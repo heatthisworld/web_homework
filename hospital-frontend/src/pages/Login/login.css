@@ -1,0 +1,36 @@
+/* 登录页面样式 */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f0f2f5;
+  padding: 20px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.login-card .ant-card-head-title {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.login-card .ant-form-item-label > label {
+  font-weight: 500;
+}
+
+.login-card .ant-btn-primary {
+  background-color: #1890ff;
+  border-color: #1890ff;
+}
+
+.login-card .ant-btn-primary:hover {
+  background-color: #40a9ff;
+  border-color: #40a9ff;
+}
