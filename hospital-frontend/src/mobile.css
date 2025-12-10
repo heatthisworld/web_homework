@@ -1,0 +1,162 @@
+/* 全局清除 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: sans-serif;
+}
+
+/* 整个页面居中 */
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: url('./assets/hospital-background.jpg') no-repeat center center fixed;
+  background-size: cover;
+  padding: 20px;
+  position: relative;
+}
+
+/* 背景图片叠加层，提高文字可读性 */
+.auth-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  z-index: 1;
+}
+
+/* 确保内容在叠加层上方 */
+.auth-container > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* 系统标题样式 */
+.system-title {
+  font-size: 28px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 30px;
+  text-align: center;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* 白色卡片区域 */
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  padding: 30px;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+/* 标题 */
+.auth-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+/* 输入框 */
+.auth-input {
+  width: 100%;
+  padding: 14px;
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  font-size: 16px;
+  transition: 0.2s;
+}
+
+.auth-input:focus {
+  border-color: #409eff;
+  box-shadow: 0 0 5px rgba(64,158,255,0.3);
+}
+
+/* 按钮 */
+.auth-btn {
+  width: 100%;
+  padding: 14px;
+  background: #409eff;
+  border: none;
+  color: white;
+  font-size: 17px;
+  border-radius: 12px;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.auth-btn:active {
+  background: #2f89d8;
+}
+
+/* 切换登录/注册 */
+.switch-text {
+  margin-top: 18px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+.switch-link {
+  color: #409eff;
+  cursor: pointer;
+  margin-left: 5px;
+}
+
+/* Header */
+.header-container {
+  height: 55px;
+  background: #409eff;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* 内容区 */
+.layout-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.layout-content {
+  flex: 1;
+  overflow-y: auto;
+  background: #f5f5f5;
+  padding: 10px;
+}
+
+/* TabBar */
+.tabbar-container {
+  height: 55px;
+  background: #fff;
+  border-top: 1px solid #eee;
+  display: flex;
+}
+
+.tabbar-item {
+  flex: 1;
+  text-align: center;
+  padding-top: 10px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+}
+
+.tabbar-item.active {
+  color: #409eff;
+  font-weight: bold;
+}
