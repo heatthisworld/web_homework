@@ -1,0 +1,307 @@
+/* 设置页面样式 */
+.settings {
+  width: 100%;
+}
+
+.settings h1 {
+  font-size: 28px;
+  color: #2c3e50;
+  margin-bottom: 20px;
+}
+
+/* 标签页 */
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tab-btn {
+  padding: 12px 25px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  background-color: white;
+  color: #606266;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  color: #409eff;
+  border-color: #c6e2ff;
+  background-color: #ecf5ff;
+}
+
+.tab-btn.active {
+  color: #409eff;
+  border-color: #409eff;
+  background-color: #ecf5ff;
+  font-weight: 500;
+}
+
+/* 内容区域 */
+.tab-content {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  min-height: 500px;
+}
+
+/* 设置区块 */
+.setting-section {
+  margin-bottom: 30px;
+}
+
+.setting-section h3 {
+  font-size: 18px;
+  color: #303133;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+/* 个人信息设置 */
+.profile-info {
+  display: flex;
+  gap: 30px;
+}
+
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  min-width: 150px;
+}
+
+.avatar-preview {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #e4e7ed;
+}
+
+.avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-upload {
+  text-align: center;
+}
+
+.avatar-upload input[type="file"] {
+  display: none;
+}
+
+.avatar-upload label {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #409eff;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.avatar-upload label:hover {
+  background-color: #66b1ff;
+}
+
+/* 表单样式 */
+.info-form {
+  flex: 1;
+}
+
+.form-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+  padding: 10px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #606266;
+  background-color: #fff;
+}
+
+.form-value {
+  padding: 10px 12px;
+  background-color: #f5f7fa;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #303133;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+/* 密码修改 */
+.password-form {
+  max-width: 500px;
+}
+
+.password-form .form-group {
+  margin-bottom: 20px;
+}
+
+/* 选项列表 */
+.notification-options,
+.preference-options {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.option-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.option-item:hover {
+  background-color: #ecf0f1;
+}
+
+.option-info {
+  flex: 1;
+}
+
+.option-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 5px;
+}
+
+.option-description {
+  font-size: 14px;
+  color: #606266;
+}
+
+.option-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.option-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.option-select select {
+  padding: 8px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #606266;
+  background-color: #fff;
+  min-width: 150px;
+}
+
+/* 表单操作按钮 */
+.form-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 15px;
+}
+
+.save-btn {
+  padding: 10px 25px;
+  background-color: #409eff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.save-btn:hover {
+  background-color: #66b1ff;
+}
+
+.edit-btn {
+  padding: 8px 16px;
+  background-color: #67c23a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.edit-btn:hover {
+  background-color: #85ce61;
+}
+
+/* 区块头部 */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tab-btn {
+    flex: 1;
+    min-width: 120px;
+  }
+  
+  .profile-info {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .option-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .option-toggle,
+  .option-select {
+    align-self: flex-end;
+  }
+}

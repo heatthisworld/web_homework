@@ -1,0 +1,509 @@
+/* 日程安排页面样式 */
+.schedule {
+  width: 100%;
+}
+
+.schedule h1 {
+  font-size: 28px;
+  color: #2c3e50;
+  margin-bottom: 20px;
+}
+
+/* 标签页 */
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tab-btn {
+  padding: 12px 25px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  background-color: white;
+  color: #606266;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  color: #409eff;
+  border-color: #c6e2ff;
+  background-color: #ecf5ff;
+}
+
+.tab-btn.active {
+  color: #409eff;
+  border-color: #409eff;
+  background-color: #ecf5ff;
+  font-weight: 500;
+}
+
+/* 内容区域 */
+.tab-content {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  min-height: 500px;
+}
+
+/* 预约日程 */
+.schedule-view {
+  width: 100%;
+}
+
+.schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.schedule-header h2 {
+  font-size: 20px;
+  color: #303133;
+  margin: 0;
+}
+
+.date-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.date-selector label {
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.date-selector input[type="date"] {
+  padding: 8px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #606266;
+  background-color: #fff;
+}
+
+.schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.schedule-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 15px 20px;
+  border-radius: 8px;
+  background-color: #f5f7fa;
+  transition: all 0.3s ease;
+  border-left: 4px solid transparent;
+}
+
+.schedule-item:hover {
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+.schedule-item.status-confirmed {
+  border-left-color: #67c23a;
+  background-color: #f0f9eb;
+}
+
+.schedule-item.status-pending {
+  border-left-color: #e6a23c;
+  background-color: #fdf6ec;
+}
+
+.schedule-item.status-cancelled {
+  border-left-color: #f56c6c;
+  background-color: #fef0f0;
+  opacity: 0.7;
+}
+
+.schedule-time {
+  font-size: 16px;
+  font-weight: 500;
+  color: #303133;
+  min-width: 80px;
+}
+
+.schedule-info {
+  flex: 1;
+}
+
+.patient-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 5px;
+}
+
+.patient-details {
+  font-size: 14px;
+  color: #606266;
+}
+
+.schedule-status {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.status-confirmed {
+  background-color: #e1f3d8;
+  color: #67c23a;
+}
+
+.status-pending {
+  background-color: #fdf6ec;
+  color: #e6a23c;
+}
+
+.status-cancelled {
+  background-color: #fef0f0;
+  color: #f56c6c;
+}
+
+.no-schedule {
+  text-align: center;
+  padding: 60px 20px;
+  color: #909399;
+  font-size: 16px;
+  background-color: #fafafa;
+  border-radius: 8px;
+  border: 1px dashed #dcdfe6;
+}
+
+/* 出诊时间设置 */
+.working-hours {
+  width: 100%;
+}
+
+.working-hours h2 {
+  font-size: 20px;
+  color: #303133;
+  margin-bottom: 20px;
+}
+
+.working-hours-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.working-hour-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.working-hour-item:hover {
+  background-color: #ecf0f1;
+}
+
+.day-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.day-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #303133;
+  min-width: 60px;
+}
+
+.working-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.working-toggle input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.working-toggle label {
+  font-size: 14px;
+  color: #606266;
+  cursor: pointer;
+}
+
+.time-setting {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.time-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.time-editing {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.time-display span,
+.time-editing span {
+  font-size: 14px;
+  color: #606266;
+}
+
+.time-editing input[type="time"] {
+  padding: 6px 10px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #606266;
+  background-color: #fff;
+}
+
+.save-btn,
+.edit-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.edit-btn {
+  background-color: #409eff;
+  color: white;
+}
+
+.edit-btn:hover {
+  background-color: #66b1ff;
+}
+
+.save-btn {
+  background-color: #67c23a;
+  color: white;
+}
+
+.save-btn:hover {
+  background-color: #85ce61;
+}
+
+/* 调休申请 */
+.leave-requests {
+  width: 100%;
+}
+
+.leave-header {
+  margin-bottom: 30px;
+}
+
+.leave-header h2 {
+  font-size: 20px;
+  color: #303133;
+  margin-bottom: 20px;
+}
+
+.new-leave-request {
+  background-color: #f5f7fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+}
+
+.new-leave-request h3 {
+  font-size: 16px;
+  color: #303133;
+  margin-bottom: 15px;
+}
+
+.leave-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.form-group input[type="date"],
+.form-group textarea {
+  padding: 10px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #606266;
+  background-color: #fff;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+}
+
+.submit-btn {
+  align-self: flex-start;
+  padding: 10px 20px;
+  background-color: #409eff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background-color: #66b1ff;
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #a0cfff;
+}
+
+.leave-requests-list h3 {
+  font-size: 16px;
+  color: #303133;
+  margin-bottom: 15px;
+}
+
+.leave-requests-list {
+  width: 100%;
+}
+
+.leave-request-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 15px 20px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  margin-bottom: 15px;
+}
+
+.leave-request-item:hover {
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+.leave-request-item.status-pending {
+  border-left: 4px solid #e6a23c;
+}
+
+.leave-request-item.status-approved {
+  border-left: 4px solid #67c23a;
+}
+
+.leave-request-item.status-rejected {
+  border-left: 4px solid #f56c6c;
+  opacity: 0.7;
+}
+
+.leave-date {
+  font-size: 16px;
+  font-weight: 500;
+  color: #303133;
+  min-width: 120px;
+}
+
+.leave-reason {
+  flex: 1;
+  font-size: 14px;
+  color: #606266;
+}
+
+.leave-status {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 500;
+  min-width: 80px;
+  text-align: center;
+}
+
+.no-leave-requests {
+  text-align: center;
+  padding: 40px 20px;
+  color: #909399;
+  font-size: 14px;
+  background-color: #fafafa;
+  border-radius: 8px;
+  border: 1px dashed #dcdfe6;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tab-btn {
+    flex: 1;
+    min-width: 120px;
+  }
+  
+  .schedule-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .schedule-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .working-hour-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .day-info {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .time-setting {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .leave-request-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .submit-btn {
+    align-self: stretch;
+  }
+}

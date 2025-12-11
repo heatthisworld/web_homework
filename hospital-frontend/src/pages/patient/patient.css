@@ -1,0 +1,595 @@
+/* 首页样式 */
+.home-page {
+  padding: 15px;
+  background-color: #f5f7fa;
+}
+
+.user-card {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+.user-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  margin-right: 15px;
+  object-fit: cover;
+}
+
+.user-info h3 {
+  margin: 0 0 5px 0;
+  font-size: 18px;
+}
+
+.user-info p {
+  margin: 0;
+  color: #909399;
+  font-size: 14px;
+}
+
+.quick-menu {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.quick-menu-item {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 15px 10px;
+  text-align: center;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+.quick-menu-icon {
+  font-size: 24px;
+  margin-bottom: 5px;
+  color: #409eff;
+}
+
+.quick-menu-label {
+  font-size: 14px;
+  color: #303133;
+}
+
+.section {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  color: #303133;
+}
+
+.notice-item {
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  color: #606266;
+}
+
+.notice-item:last-child {
+  border-bottom: none;
+}
+
+.doctor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.doctor-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: #fafafa;
+}
+
+.doctor-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 15px;
+  object-fit: cover;
+}
+
+.doctor-info h4 {
+  margin: 0 0 3px 0;
+  font-size: 15px;
+}
+
+.doctor-info p {
+  margin: 0;
+  font-size: 13px;
+  color: #909399;
+}
+
+/* 挂号页面样式 */
+.registration-page {
+  padding: 15px;
+  background-color: #f5f7fa;
+}
+
+/* 当前选择信息 */
+.current-selection {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+.current-selection h4 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  color: #303133;
+}
+
+.selection-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+}
+
+.info-label {
+  font-size: 14px;
+  color: #606266;
+}
+
+.info-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+}
+
+/* 选择按钮区域 */
+.selection-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.selection-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 15px 20px;
+  background-color: #fff;
+  border: 1px solid #dcdfe6;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.05);
+}
+
+.selection-btn:hover {
+  border-color: #409eff;
+  box-shadow: 0 2px 12px 0 rgba(64, 158, 255, 0.1);
+}
+
+.selection-btn.expanded {
+  border-color: #409eff;
+  background-color: #ecf5ff;
+}
+
+.selection-btn.selected {
+  border-color: #67c23a;
+  background-color: #f0f9eb;
+}
+
+.selection-btn.selected::after {
+  content: '✓';
+  color: #67c23a;
+  font-weight: bold;
+  margin-left: 10px;
+}
+
+.selection-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f5f7fa;
+  border-color: #dcdfe6;
+}
+
+.arrow {
+  font-size: 12px;
+  color: #909399;
+  transition: transform 0.3s ease;
+}
+
+/* 选项展开区域 */
+.options-section {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* 选项通用样式 */
+.option-item {
+  padding: 15px;
+  margin-bottom: 10px;
+  background-color: #f5f7fa;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.option-item:last-child {
+  margin-bottom: 0;
+}
+
+.option-item:hover {
+  border-color: #409eff;
+  background-color: #ecf5ff;
+}
+
+.option-item.selected {
+  border-color: #409eff;
+  background-color: #ecf5ff;
+  color: #409eff;
+  font-weight: 500;
+}
+
+.option-name {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.option-desc {
+  font-size: 14px;
+  color: #606266;
+}
+
+/* 时间选项样式 */
+.time-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.time-option-item {
+  flex: 1 1 calc(33.333% - 10px);
+  padding: 15px;
+  background-color: #f5f7fa;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 80px;
+}
+
+.time-option-item:hover {
+  border-color: #409eff;
+  background-color: #ecf5ff;
+}
+
+.time-option-item.selected {
+  border-color: #409eff;
+  background-color: #409eff;
+  color: #fff;
+  font-weight: 500;
+}
+
+/* 提交按钮 */
+.submit-btn {
+  width: 100%;
+  padding: 15px;
+  background-color: #409eff;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px 0 rgba(64, 158, 255, 0.3);
+}
+
+.submit-btn:hover:not(:disabled) {
+  background-color: #66b1ff;
+  box-shadow: 0 4px 12px 0 rgba(64, 158, 255, 0.4);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #a0cfff;
+  box-shadow: none;
+}
+
+/* 成功消息 */
+.success-message {
+  background-color: #f0f9eb;
+  border: 1px solid #e1f3d8;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  color: #67c23a;
+  margin: 20px 0;
+}
+
+.success-message h4 {
+  margin: 0 0 10px 0;
+  font-size: 18px;
+}
+
+.success-message p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* 记录页面样式 */
+.records-page {
+  padding: 15px;
+  background-color: #f5f7fa;
+}
+
+.records-page h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #303133;
+}
+
+.internal-tabs {
+  display: flex;
+  background-color: #fff;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+.internal-tab {
+  flex: 1;
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 14px;
+  color: #606266;
+}
+
+.internal-tab.active {
+  background-color: #409eff;
+  color: #fff;
+}
+
+.record-item {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+.record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.record-department {
+  font-weight: bold;
+  color: #303133;
+}
+
+.record-status {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.record-status.已就诊 {
+  background-color: #e1f3d8;
+  color: #67c23a;
+}
+
+.record-status.待就诊 {
+  background-color: #f0f9ff;
+  color: #409eff;
+}
+
+.record-status.已取消 {
+  background-color: #fef0f0;
+  color: #f56c6c;
+}
+
+.record-date {
+  color: #909399;
+  font-size: 14px;
+}
+
+.record-content p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #606266;
+}
+
+.cancel-btn, .detail-btn {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.cancel-btn {
+  background-color: #fef0f0;
+  color: #f56c6c;
+}
+
+.detail-btn {
+  background-color: #f0f9ff;
+  color: #409eff;
+}
+
+/* 个人中心样式 */
+.profile-page {
+  padding: 15px;
+  background-color: #f5f7fa;
+}
+
+.user-info-card {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+.user-info h3 {
+  margin: 0 0 5px 0;
+  font-size: 18px;
+}
+
+.user-info p {
+  margin: 0;
+  color: #909399;
+  font-size: 14px;
+}
+
+.detail-info, .auxiliary-info {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 14px;
+  color: #606266;
+}
+
+.info-value {
+  font-size: 14px;
+  color: #303133;
+}
+
+.menu-section {
+  background-color: #fff;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+.menu-section h4 {
+  padding: 15px;
+  margin: 0;
+  font-size: 14px;
+  color: #909399;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.menu-list {
+  padding: 10px 0;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  cursor: pointer;
+}
+
+.menu-icon {
+  font-size: 18px;
+  margin-right: 15px;
+  width: 20px;
+  text-align: center;
+}
+
+.menu-label {
+  flex: 1;
+  font-size: 15px;
+  color: #303133;
+}
+
+.menu-arrow {
+  font-size: 18px;
+  color: #c0c4cc;
+}
+
+.logout-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #fef0f0;
+  color: #f56c6c;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+.logout-btn:hover {
+  background-color: #fde2e2;
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+  .home-page, .registration-page, .records-page, .profile-page {
+    padding: 10px;
+  }
+  
+  .quick-menu {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .user-card, .user-info-card {
+    padding: 15px;
+  }
+  
+  .user-avatar {
+    width: 50px;
+    height: 50px;
+  }
+}

@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import Header from "./Header";
 import TabBar from "./TabBar";
 import type { TabItem } from "./TabBar";
+import LeftSidebar from "./LeftSidebar";
 import "../../mobile.css";
 
 interface LayoutProps {
@@ -19,14 +20,22 @@ const Layout: React.FC<LayoutProps> = ({
   onTabChange,
   children
 }) => {
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+
   return (
     <div className="layout-container">
-      <Header title={title} />
+      {/* 左侧导航栏 */}
+      <LeftSidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
 
+      {/* 顶部 Header（添加按钮） */}
+      <Header title={title} onMenuClick={() => setSidebarVisible(true)} />
+
+      {/* 主内容区 */}
       <div className="layout-content">
         {children}
       </div>
 
+      {/* 底部 TabBar */}
       <TabBar tabs={tabs} active={activeTab} onChange={onTabChange} />
     </div>
   );

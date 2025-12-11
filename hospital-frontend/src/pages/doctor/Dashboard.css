@@ -1,0 +1,253 @@
+/* Dashboard 样式 */
+.dashboard {
+  width: 100%;
+}
+
+.dashboard h1 {
+  font-size: 28px;
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.dashboard-date {
+  color: #7f8c8d;
+  font-size: 16px;
+  margin-bottom: 30px;
+}
+
+/* 统计卡片 */
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+  font-size: 40px;
+  margin-right: 20px;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-title {
+  font-size: 14px;
+  color: #7f8c8d;
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+/* 行和列布局 */
+.dashboard-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+}
+
+.dashboard-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 患者列表 */
+.patient-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.patient-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.patient-item:hover {
+  background-color: #ecf0f1;
+}
+
+.patient-info {
+  flex: 1;
+}
+
+.patient-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #2c3e50;
+  margin-bottom: 5px;
+}
+
+.patient-details {
+  font-size: 14px;
+  color: #7f8c8d;
+}
+
+.patient-schedule {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.patient-time {
+  font-size: 16px;
+  font-weight: 500;
+  color: #3498db;
+}
+
+.patient-status {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.patient-status.arrived {
+  background-color: #e1f3d8;
+  color: #67c23a;
+}
+
+.patient-status.not-arrived {
+  background-color: #fef0f0;
+  color: #f56c6c;
+}
+
+/* 任务列表 */
+.tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.task-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.task-item:hover {
+  background-color: #ecf0f1;
+}
+
+.task-content {
+  flex: 1;
+}
+
+.task-title {
+  font-size: 16px;
+  color: #2c3e50;
+}
+
+.task-count {
+  background-color: #3498db;
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* 通知列表 */
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.notification-item {
+  padding: 15px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.notification-item:hover {
+  background-color: #ecf0f1;
+}
+
+.notification-content {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.notification-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.notification-text {
+  font-size: 14px;
+  color: #7f8c8d;
+}
+
+.notification-time {
+  font-size: 12px;
+  color: #95a5a6;
+  margin-top: 5px;
+}
+
+/* 查看全部按钮 */
+.view-all-btn {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.view-all-btn:hover {
+  background-color: #2980b9;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .dashboard-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-cards {
+    grid-template-columns: 1fr;
+  }
+}

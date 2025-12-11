@@ -85,6 +85,25 @@
 | created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
 | updated_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | 更新时间 |
 
+### 2.7 病历表（medical_record）
+用于存储病人的病历信息，包括症状、诊断、用药和治疗方案等。
+
+| 字段名 | 数据类型 | 约束 | 描述 |
+| --- | --- | --- | --- |
+| id | BIGINT | PRIMARY KEY, AUTO_INCREMENT | 病历ID |
+| patient_id | BIGINT | FOREIGN KEY REFERENCES patient(id) | 病人ID |
+| doctor_id | BIGINT | FOREIGN KEY REFERENCES doctor(id) | 医生ID |
+| registration_id | BIGINT | FOREIGN KEY REFERENCES registration(id) | 挂号ID |
+| visit_date | TIMESTAMP | NOT NULL | 就诊日期 |
+| symptoms | TEXT | | 症状描述 |
+| diagnosis | TEXT | | 诊断结果 |
+| medication | TEXT | | 用药记录 |
+| examinations | TEXT | | 检查结果 |
+| treatment | TEXT | | 治疗方案 |
+| notes | TEXT | | 医生备注 |
+| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
+| updated_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | 更新时间 |
+
 ## 3. 数据库关系图
 
 ```
@@ -124,6 +143,18 @@
 | appointment_time       |
 | status                 |
 +------------------------+
+          |
+          |
++------------------------+
+|    medical_record      |
++------------------------+
+| patient_id             |
+| doctor_id              |
+| registration_id        |
+| visit_date             |
+| diagnosis              |
+| medication             |
++------------------------+
 ```
 
 ## 4. 索引设计
@@ -136,6 +167,7 @@
 4. 医生表：user_id（唯一索引）、name（普通索引）、department（普通索引）
 5. 医生病种关联表：doctor_id（普通索引）、disease_id（普通索引）
 6. 挂号表：patient_id（普通索引）、doctor_id（普通索引）、disease_id（普通索引）、appointment_time（普通索引）、status（普通索引）
+7. 病历表：patient_id（普通索引）、doctor_id（普通索引）、registration_id（普通索引）、visit_date（普通索引）
 
 ## 5. 数据库配置建议
 

@@ -1,0 +1,262 @@
+/* 挂号管理页面样式 */
+.registration-management {
+  width: 100%;
+}
+
+.registration-management h1 {
+  font-size: 28px;
+  color: #2c3e50;
+  margin-bottom: 20px;
+}
+
+/* 筛选区域 */
+.filter-section {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.filter-row {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-group label {
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.filter-group input[type="date"],
+.filter-group select {
+  padding: 8px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #606266;
+  background-color: #fff;
+}
+
+.filter-group input[type="text"] {
+  padding: 8px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #606266;
+  background-color: #fff;
+  width: 300px;
+}
+
+.search-group {
+  margin-left: auto;
+}
+
+/* 批量操作 */
+.batch-actions {
+  background-color: #ecf5ff;
+  padding: 15px 20px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border: 1px solid #d9ecff;
+}
+
+.batch-actions span {
+  font-size: 14px;
+  color: #303133;
+  font-weight: 500;
+}
+
+.batch-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* 按钮样式 */
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-sm {
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+.btn-primary {
+  background-color: #409eff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #66b1ff;
+}
+
+.btn-success {
+  background-color: #67c23a;
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #85ce61;
+}
+
+.btn-danger {
+  background-color: #f56c6c;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #f78989;
+}
+
+.btn-info {
+  background-color: #909399;
+  color: white;
+}
+
+.btn-info:hover {
+  background-color: #a6a9ad;
+}
+
+/* 表格容器 */
+.registration-table-container {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* 表格样式 */
+.registration-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.registration-table th {
+  background-color: #f5f7fa;
+  color: #606266;
+  font-weight: 500;
+  text-align: left;
+  padding: 12px 15px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.registration-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #ebeef5;
+  color: #303133;
+}
+
+.registration-table tbody tr:hover {
+  background-color: #f5f7fa;
+}
+
+/* 状态徽章 */
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-pending {
+  background-color: #fdf6ec;
+  color: #e6a23c;
+}
+
+.status-confirmed {
+  background-color: #ecf5ff;
+  color: #409eff;
+}
+
+.status-cancelled {
+  background-color: #fef0f0;
+  color: #f56c6c;
+}
+
+.status-completed {
+  background-color: #f0f9eb;
+  color: #67c23a;
+}
+
+/* 操作按钮组 */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* 无数据提示 */
+.no-data {
+  text-align: center;
+  padding: 40px 0;
+  color: #909399;
+  font-size: 14px;
+}
+
+/* 复选框样式 */
+input[type="checkbox"] {
+  cursor: pointer;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .filter-row {
+    flex-wrap: wrap;
+  }
+  
+  .search-group {
+    margin-left: 0;
+    width: 100%;
+  }
+  
+  .filter-group input[type="text"] {
+    width: 100%;
+  }
+  
+  .registration-table {
+    font-size: 13px;
+  }
+  
+  .registration-table th,
+  .registration-table td {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .batch-actions {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .batch-buttons {
+    justify-content: center;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 5px;
+  }
+}
