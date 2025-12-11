@@ -1,11 +1,12 @@
-# 医院管理系统后端
+# 医院管理系统
 
 ## 1. 项目简介
 
-医院管理系统后端是一个基于Spring Boot的Web应用，提供了医院管理所需的核心功能，包括用户认证、医生管理、患者管理、疾病管理和挂号管理等。
+医院管理系统是一个基于Spring Boot和React的前后端分离Web应用，提供了医院管理所需的核心功能，包括用户认证、医生管理、患者管理、疾病管理和挂号管理等。
 
 ## 2. 技术栈
 
+### 2.1 后端技术栈
 - **框架**: Spring Boot 3.2.x
 - **ORM**: Spring Data JPA
 - **数据库**: MySQL 8.0
@@ -14,38 +15,42 @@
 - **开发语言**: Java 17+
 - **容器化**: Docker
 
+### 2.2 前端技术栈
+- **框架**: React 19.x
+- **路由**: React Router DOM 7.x
+- **UI组件库**: Ant Design Mobile 5.x
+- **状态管理**: React Context API
+- **构建工具**: Vite
+- **开发语言**: TypeScript
+
 ## 3. 环境要求
 
+### 3.1 后端环境要求
 - Java 17 或更高版本
 - Maven 3.6 或更高版本
 - Docker 20.10 或更高版本（用于运行MySQL容器）
 
+### 3.2 前端环境要求
+- Node.js 18 或更高版本
+- npm 9 或更高版本
+
 ## 4. 项目结构
 
 ```
-hospital/
+web_homework/
 ├── docs/                # 文档目录
 │   ├── API_DOCUMENTATION.md    # API文档
 │   └── database_design.md      # 数据库设计文档
-├── src/
-│   ├── main/
-│   │   ├── java/com/hospital/  # 源代码
-│   │   │   ├── controller/     # 控制器层
-│   │   │   ├── entity/         # 实体类
-│   │   │   ├── model/          # 数据模型
-│   │   │   ├── repository/     # 数据访问层
-│   │   │   ├── service/        # 业务逻辑层
-│   │   │   ├── util/           # 工具类
-│   │   │   └── HospitalApplication.java  # 应用入口
-│   │   └── resources/          # 资源文件
-│   │       ├── application.properties  # 配置文件
-│   │       └── static/         # 静态资源
-│   └── test/                   # 测试代码
-├── .gitignore
-├── mvnw
-├── mvnw.cmd
-├── pom.xml
-└── README.md
+├── hospital/            # 后端项目
+│   ├── src/             # 后端源代码
+│   ├── pom.xml          # Maven配置文件
+│   └── README.md        # 后端README
+├── hospital-frontend/   # 前端项目
+│   ├── src/             # 前端源代码
+│   ├── package.json     # npm配置文件
+│   ├── vite.config.ts   # Vite配置文件
+│   └── README.md        # 前端README
+└── README.md            # 项目总README
 ```
 
 ## 5. 配置步骤
@@ -89,13 +94,16 @@ spring.datasource.password=123456
 
 ## 6. 运行项目
 
-### 6.1 编译项目
+### 6.1 后端运行步骤
+
+#### 6.1.1 编译项目
 
 ```bash
+cd hospital
 mvn clean compile
 ```
 
-### 6.2 运行项目
+#### 6.1.2 运行项目
 
 ```bash
 mvn spring-boot:run
@@ -108,17 +116,82 @@ mvn clean package
 java -jar target/hospital-0.0.1-SNAPSHOT.jar
 ```
 
-### 6.3 验证项目是否启动成功
+#### 6.1.3 验证后端是否启动成功
 
-项目启动后，可以通过以下URL访问：
+后端启动后，可以通过以下URL访问：
 
 ```
 http://localhost:8080
 ```
 
-如果看到Spring Boot的默认页面或API响应，则说明项目启动成功。
+如果看到Spring Boot的默认页面或API响应，则说明后端项目启动成功。
 
-## 7. API文档
+### 6.2 前端运行步骤
+
+#### 6.2.1 安装依赖
+
+```bash
+cd hospital-frontend
+npm install
+```
+
+#### 6.2.2 启动开发服务器
+
+```bash
+npm run dev
+```
+
+#### 6.2.3 验证前端是否启动成功
+
+前端启动后，可以通过以下URL访问：
+
+```
+http://localhost:3000
+```
+
+如果看到登录页面，则说明前端项目启动成功。
+
+### 6.3 构建生产版本
+
+```bash
+cd hospital-frontend
+npm run build
+```
+
+构建完成后，生成的静态文件将位于`dist`目录中。
+
+## 7. 前端页面访问路径
+
+### 7.1 认证页面
+- **登录/注册页面**: `http://localhost:3000/`
+
+### 7.2 患者页面
+- **患者首页**: `http://localhost:3000/patient/` (默认显示首页)
+- **挂号页面**: `http://localhost:3000/patient/registration`
+- **就诊记录页面**: `http://localhost:3000/patient/records`
+- **个人中心页面**: `http://localhost:3000/patient/profile`
+
+### 7.3 医生页面
+- **医生首页/仪表盘**: `http://localhost:3000/doctor/` (默认显示仪表盘)
+- **挂号管理页面**: `http://localhost:3000/doctor/registration`
+- **患者管理页面**: `http://localhost:3000/doctor/patients`
+- **排班管理页面**: `http://localhost:3000/doctor/schedule`
+- **统计分析页面**: `http://localhost:3000/doctor/statistics`
+- **设置页面**: `http://localhost:3000/doctor/settings`
+
+### 7.4 管理员页面
+- **管理员首页/仪表盘**: `http://localhost:3000/admin/` (默认显示仪表盘)
+- **用户管理页面**: `http://localhost:3000/admin/users`
+- **科室管理页面**: `http://localhost:3000/admin/departments`
+- **排班管理页面**: `http://localhost:3000/admin/schedule`
+- **挂号管理页面**: `http://localhost:3000/admin/registrations`
+- **统计分析页面**: `http://localhost:3000/admin/statistics`
+- **系统设置页面**: `http://localhost:3000/admin/settings`
+
+### 7.5 公共页面
+- **白板页面**: `http://localhost:3000/whiteboard`
+
+## 8. API文档
 
 项目提供了详细的API文档，位于`docs/API_DOCUMENTATION.md`文件中，包含了所有API的端点、方法、参数和响应格式。
 
