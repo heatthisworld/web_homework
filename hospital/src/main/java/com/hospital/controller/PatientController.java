@@ -1,10 +1,9 @@
 package com.hospital.controller;
 
 import com.hospital.entity.Patient;
+import com.hospital.model.Result;
 import com.hospital.service.PatientService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,52 +17,44 @@ public class PatientController {
     private PatientService patientService;
 
     @GetMapping
-    public List<Patient> getAllPatients() {
-        return patientService.getAllPatients();
+    public Result<List<Patient>> getAllPatients() {
+        return Result.success(patientService.getAllPatients());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Patient> getPatientById(@PathVariable Long id) {
+    public Result<Patient> getPatientById(@PathVariable Long id) {
         Optional<Patient> patient = patientService.getPatientById(id);
-        return patient.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        return patient.map(Result::success)
+                .orElseGet(() -> Result.error(404, "患者不存在"));
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<Patient> getPatientByUserId(@PathVariable Long userId) {
+    public Result<Patient> getPatientByUserId(@PathVariable Long userId) {
         Optional<Patient> patient = patientService.getPatientByUserId(userId);
-        return patient.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        return patient.map(Result::success)
+                .orElseGet(() -> Result.error(404, "患者不存在"));
     }
 
     @GetMapping("/search")
-    public List<Patient> searchPatientsByName(@RequestParam String name) {
-        return patientService.searchPatientsByName(name);
+    public Result<List<Patient>> searchPatientsByName(@RequestParam String name) {
+        return Result.success(patientService.searchPatientsByName(name));
     }
 
     @PostMapping
-    public ResponseEntity<Patient> createPatient(@RequestBody Patient patient) {
+    public Result<Patient> createPatient(@RequestBody Patient patient) {
         Patient createdPatient = patientService.createPatient(patient);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdPatient);
+        return Result.success(createdPatient);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Patient> updatePatient(@PathVariable Long id, @RequestBody Patient patient) {
-        try {
-            Patient updatedPatient = patientService.updatePatient(id, patient);
-            return ResponseEntity.ok(updatedPatient);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public Result<Patient> updatePatient(@PathVariable Long id, @RequestBody Patient patient) {
+        Patient updatedPatient = patientService.updatePatient(id, patient);
+        return Result.success(updatedPatient);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePatient(@PathVariable Long id) {
-        try {
-            patientService.deletePatient(id);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public Result<Void> deletePatient(@PathVariable Long id) {
+        patientService.deletePatient(id);
+        return Result.success();
     }
 }

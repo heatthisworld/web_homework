@@ -1,11 +1,10 @@
 package com.hospital.controller;
 
 import com.hospital.entity.Registration;
+import com.hospital.model.Result;
 import com.hospital.service.RegistrationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -20,86 +19,86 @@ public class RegistrationController {
     private RegistrationService registrationService;
 
     @GetMapping
-    public List<Registration> getAllRegistrations() {
-        return registrationService.getAllRegistrations();
+    public Result<List<Registration>> getAllRegistrations() {
+        return Result.success(registrationService.getAllRegistrations());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Registration> getRegistrationById(@PathVariable Long id) {
+    public Result<Registration> getRegistrationById(@PathVariable Long id) {
         Optional<Registration> registration = registrationService.getRegistrationById(id);
-        return registration.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        return registration.map(Result::success)
+                .orElseGet(() -> Result.error(404, "挂号记录不存在"));
     }
 
     @GetMapping("/patient/{patientId}")
-    public List<Registration> getRegistrationsByPatientId(@PathVariable Long patientId) {
-        return registrationService.getRegistrationsByPatientId(patientId);
+    public Result<List<Registration>> getRegistrationsByPatientId(@PathVariable Long patientId) {
+        return Result.success(registrationService.getRegistrationsByPatientId(patientId));
     }
 
     @GetMapping("/doctor/{doctorId}")
-    public List<Registration> getRegistrationsByDoctorId(@PathVariable Long doctorId) {
-        return registrationService.getRegistrationsByDoctorId(doctorId);
+    public Result<List<Registration>> getRegistrationsByDoctorId(@PathVariable Long doctorId) {
+        return Result.success(registrationService.getRegistrationsByDoctorId(doctorId));
     }
 
     @GetMapping("/disease/{diseaseId}")
-    public List<Registration> getRegistrationsByDiseaseId(@PathVariable Long diseaseId) {
-        return registrationService.getRegistrationsByDiseaseId(diseaseId);
+    public Result<List<Registration>> getRegistrationsByDiseaseId(@PathVariable Long diseaseId) {
+        return Result.success(registrationService.getRegistrationsByDiseaseId(diseaseId));
     }
 
     @GetMapping("/status/{status}")
-    public List<Registration> getRegistrationsByStatus(@PathVariable Registration.Status status) {
-        return registrationService.getRegistrationsByStatus(status);
+    public Result<List<Registration>> getRegistrationsByStatus(@PathVariable Registration.Status status) {
+        return Result.success(registrationService.getRegistrationsByStatus(status));
     }
 
     @GetMapping("/patient/{patientId}/status/{status}")
-    public List<Registration> getRegistrationsByPatientAndStatus(@PathVariable Long patientId, @PathVariable Registration.Status status) {
-        return registrationService.getRegistrationsByPatientAndStatus(patientId, status);
+    public Result<List<Registration>> getRegistrationsByPatientAndStatus(@PathVariable Long patientId, @PathVariable Registration.Status status) {
+        return Result.success(registrationService.getRegistrationsByPatientAndStatus(patientId, status));
     }
 
     @GetMapping("/time")
-    public List<Registration> getRegistrationsByAppointmentTimeBetween(
+    public Result<List<Registration>> getRegistrationsByAppointmentTimeBetween(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
-        return registrationService.getRegistrationsByAppointmentTimeBetween(start, end);
+        return Result.success(registrationService.getRegistrationsByAppointmentTimeBetween(start, end));
     }
 
     @PostMapping
-    public ResponseEntity<Registration> createRegistration(@RequestBody Registration registration) {
+    public Result<Registration> createRegistration(@RequestBody Registration registration) {
         try {
             Registration createdRegistration = registrationService.createRegistration(registration);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdRegistration);
+            return Result.success(createdRegistration);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(null);
+            return Result.error(400, "创建挂号失败：" + e.getMessage());
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Registration> updateRegistration(@PathVariable Long id, @RequestBody Registration registration) {
+    public Result<Registration> updateRegistration(@PathVariable Long id, @RequestBody Registration registration) {
         try {
             Registration updatedRegistration = registrationService.updateRegistration(id, registration);
-            return ResponseEntity.ok(updatedRegistration);
+            return Result.success(updatedRegistration);
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return Result.error(404, "挂号记录不存在");
         }
     }
 
     @PutMapping("/{id}/status/{status}")
-    public ResponseEntity<Registration> updateRegistrationStatus(@PathVariable Long id, @PathVariable Registration.Status status) {
+    public Result<Registration> updateRegistrationStatus(@PathVariable Long id, @PathVariable Registration.Status status) {
         try {
             Registration updatedRegistration = registrationService.updateRegistrationStatus(id, status);
-            return ResponseEntity.ok(updatedRegistration);
+            return Result.success(updatedRegistration);
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return Result.error(404, "挂号记录不存在");
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteRegistration(@PathVariable Long id) {
+    public Result<Void> deleteRegistration(@PathVariable Long id) {
         try {
             registrationService.deleteRegistration(id);
-            return ResponseEntity.noContent().build();
+            return Result.success();
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return Result.error(404, "挂号记录不存在");
         }
     }
 }

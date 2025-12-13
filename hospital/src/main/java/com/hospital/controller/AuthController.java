@@ -2,10 +2,10 @@ package com.hospital.controller;
 
 import com.hospital.model.AuthRequest;
 import com.hospital.model.AuthResponse;
+import com.hospital.model.Result;
 import com.hospital.repository.UserRepository;
 import com.hospital.util.JwtTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,13 +30,13 @@ public class AuthController {
     private UserRepository userRepository;
 
     @PostMapping("/login")
-    public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthRequest authenticationRequest) throws Exception {
+    public Result<AuthResponse> createAuthenticationToken(@RequestBody AuthRequest authenticationRequest) throws Exception {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword())
             );
         } catch (BadCredentialsException e) {
-            throw new Exception("Incorrect username or password", e);
+            return Result.error(401, "用户名或密码错误");
         }
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(authenticationRequest.getUsername());
@@ -47,6 +47,6 @@ public class AuthController {
                 .map(user -> user.getRole().name())
                 .orElse("ROLE_USER");
 
-        return ResponseEntity.ok(new AuthResponse(token, authenticationRequest.getUsername(), role));
+        return Result.success(new AuthResponse(token, authenticationRequest.getUsername(), role));
     }
 }
