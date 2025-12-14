@@ -51,7 +51,7 @@ public class AuthController {
                     new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword())
             );
         } catch (BadCredentialsException e) {
-            return Result.error(401, "用户名或密码错误");
+            return Result.error(4001, "用户名或密码错误");
         }
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(authenticationRequest.getUsername());
@@ -69,7 +69,7 @@ public class AuthController {
     public Result<String> registerPatient(@RequestBody RegisterRequest registerRequest) {
         // 1. 检查用户名是否已存在
         if (userRepository.findByUsername(registerRequest.getUsername()).isPresent()) {
-            return Result.error(400, "用户名已存在");
+            return Result.error(4002, "用户名已存在");
         }
 
         // 2. 创建用户对象

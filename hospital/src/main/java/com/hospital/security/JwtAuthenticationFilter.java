@@ -2,6 +2,7 @@ package com.hospital.security;
 
 import com.hospital.util.JwtTokenUtil;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -44,8 +45,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 username = jwtTokenUtil.getUsernameFromToken(jwtToken);
             } catch (IllegalArgumentException e) {
                 logger.error("Unable to get JWT Token");
+                // 返回无效令牌错误
+                response.setContentType("application/json;charset=UTF-8");
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                String json = "{\"code\":4003,\"msg\":\"无效的令牌\",\"data\":null}";
+                response.getWriter().write(json);
+                return;
             } catch (ExpiredJwtException e) {
                 logger.error("JWT Token has expired");
+                // 返回令牌过期错误
+                response.setContentType("application/json;charset=UTF-8");
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                String json = "{\"code\":4004,\"msg\":\"令牌已过期\",\"data\":null}";
+                response.getWriter().write(json);
+                return;
+            } catch (SignatureException e) {
+                logger.error("JWT Token signature verification failed");
+                // 返回令牌签名验证失败错误
+                response.setContentType("application/json;charset=UTF-8");
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                String json = "{\"code\":4005,\"msg\":\"令牌签名验证失败\",\"data\":null}";
+                response.getWriter().write(json);
+                return;
             }
         } else {
             logger.warn("JWT Token does not begin with Bearer String");
