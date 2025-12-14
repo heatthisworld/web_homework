@@ -40,10 +40,31 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // 检查是否已有数据，如果有则跳过初始化
-        if (userRepository.count() > 0) {
-            System.out.println("数据库中已有数据，跳过数据初始化");
+        // 检查是否需要强制初始化数据
+        boolean forceInit = false;
+        for (String arg : args) {
+            if ("--force-init".equals(arg)) {
+                forceInit = true;
+                break;
+            }
+        }
+
+        // 检查是否已有数据，如果有则跳过初始化，除非强制初始化
+        if (userRepository.count() > 0 && !forceInit) {
+            System.out.println("数据库中已有数据，跳过数据初始化（使用 --force-init 参数可强制初始化）");
             return;
+        }
+
+        // 如果是强制初始化，先清空所有数据
+        if (forceInit) {
+            System.out.println("开始清空现有数据...");
+            // 按外键依赖顺序删除数据
+            registrationRepository.deleteAll();
+            patientRepository.deleteAll();
+            doctorRepository.deleteAll();
+            diseaseRepository.deleteAll();
+            userRepository.deleteAll();
+            System.out.println("现有数据清空完成！");
         }
 
         System.out.println("开始初始化测试数据...");

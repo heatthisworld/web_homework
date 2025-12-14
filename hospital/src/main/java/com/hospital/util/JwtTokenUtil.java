@@ -3,7 +3,6 @@ package com.hospital.util;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,11 +17,11 @@ import java.util.function.Function;
 @Component
 public class JwtTokenUtil {
 
-    @Value("${jwt.secret}")
-    private String secret;
-
     @Value("${jwt.expiration}")
     private long expiration;
+
+    // 使用Keys类生成符合HS512算法要求的安全密钥
+    private final SecretKey secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
 
     // ================== Token 中获取 Claims ==================
 
@@ -41,17 +40,10 @@ public class JwtTokenUtil {
 
     private Claims getAllClaimsFromToken(String token) {
         return Jwts.parser()                   // ✔ 新 API
-                .verifyWith(getSignInKey())    // ✔ 替代 setSigningKey()
+                .verifyWith(secretKey)         // ✔ 替代 setSigningKey()
                 .build()
                 .parseSignedClaims(token)      // ✔ 替代 parseClaimsJws()
                 .getPayload();                 // ✔ 替代 getBody()
-    }
-
-    // ================== Key ==================
-
-    private SecretKey getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secret);
-        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     // ================== Token 生成 ==================
@@ -66,7 +58,7 @@ public class JwtTokenUtil {
                 .subject(subject)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration * 1000))
-                .signWith(getSignInKey(), SignatureAlgorithm.HS512)
+                .signWith(secretKey, SignatureAlgorithm.HS512)
                 .compact();
     }
 

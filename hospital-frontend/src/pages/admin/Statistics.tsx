@@ -1,9 +1,5 @@
 import React, { useState } from 'react';
 
-interface StatisticsProps {
-  // 可以根据需要添加props
-}
-
 interface MonthlyStat {
   month: string;
   registrations: number;
@@ -17,7 +13,7 @@ interface DepartmentStat {
   percentage: number;
 }
 
-const Statistics: React.FC<StatisticsProps> = () => {
+const Statistics: React.FC = () => {
   // 模拟数据
   const monthlyStats: MonthlyStat[] = [
     { month: '1月', registrations: 3245, patients: 2892, revenue: 45678 },

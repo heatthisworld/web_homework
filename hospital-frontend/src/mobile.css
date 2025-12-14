@@ -112,6 +112,44 @@
   cursor: pointer;
   margin-left: 5px;
 }
+
+/* 注册副标题 */
+.auth-subtitle {
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* 错误提示 */
+.auth-error {
+  color: #f56c6c;
+  font-size: 14px;
+  margin-bottom: 15px;
+  text-align: center;
+  padding: 10px;
+  background-color: #fef0f0;
+  border-radius: 8px;
+  border: 1px solid #fbc4c4;
+}
+
+/* 成功提示 */
+.auth-success {
+  color: #67c23a;
+  font-size: 14px;
+  margin-bottom: 15px;
+  text-align: center;
+  padding: 10px;
+  background-color: #f0f9eb;
+  border-radius: 8px;
+  border: 1px solid #c2e7b0;
+}
+
+/* 加载状态 */
+.auth-btn:disabled {
+  background-color: #a0cfff;
+  cursor: not-allowed;
+}
 /* Header */
 .header-container {
   height: 55px;

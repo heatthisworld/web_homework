@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 
-interface SettingsProps {
-  // 可以根据需要添加props
-}
+// 移除空接口，直接使用 React.FC 无泛型
 
 interface SystemSetting {
   key: string;
@@ -13,7 +11,7 @@ interface SystemSetting {
   description: string;
 }
 
-const Settings: React.FC<SettingsProps> = () => {
+const Settings: React.FC = () => {
   // 模拟系统设置数据
   const [settings, setSettings] = useState<SystemSetting[]>([
     {
