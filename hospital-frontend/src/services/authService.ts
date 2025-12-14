@@ -42,8 +42,8 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
 
     const responseData = await response.json();
     
-    // 检查后端返回的code字段，而不是HTTP状态码
-    if (responseData.code !== 200) {
+    // 检查后端返回的code字段，0表示成功
+    if (responseData.code !== 0) {
       throw new Error(responseData.msg || `登录失败，错误码：${responseData.code}`);
     }
 
@@ -69,8 +69,8 @@ export const register = async (data: RegisterRequest): Promise<RegisterResponse>
 
     const responseData = await response.json();
     
-    // 检查后端返回的code字段，而不是HTTP状态码
-    if (responseData.code !== 200) {
+    // 检查后端返回的code字段，0表示成功
+    if (responseData.code !== 0) {
       throw new Error(responseData.msg || `注册失败，错误码：${responseData.code}`);
     }
 
