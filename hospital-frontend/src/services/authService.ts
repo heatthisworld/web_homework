@@ -18,6 +18,12 @@ export interface RegisterRequest {
   username: string;
   password: string;
   role: 'PATIENT'; // 只支持患者注册
+  name: string;
+  gender: 'MALE' | 'FEMALE';
+  age: number;
+  idCard: string;
+  phone: string;
+  address: string;
 }
 
 // 注册响应接口
@@ -25,6 +31,12 @@ export interface RegisterResponse {
   id: number;
   username: string;
   role: 'PATIENT';
+  name: string;
+  gender: 'MALE' | 'FEMALE';
+  age: number;
+  idCard: string;
+  phone: string;
+  address: string;
   createdAt: string;
   updatedAt: string;
 }
