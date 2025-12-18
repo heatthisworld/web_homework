@@ -10,14 +10,22 @@ import com.hospital.repository.UserRepository;
 import com.hospital.service.PatientService;
 import com.hospital.service.UserService;
 import com.hospital.util.JwtTokenUtil;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Duration;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -45,7 +53,9 @@ public class AuthController {
     private PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
-    public Result<AuthResponse> createAuthenticationToken(@RequestBody AuthRequest authenticationRequest) throws Exception {
+    public Result<AuthResponse> createAuthenticationToken(@RequestBody AuthRequest authenticationRequest,
+                                                          HttpServletRequest request,
+                                                          HttpServletResponse response) throws Exception {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword())
@@ -62,6 +72,15 @@ public class AuthController {
                 .map(user -> user.getRole().name())
                 .orElse("ROLE_USER");
 
+        ResponseCookie cookie = ResponseCookie.from(JwtTokenUtil.AUTH_COOKIE_NAME, token)
+                .httpOnly(true)
+                .secure(request.isSecure())
+                .path("/")
+                .sameSite("Lax")
+                .maxAge(Duration.ofDays(7))
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
         return Result.success(new AuthResponse(token, authenticationRequest.getUsername(), role));
     }
 
@@ -77,12 +96,12 @@ public class AuthController {
         user.setUsername(registerRequest.getUsername());
         // 使用BCrypt加密密码
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        // 设置角色为病人
+        // 设置角色为病患
         user.setRole(User.Role.PATIENT);
         // 保存用户
         User savedUser = userService.createUser(user);
 
-        // 3. 创建病人对象
+        // 3. 创建病患对象
         Patient patient = new Patient();
         patient.setUser(savedUser);
         patient.setName(registerRequest.getName());
@@ -92,9 +111,35 @@ public class AuthController {
         patient.setIdCard(registerRequest.getIdCard());
         patient.setPhone(registerRequest.getPhone());
         patient.setAddress(registerRequest.getAddress());
-        // 保存病人
+        // 保存病患
         patientService.createPatient(patient);
 
         return Result.success("注册成功");
+    }
+
+    @GetMapping("/me")
+    public Result<AuthResponse> currentUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return Result.error(401, "未登录或登录已失效");
+        }
+
+        String username = authentication.getName();
+        Optional<User.Role> roleOptional = userRepository.findByUsername(username).map(User::getRole);
+        String role = roleOptional.map(Enum::name).orElse("ROLE_USER");
+
+        return Result.success(new AuthResponse(null, username, role));
+    }
+
+    @PostMapping("/logout")
+    public Result<String> logout(HttpServletRequest request, HttpServletResponse response) {
+        ResponseCookie deleteCookie = ResponseCookie.from(JwtTokenUtil.AUTH_COOKIE_NAME, "")
+                .httpOnly(true)
+                .secure(request.isSecure())
+                .path("/")
+                .sameSite("Lax")
+                .maxAge(0)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
+        return Result.success("退出成功");
     }
 }

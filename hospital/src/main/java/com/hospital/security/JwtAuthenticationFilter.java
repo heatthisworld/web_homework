@@ -5,6 +5,7 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -31,61 +32,80 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private JwtTokenUtil jwtTokenUtil;
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return "/api/auth/login".equals(path)
+                || "/api/auth/register".equals(path)
+                || path.startsWith("/swagger-ui/")
+                || path.startsWith("/v3/api-docs/");
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        final String requestTokenHeader = request.getHeader("Authorization");
-
+        String jwtToken = resolveToken(request);
         String username = null;
-        String jwtToken = null;
 
-        // JWT令牌通常以"Bearer "开头
-        if (requestTokenHeader != null && requestTokenHeader.startsWith("Bearer ")) {
-            jwtToken = requestTokenHeader.substring(7);
+        if (jwtToken != null && !jwtToken.isBlank()) {
             try {
                 username = jwtTokenUtil.getUsernameFromToken(jwtToken);
             } catch (IllegalArgumentException e) {
-                logger.error("Unable to get JWT Token");
-                // 返回无效令牌错误
-                response.setContentType("application/json;charset=UTF-8");
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                String json = "{\"code\":4003,\"msg\":\"无效的令牌\",\"data\":null}";
-                response.getWriter().write(json);
+                logger.error("Unable to get JWT Token", e);
+                writeUnauthorized(response, 4003, "无效的令牌");
+                return;
+            } catch (io.jsonwebtoken.MalformedJwtException e) {
+                logger.error("Malformed JWT Token", e);
+                writeUnauthorized(response, 4003, "无效的令牌");
                 return;
             } catch (ExpiredJwtException e) {
-                logger.error("JWT Token has expired");
-                // 返回令牌过期错误
-                response.setContentType("application/json;charset=UTF-8");
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                String json = "{\"code\":4004,\"msg\":\"令牌已过期\",\"data\":null}";
-                response.getWriter().write(json);
+                logger.error("JWT Token has expired", e);
+                writeUnauthorized(response, 4004, "令牌已过期");
                 return;
             } catch (SignatureException e) {
-                logger.error("JWT Token signature verification failed");
-                // 返回令牌签名验证失败错误
-                response.setContentType("application/json;charset=UTF-8");
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                String json = "{\"code\":4005,\"msg\":\"令牌签名验证失败\",\"data\":null}";
-                response.getWriter().write(json);
+                logger.error("JWT Token signature verification failed", e);
+                writeUnauthorized(response, 4005, "令牌签名验证失败");
                 return;
             }
-        } else {
-            logger.warn("JWT Token does not begin with Bearer String");
         }
 
-        // 验证令牌并设置认证
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
-            // 验证令牌有效性
             if (jwtTokenUtil.validateToken(jwtToken, userDetails)) {
                 UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 usernamePasswordAuthenticationToken
                         .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                // 将认证添加到SecurityContext
                 SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
             }
         }
         chain.doFilter(request, response);
+    }
+
+    private String resolveToken(HttpServletRequest request) {
+        final String requestTokenHeader = request.getHeader("Authorization");
+        if (requestTokenHeader != null && requestTokenHeader.startsWith("Bearer ")) {
+            return requestTokenHeader.substring(7);
+        }
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (JwtTokenUtil.AUTH_COOKIE_NAME.equals(cookie.getName())) {
+                    String token = cookie.getValue();
+                    if (token == null || token.isBlank()) {
+                        return null;
+                    }
+                    return token;
+                }
+            }
+        }
+        return null;
+    }
+
+    private void writeUnauthorized(HttpServletResponse response, int code, String msg) throws IOException {
+        response.setContentType("application/json;charset=UTF-8");
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        String json = String.format("{\"code\":%d,\"msg\":\"%s\",\"data\":null}", code, msg);
+        response.getWriter().write(json);
     }
 }

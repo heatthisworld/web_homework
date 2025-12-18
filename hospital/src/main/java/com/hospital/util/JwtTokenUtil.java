@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,13 +18,19 @@ import java.util.function.Function;
 @Component
 public class JwtTokenUtil {
 
+    public static final String AUTH_COOKIE_NAME = "HOSPITAL_AUTH_TOKEN";
+
     @Value("${jwt.expiration}")
     private long expiration;
 
-    // 使用Keys类生成符合HS512算法要求的安全密钥
-    private final SecretKey secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+    @Value("${jwt.secret}")
+    private String secret;
 
-    // ================== Token 中获取 Claims ==================
+    private SecretKey getSigningKey() {
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
+
+    // ================== Token ä¸­èŽ·å?Claims ==================
 
     public String getUsernameFromToken(String token) {
         return getClaimFromToken(token, Claims::getSubject);
@@ -39,14 +46,14 @@ public class JwtTokenUtil {
     }
 
     private Claims getAllClaimsFromToken(String token) {
-        return Jwts.parser()                   // ✔ 新 API
-                .verifyWith(secretKey)         // ✔ 替代 setSigningKey()
+        return Jwts.parser()                   // âœ?æ–?API
+                .verifyWith(getSigningKey())         // âœ?æ›¿ä»£ setSigningKey()
                 .build()
-                .parseSignedClaims(token)      // ✔ 替代 parseClaimsJws()
-                .getPayload();                 // ✔ 替代 getBody()
+                .parseSignedClaims(token)      // âœ?æ›¿ä»£ parseClaimsJws()
+                .getPayload();                 // âœ?æ›¿ä»£ getBody()
     }
 
-    // ================== Token 生成 ==================
+    // ================== Token ç”Ÿæˆ ==================
 
     public String generateToken(UserDetails userDetails) {
         return doGenerateToken(new HashMap<>(), userDetails.getUsername());
@@ -58,11 +65,11 @@ public class JwtTokenUtil {
                 .subject(subject)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration * 1000))
-                .signWith(secretKey, SignatureAlgorithm.HS512)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
                 .compact();
     }
 
-    // ================== 校验 ==================
+    // ================== æ ¡éªŒ ==================
 
     private boolean isTokenExpired(String token) {
         return getExpirationDateFromToken(token).before(new Date());
