@@ -1,7 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../mobile.css";
-import { login, saveUserInfo } from "../../services/authService";
+import {
+  fetchCurrentUser,
+  login,
+  saveUserInfo,
+  type LoginResponse,
+} from "../../services/authService";
 
 interface LoginFormProps {
   onSwitch: () => void;
@@ -11,8 +16,52 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitch }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  const redirectByRole = (role: LoginResponse["role"]) => {
+    switch (role) {
+      case "DOCTOR":
+        navigate("/doctor/dashboard");
+        break;
+      case "PATIENT":
+        navigate("/patient/dashboard");
+        break;
+      case "ADMIN":
+        navigate("/admin/dashboard");
+        break;
+      default:
+        navigate("/");
+    }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const tryAutoLogin = async () => {
+      try {
+        const user = await fetchCurrentUser();
+        if (cancelled) {
+          return;
+        }
+        saveUserInfo(user);
+        redirectByRole(user.role);
+      } catch {
+        // ignore auto-login failure and keep form visible
+      } finally {
+        if (!cancelled) {
+          setCheckingSession(false);
+        }
+      }
+    };
+
+    tryAutoLogin();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -26,33 +75,25 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitch }) => {
     try {
       const response = await login({ username, password });
       saveUserInfo(response);
-
-      // 根据角色跳转到对应页面
-      switch (response.role) {
-        case "DOCTOR":
-          navigate("/doctor/dashboard");
-          break;
-        case "PATIENT":
-          navigate("/patient/dashboard");
-          break;
-        case "ADMIN":
-          navigate("/admin/dashboard");
-          break;
-        default:
-          navigate("/login");
-      }
+      redirectByRole(response.role);
     } catch (err) {
       setError(err instanceof Error ? err.message : "登录失败");
     } finally {
       setLoading(false);
+      setCheckingSession(false);
     }
   };
+
+  const isBusy = loading || checkingSession;
 
   return (
     <div className="auth-card">
       <h2 className="auth-title">登录</h2>
 
       {error && <div className="auth-error">{error}</div>}
+      {checkingSession && !loading && !error && (
+        <div className="auth-hint">自动登录中，请稍候...</div>
+      )}
 
       <input
         className="auth-input"
@@ -60,6 +101,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitch }) => {
         placeholder="请输入用户名"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
+        disabled={isBusy}
       />
 
       <input
@@ -68,13 +110,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitch }) => {
         placeholder="请输入密码"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
+        disabled={isBusy}
       />
 
-      <button
-        className="auth-btn"
-        onClick={handleLogin}
-        disabled={loading}
-      >
+      <button className="auth-btn" onClick={handleLogin} disabled={isBusy}>
         {loading ? "登录中..." : "登录"}
       </button>
 

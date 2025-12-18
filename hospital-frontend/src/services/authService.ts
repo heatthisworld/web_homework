@@ -1,38 +1,34 @@
-const API_BASE_URL = '/api';
+const API_BASE_URL = "/api";
 
-// 登录请求接口
 export interface LoginRequest {
   username: string;
   password: string;
 }
 
-// 登录响应接口
 export interface LoginResponse {
-  token: string;
+  token?: string;
   username: string;
-  role: 'DOCTOR' | 'PATIENT' | 'ADMIN';
+  role: "DOCTOR" | "PATIENT" | "ADMIN";
 }
 
-// 注册请求接口
 export interface RegisterRequest {
   username: string;
   password: string;
-  role: 'PATIENT'; // 只支持患者注册
+  role: "PATIENT";
   name: string;
-  gender: 'MALE' | 'FEMALE';
+  gender: "MALE" | "FEMALE";
   age: number;
   idCard: string;
   phone: string;
   address: string;
 }
 
-// 注册响应接口
 export interface RegisterResponse {
   id: number;
   username: string;
-  role: 'PATIENT';
+  role: "PATIENT";
   name: string;
-  gender: 'MALE' | 'FEMALE';
+  gender: "MALE" | "FEMALE";
   age: number;
   idCard: string;
   phone: string;
@@ -41,77 +37,124 @@ export interface RegisterResponse {
   updatedAt: string;
 }
 
-// 登录功能
-export const login = async (data: LoginRequest): Promise<LoginResponse> => {
+type ApiEnvelope<T> = {
+  code: number;
+  msg?: string;
+  data: T;
+};
+
+const withCredentials = (options: RequestInit = {}): RequestInit => ({
+  credentials: "include",
+  ...options,
+});
+
+const parseJson = async <T>(response: Response): Promise<T> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-
-    const responseData = await response.json();
-    
-    // 检查后端返回的code字段，0表示成功
-    if (responseData.code !== 0) {
-      throw new Error(responseData.msg || `登录失败，错误码：${responseData.code}`);
-    }
-
-    return responseData.data;
-  } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error('无法连接到服务器，请检查后端服务是否正常运行');
-    }
-    throw error;
+    return (await response.json()) as T;
+  } catch {
+    throw new Error("服务端返回格式不正确");
   }
 };
 
-// 注册功能
-export const register = async (data: RegisterRequest): Promise<RegisterResponse> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/users`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
+const unwrapData = async <T>(response: Response): Promise<T> => {
+  const payload = await parseJson<ApiEnvelope<T>>(response);
 
-    const responseData = await response.json();
-    
-    // 检查后端返回的code字段，0表示成功
-    if (responseData.code !== 0) {
-      throw new Error(responseData.msg || `注册失败，错误码：${responseData.code}`);
-    }
-
-    return responseData.data;
-  } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error('无法连接到服务器，请检查后端服务是否正常运行');
-    }
-    throw error;
+  if (payload.code !== 0) {
+    throw new Error(payload.msg || `请求失败，错误码：${payload.code}`);
   }
+
+  return payload.data;
 };
 
-// 保存用户信息到本地存储
+const normalizeFetchError = (error: unknown) => {
+  if (error instanceof TypeError && error.message === "Failed to fetch") {
+    return new Error("无法连接到服务器，请检查后端服务是否正常运行");
+  }
+  return error instanceof Error ? error : new Error("请求失败");
+};
+
 export const saveUserInfo = (user: LoginResponse) => {
-  localStorage.setItem('user', JSON.stringify(user));
+  localStorage.setItem("user", JSON.stringify(user));
 };
 
-// 从本地存储获取用户信息
 export const getUserInfo = () => {
-  const userStr = localStorage.getItem('user');
-  return userStr ? JSON.parse(userStr) as LoginResponse : null;
+  const userStr = localStorage.getItem("user");
+  return userStr ? (JSON.parse(userStr) as LoginResponse) : null;
 };
 
-// 清除本地存储的用户信息
 export const clearUserInfo = () => {
-  localStorage.removeItem('user');
+  localStorage.removeItem("user");
 };
 
-// 获取当前用户是否已登录
 export const isLoggedIn = () => {
   return !!getUserInfo();
+};
+
+export const login = async (data: LoginRequest): Promise<LoginResponse> => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/auth/login`,
+      withCredentials({
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }),
+    );
+
+    return await unwrapData<LoginResponse>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const register = async (
+  data: RegisterRequest,
+): Promise<RegisterResponse> => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/users`,
+      withCredentials({
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }),
+    );
+
+    return await unwrapData<RegisterResponse>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const fetchCurrentUser = async (): Promise<LoginResponse> => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/auth/me`,
+      withCredentials({
+        method: "GET",
+      }),
+    );
+    return await unwrapData<LoginResponse>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const logout = async (): Promise<void> => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/auth/logout`,
+      withCredentials({
+        method: "POST",
+      }),
+    );
+    await unwrapData<unknown>(response);
+    clearUserInfo();
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
 };
