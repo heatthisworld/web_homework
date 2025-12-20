@@ -4,9 +4,16 @@ import "../../mobile.css";
 interface LeftSidebarProps {
   visible: boolean;
   onClose: () => void;
+  debugMode?: boolean;
+  onToggleDebugMode?: (value: boolean) => void;
 }
 
-const LeftSidebar: React.FC<LeftSidebarProps> = ({ visible, onClose }) => {
+const LeftSidebar: React.FC<LeftSidebarProps> = ({
+  visible,
+  onClose,
+  debugMode = false,
+  onToggleDebugMode,
+}) => {
   return (
     <>
       {/* 半透明遮罩 */}
@@ -21,6 +28,16 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ visible, onClose }) => {
         <div className="sidebar-item">🔔 通知中心</div>
         <div className="sidebar-item">⚙ 设置</div>
         <div className="sidebar-item">📞 联系客服</div>
+
+        <div className="sidebar-divider" />
+        <label className="sidebar-item sidebar-toggle">
+          <input
+            type="checkbox"
+            checked={debugMode}
+            onChange={(e) => onToggleDebugMode?.(e.target.checked)}
+          />
+          <span className="toggle-label">开启 Debug 模式（使用模拟数据）</span>
+        </label>
       </div>
     </>
   );

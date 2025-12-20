@@ -252,3 +252,29 @@
   border-bottom: 1px solid #f1f1f1;
   cursor: pointer;
 }
+
+.sidebar-divider {
+  border-top: 1px solid #eee;
+  margin: 10px 0;
+}
+
+.sidebar-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toggle-label {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.4;
+}
+
+.error-message {
+  padding: 10px;
+  background: #fef0f0;
+  border: 1px solid #fbc4c4;
+  color: #f56c6c;
+  border-radius: 8px;
+  margin: 10px 0;
+}

@@ -10,6 +10,8 @@ interface LayoutProps {
   tabs: TabItem[];
   activeTab: string;
   onTabChange: (key: string) => void;
+  debugMode?: boolean;
+  onToggleDebugMode?: (value: boolean) => void;
   children: React.ReactNode;
 }
 
@@ -18,22 +20,27 @@ const Layout: React.FC<LayoutProps> = ({
   tabs,
   activeTab,
   onTabChange,
-  children
+  debugMode = false,
+  onToggleDebugMode,
+  children,
 }) => {
   const [sidebarVisible, setSidebarVisible] = useState(false);
 
   return (
     <div className="layout-container">
       {/* 左侧导航栏 */}
-      <LeftSidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
+      <LeftSidebar
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        debugMode={debugMode}
+        onToggleDebugMode={onToggleDebugMode}
+      />
 
-      {/* 顶部 Header（添加按钮） */}
+      {/* 顶部 Header（带菜单按钮） */}
       <Header title={title} onMenuClick={() => setSidebarVisible(true)} />
 
       {/* 主内容区 */}
-      <div className="layout-content">
-        {children}
-      </div>
+      <div className="layout-content">{children}</div>
 
       {/* 底部 TabBar */}
       <TabBar tabs={tabs} active={activeTab} onChange={onTabChange} />

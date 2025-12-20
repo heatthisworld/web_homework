@@ -7,6 +7,7 @@ import ProfilePage from './ProfilePage';
 
 const PatientApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState('home');
+  const [debugMode, setDebugMode] = useState(false);
 
   const tabs = [
     { key: 'home', label: '首页' },
@@ -18,15 +19,15 @@ const PatientApp: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <HomePage />;
+        return <HomePage debugMode={debugMode} />;
       case 'registration':
-        return <RegistrationPage />;
+        return <RegistrationPage debugMode={debugMode} />;
       case 'records':
-        return <RecordsPage />;
+        return <RecordsPage debugMode={debugMode} />;
       case 'profile':
-        return <ProfilePage />;
+        return <ProfilePage debugMode={debugMode} />;
       default:
-        return <HomePage />;
+        return <HomePage debugMode={debugMode} />;
     }
   };
 
@@ -35,6 +36,8 @@ const PatientApp: React.FC = () => {
       tabs={tabs} 
       activeTab={activeTab} 
       onTabChange={setActiveTab}
+      debugMode={debugMode}
+      onToggleDebugMode={setDebugMode}
       title="医院挂号系统"
     >
       {renderContent()}

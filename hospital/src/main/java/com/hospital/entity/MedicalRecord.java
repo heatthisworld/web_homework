@@ -54,8 +54,12 @@ public class MedicalRecord {
 
     @PrePersist
     protected void onCreate() {
-        visitDate = LocalDateTime.now();
-        createdAt = LocalDateTime.now();
+        if (visitDate == null) {
+            visitDate = LocalDateTime.now();
+        }
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
         updatedAt = LocalDateTime.now();
     }
 

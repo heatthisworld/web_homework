@@ -47,10 +47,16 @@ public class Registration {
 
     @PrePersist
     protected void onCreate() {
-        registrationTime = LocalDateTime.now();
-        createdAt = LocalDateTime.now();
+        if (registrationTime == null) {
+            registrationTime = LocalDateTime.now();
+        }
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
         updatedAt = LocalDateTime.now();
-        status = Status.REGISTERED;
+        if (status == null) {
+            status = Status.REGISTERED;
+        }
     }
 
     @PreUpdate

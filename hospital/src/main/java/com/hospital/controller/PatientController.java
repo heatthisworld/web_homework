@@ -1,6 +1,7 @@
 package com.hospital.controller;
 
 import com.hospital.entity.Patient;
+import com.hospital.model.PatientDetailsDto;
 import com.hospital.model.Result;
 import com.hospital.service.PatientService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,13 @@ public class PatientController {
                 .orElseGet(() -> Result.error(404, "患者不存在"));
     }
 
+    @GetMapping("/{id}/details")
+    public Result<PatientDetailsDto> getPatientDetails(@PathVariable Long id) {
+        Optional<PatientDetailsDto> patient = patientService.getPatientDetails(id);
+        return patient.map(Result::success)
+                .orElseGet(() -> Result.error(404, "患者不存在"));
+    }
+
     @GetMapping("/user/{userId}")
     public Result<Patient> getPatientByUserId(@PathVariable Long userId) {
         Optional<Patient> patient = patientService.getPatientByUserId(userId);
@@ -38,6 +46,18 @@ public class PatientController {
     @GetMapping("/search")
     public Result<List<Patient>> searchPatientsByName(@RequestParam String name) {
         return Result.success(patientService.searchPatientsByName(name));
+    }
+
+    @GetMapping("/details")
+    public Result<List<PatientDetailsDto>> getPatientsWithDetails(@RequestParam(required = false) String name) {
+        List<PatientDetailsDto> patients = patientService.getPatientsWithDetails();
+        if (name != null && !name.isBlank()) {
+            String keyword = name.toLowerCase();
+            patients = patients.stream()
+                    .filter(p -> p.getName() != null && p.getName().toLowerCase().contains(keyword))
+                    .toList();
+        }
+        return Result.success(patients);
     }
 
     @PostMapping

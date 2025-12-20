@@ -18,6 +18,18 @@
   margin-bottom: 20px;
 }
 
+.patient-error {
+  margin-top: 10px;
+  color: #f56c6c;
+  font-size: 13px;
+}
+
+.loading {
+  padding: 40px 0;
+  text-align: center;
+  color: #606266;
+}
+
 .filter-row {
   display: flex;
   gap: 20px;

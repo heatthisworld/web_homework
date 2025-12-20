@@ -1,91 +1,198 @@
-import React from 'react';
-import './patient.css';
+import React, { useEffect, useState } from "react";
+import "./patient.css";
+import {
+  fetchCurrentPatientDetails,
+  updatePatientProfile,
+  type PatientDetails,
+} from "../../services/patientService";
 
-const ProfilePage: React.FC = () => {
-  // 模拟数据
-  const userInfo = {
-    name: '张三',
-    patientId: 'PAT202300123',
-    gender: '男',
-    age: 35,
-    phone: '138****1234',
-    email: 'zhangsan@example.com',
-    address: '北京市朝阳区某某街道123号'
+interface ProfilePageProps {
+  debugMode: boolean;
+}
+
+const mockUser: PatientDetails = {
+  id: 0,
+  username: "patient@example.com",
+  name: "张三",
+  gender: "MALE",
+  age: 35,
+  phone: "138****1234",
+  address: "北京市朝阳区朝阳北路123号",
+  medicalHistory: [],
+  visitHistory: [],
+};
+
+const ProfilePage: React.FC<ProfilePageProps> = ({ debugMode }) => {
+  const [userInfo, setUserInfo] = useState<PatientDetails>(mockUser);
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    address: "",
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (debugMode) {
+        setUserInfo(mockUser);
+        setForm({
+          name: mockUser.name || "",
+          phone: mockUser.phone || "",
+          address: mockUser.address || "",
+        });
+        setLoading(false);
+        return;
+      }
+      try {
+        const detail = await fetchCurrentPatientDetails();
+        if (cancelled) return;
+        setUserInfo(detail);
+        setForm({
+          name: detail.name || "",
+          phone: detail.phone || "",
+          address: detail.address || "",
+        });
+      } catch (err) {
+        if (cancelled) return;
+        setError(
+          err instanceof Error ? `${err.message}，已显示示例数据` : "加载失败，已显示示例数据",
+        );
+        setUserInfo(mockUser);
+        setForm({
+          name: mockUser.name || "",
+          phone: mockUser.phone || "",
+          address: mockUser.address || "",
+        });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [debugMode]);
+
+  const onSave = async () => {
+    if (debugMode) {
+      setUserInfo({ ...userInfo, ...form });
+      setEditing(false);
+      setMessage("已保存（调试模式，仅本地）");
+      return;
+    }
+    try {
+      setMessage("");
+      await updatePatientProfile(userInfo.id, {
+        name: form.name,
+        phone: form.phone,
+        address: form.address,
+      });
+      setUserInfo({ ...userInfo, ...form });
+      setEditing(false);
+      setMessage("保存成功");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "保存失败");
+    }
   };
 
-  const menuItems = [
-    { id: 1, icon: '📋', label: '我的挂号', path: '/patient/records' },
-    { id: 2, icon: '📊', label: '我的病历', path: '/patient/medical-records' },
-    { id: 3, icon: '🔔', label: '系统通知', path: '/patient/notifications' },
-    { id: 4, icon: '⚙️', label: '设置', path: '/patient/settings' },
-    { id: 5, icon: '❓', label: '使用帮助', path: '/patient/help' },
-    { id: 6, icon: '📞', label: '联系客服', path: '/patient/contact' }
-  ];
+  if (loading) {
+    return (
+      <div className="profile-page patient-page">
+        <div className="announcement-item">正在加载，请稍候...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="profile-page patient-page">
+      {error && <div className="error-message">{error}</div>}
+      {message && <div className="success-message">{message}</div>}
+
       {/* 用户信息卡片 */}
       <div className="user-info-card">
-        <img 
-          src="/src/assets/Defaulthead.png" 
-          alt="用户头像" 
+        <img
+          src="/src/assets/Defaulthead.png"
+          alt="用户头像"
           className="user-avatar"
         />
         <div className="user-info">
           <h3>{userInfo.name}</h3>
-          <p>患者ID: {userInfo.patientId}</p>
-          <p>{userInfo.gender} | {userInfo.age}岁</p>
+          <p>患者ID: {userInfo.id}</p>
+          <p>
+            {userInfo.gender === "MALE" ? "男" : "女"} | {userInfo.age ?? "-"}岁
+          </p>
         </div>
       </div>
 
       {/* 详细信息 */}
       <div className="detail-info">
         <div className="info-item">
-          <span className="info-label">手机号码:</span>
-          <span className="info-value">{userInfo.phone}</span>
+          <span className="info-label">姓名:</span>
+          {editing ? (
+            <input
+              className="auth-input"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+          ) : (
+            <span className="info-value">{userInfo.name}</span>
+          )}
         </div>
         <div className="info-item">
-          <span className="info-label">邮箱地址:</span>
-          <span className="info-value">{userInfo.email}</span>
+          <span className="info-label">手机号:</span>
+          {editing ? (
+            <input
+              className="auth-input"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            />
+          ) : (
+            <span className="info-value">{userInfo.phone}</span>
+          )}
         </div>
         <div className="info-item">
           <span className="info-label">联系地址:</span>
-          <span className="info-value">{userInfo.address}</span>
+          {editing ? (
+            <input
+              className="auth-input"
+              value={form.address}
+              onChange={(e) => setForm({ ...form, address: e.target.value })}
+            />
+          ) : (
+            <span className="info-value">{userInfo.address}</span>
+          )}
         </div>
       </div>
 
-      {/* 功能菜单 */}
       <div className="menu-section">
-        <h4>功能菜单</h4>
+        <h4>操作</h4>
         <div className="menu-list">
-          {menuItems.map(item => (
-            <div key={item.id} className="menu-item">
-              <div className="menu-icon">{item.icon}</div>
-              <div className="menu-label">{item.label}</div>
-              <div className="menu-arrow">›</div>
+          <div className="menu-item">
+            <div className="menu-icon">📝</div>
+            <div className="menu-label">编辑信息</div>
+            <div className="menu-arrow">
+              <button className="auth-btn" onClick={() => setEditing(!editing)}>
+                {editing ? "取消" : "编辑"}
+              </button>
             </div>
-          ))}
+          </div>
+          {editing && (
+            <div className="menu-item">
+              <div className="menu-icon">💾</div>
+              <div className="menu-label">保存更改</div>
+              <div className="menu-arrow">
+                <button className="auth-btn" onClick={onSave}>
+                  保存
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* 辅助信息 */}
-      <div className="auxiliary-info">
-        <div className="info-item">
-          <span className="info-label">系统版本:</span>
-          <span className="info-value">v1.0.0</span>
-        </div>
-        <div className="info-item">
-          <span className="info-label">用户协议:</span>
-          <span className="info-value">查看</span>
-        </div>
-        <div className="info-item">
-          <span className="info-label">隐私政策:</span>
-          <span className="info-value">查看</span>
-        </div>
-      </div>
-
-      {/* 退出登录按钮 */}
-      <button className="logout-btn">退出登录</button>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 package com.hospital.service;
 
 import com.hospital.entity.Patient;
-import org.springframework.stereotype.Service;
+import com.hospital.model.PatientDetailsDto;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,4 +15,6 @@ public interface PatientService {
     Patient createPatient(Patient patient);
     Patient updatePatient(Long id, Patient patient);
     void deletePatient(Long id);
+    List<PatientDetailsDto> getPatientsWithDetails();
+    Optional<PatientDetailsDto> getPatientDetails(Long id);
 }
