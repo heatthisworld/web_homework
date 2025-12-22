@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../mobile.css";
 import {
+  debugLogin,
   fetchCurrentUser,
   login,
   saveUserInfo,
@@ -15,6 +16,7 @@ interface LoginFormProps {
 const LoginForm: React.FC<LoginFormProps> = ({ onSwitch }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [debugMode, setDebugMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState("");
@@ -73,7 +75,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitch }) => {
     setError("");
 
     try {
-      const response = await login({ username, password });
+      const response = debugMode
+        ? await debugLogin({ username, password })
+        : await login({ username, password });
       saveUserInfo(response);
       redirectByRole(response.role);
     } catch (err) {
@@ -112,6 +116,16 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitch }) => {
         onChange={(e) => setPassword(e.target.value)}
         disabled={isBusy}
       />
+
+      <label className="debug-checkbox">
+        <input
+          type="checkbox"
+          checked={debugMode}
+          onChange={(e) => setDebugMode(e.target.checked)}
+          disabled={isBusy}
+        />
+        <span>Debug 登录（使用 /api/debug/login）</span>
+      </label>
 
       <button className="auth-btn" onClick={handleLogin} disabled={isBusy}>
         {loading ? "登录中..." : "登录"}

@@ -150,6 +150,15 @@
   background-color: #a0cfff;
   cursor: not-allowed;
 }
+
+.debug-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 4px;
+  font-size: 14px;
+  color: #333;
+}
 /* Header */
 .header-container {
   height: 55px;

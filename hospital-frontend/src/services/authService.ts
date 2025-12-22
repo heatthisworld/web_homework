@@ -109,6 +109,25 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
   }
 };
 
+export const debugLogin = async (data: LoginRequest): Promise<LoginResponse> => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/debug/login`,
+      withCredentials({
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }),
+    );
+
+    return await unwrapData<LoginResponse>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
 export const register = async (
   data: RegisterRequest,
 ): Promise<RegisterResponse> => {

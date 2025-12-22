@@ -75,6 +75,7 @@ public class DataInitializer implements CommandLineRunner {
         List<Patient> patients = createPatients();
         List<Registration> registrations = createRegistrations(patients, doctors, diseases);
         createMedicalRecords(registrations);
+        createDebugAccounts(diseases);
 
         System.out.println("Demo data ready.");
     }
@@ -238,6 +239,102 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         System.out.println("Created " + recordCount + " medical records.");
+    }
+
+    private void createDebugAccounts(List<Disease> diseases) {
+        System.out.println("Creating debug accounts 1P/2P/3P...");
+
+        // Admin: 1P
+        if (!userRepository.findByUsername("1P").isPresent()) {
+            User admin = new User();
+            admin.setUsername("1P");
+            admin.setPassword(passwordEncoder.encode("debug"));
+            admin.setRole(User.Role.ADMIN);
+            userRepository.save(admin);
+        }
+
+        // Doctor: 3P
+        Doctor doctor;
+        if (userRepository.findByUsername("3P").isPresent()) {
+            doctor = doctorRepository.findAll().stream()
+                    .filter(d -> d.getUser() != null && "3P".equals(d.getUser().getUsername()))
+                    .findFirst()
+                    .orElse(null);
+        } else {
+            User doctorUser = new User();
+            doctorUser.setUsername("3P");
+            doctorUser.setPassword(passwordEncoder.encode("debug"));
+            doctorUser.setRole(User.Role.DOCTOR);
+            userRepository.save(doctorUser);
+
+            doctor = new Doctor();
+            doctor.setUser(doctorUser);
+            doctor.setName("调试医生");
+            doctor.setGender(Doctor.Gender.MALE);
+            doctor.setTitle("主治医师");
+            doctor.setPhone(faker.phoneNumber().cellPhone());
+            doctor.setDepartment("内科");
+            doctor.setDiseases(pickRandomDiseasesForDepartment(diseases, "内科"));
+            doctor = doctorRepository.save(doctor);
+        }
+
+        // Patient: 2P
+        Patient patient;
+        if (userRepository.findByUsername("2P").isPresent()) {
+            patient = patientRepository.findAll().stream()
+                    .filter(p -> p.getUser() != null && "2P".equals(p.getUser().getUsername()))
+                    .findFirst()
+                    .orElse(null);
+        } else {
+            User patientUser = new User();
+            patientUser.setUsername("2P");
+            patientUser.setPassword(passwordEncoder.encode("debug"));
+            patientUser.setRole(User.Role.PATIENT);
+            userRepository.save(patientUser);
+
+            patient = new Patient();
+            patient.setUser(patientUser);
+            patient.setName("调试病人");
+            patient.setGender(Patient.Gender.FEMALE);
+            patient.setAge(30);
+            patient.setIdCard(faker.idNumber().valid());
+            patient.setPhone(faker.phoneNumber().cellPhone());
+            patient.setAddress("调试地址");
+            patient = patientRepository.save(patient);
+        }
+
+        // Disease and registration/medical record for patient 2P
+        Disease disease = diseases.isEmpty() ? null : diseases.get(0);
+        if (disease == null) {
+            disease = new Disease();
+            disease.setName("调试通用病症");
+            disease.setDepartment("内科");
+            disease.setDescription("用于调试的数据");
+            disease = diseaseRepository.save(disease);
+        }
+
+        Registration registration = new Registration();
+        registration.setPatient(patient);
+        registration.setDoctor(doctor);
+        registration.setDisease(disease);
+        registration.setAppointmentTime(LocalDateTime.now().plusDays(2).withHour(10).withMinute(0));
+        registration.setStatus(Registration.Status.REGISTERED);
+        registration = registrationRepository.save(registration);
+
+        MedicalRecord record = new MedicalRecord();
+        record.setPatient(patient);
+        record.setDoctor(doctor);
+        record.setRegistration(registration);
+        record.setVisitDate(LocalDateTime.now().minusDays(1).withHour(9));
+        record.setSymptoms("头痛、乏力");
+        record.setDiagnosis(disease.getName());
+        record.setMedication("调试药物A, 调试药物B");
+        record.setTreatment("调试治疗方案");
+        record.setExaminations("血常规, 心电图");
+        record.setNotes("调试用例记录");
+        medicalRecordRepository.save(record);
+
+        System.out.println("Debug accounts created.");
     }
 
     private Registration.Status pickStatus(LocalDateTime appointmentTime) {
