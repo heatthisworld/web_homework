@@ -1,269 +1,134 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from "react";
+
+type ShiftStatus = "开放" | "进行中" | "满号" | "暂停";
 
 interface Schedule {
   id: number;
-  doctorId: number;
-  doctorName: string;
-  department: string;
   date: string;
-  startTime: string;
-  endTime: string;
-  status: 'available' | 'unavailable' | 'booked';
-  maxPatients: number;
-  currentPatients: number;
+  period: string;
+  doctor: string;
+  department: string;
+  type: "普通号" | "专家号" | "加号";
+  slots: string;
+  status: ShiftStatus;
 }
 
 const ScheduleManagement: React.FC = () => {
-  // 模拟数据
-  const schedules: Schedule[] = [
-    { 
-      id: 1, 
-      doctorId: 1, 
-      doctorName: '张医生', 
-      department: '内科', 
-      date: '2025-12-12', 
-      startTime: '09:00', 
-      endTime: '12:00', 
-      status: 'available', 
-      maxPatients: 15, 
-      currentPatients: 8 
-    },
-    { 
-      id: 2, 
-      doctorId: 1, 
-      doctorName: '张医生', 
-      department: '内科', 
-      date: '2025-12-12', 
-      startTime: '14:00', 
-      endTime: '17:00', 
-      status: 'available', 
-      maxPatients: 15, 
-      currentPatients: 5 
-    },
-    { 
-      id: 3, 
-      doctorId: 2, 
-      doctorName: '李医生', 
-      department: '外科', 
-      date: '2025-12-12', 
-      startTime: '09:00', 
-      endTime: '12:00', 
-      status: 'unavailable', 
-      maxPatients: 12, 
-      currentPatients: 0 
-    },
-    { 
-      id: 4, 
-      doctorId: 3, 
-      doctorName: '王医生', 
-      department: '儿科', 
-      date: '2025-12-13', 
-      startTime: '09:00', 
-      endTime: '12:00', 
-      status: 'available', 
-      maxPatients: 20, 
-      currentPatients: 12 
-    },
-    { 
-      id: 5, 
-      doctorId: 4, 
-      doctorName: '赵医生', 
-      department: '妇产科', 
-      date: '2025-12-13', 
-      startTime: '14:00', 
-      endTime: '17:00', 
-      status: 'booked', 
-      maxPatients: 10, 
-      currentPatients: 10 
-    },
-    { 
-      id: 6, 
-      doctorId: 5, 
-      doctorName: '刘医生', 
-      department: '眼科', 
-      date: '2025-12-14', 
-      startTime: '09:00', 
-      endTime: '12:00', 
-      status: 'available', 
-      maxPatients: 18, 
-      currentPatients: 7 
-    },
+  const mockSchedules: Schedule[] = [
+    { id: 1, date: "2025-12-12", period: "09:00-12:00", doctor: "王磊", department: "内科", type: "普通号", slots: "12 / 18", status: "进行中" },
+    { id: 2, date: "2025-12-12", period: "10:00-12:00", doctor: "林静", department: "儿科", type: "专家号", slots: "满号", status: "满号" },
+    { id: 3, date: "2025-12-12", period: "14:00-17:00", doctor: "陈思", department: "外科", type: "加号", slots: "6 / 12", status: "开放" },
+    { id: 4, date: "2025-12-13", period: "09:00-11:00", doctor: "李言", department: "眼科", type: "专家号", slots: "3 / 10", status: "开放" },
+    { id: 5, date: "2025-12-13", period: "14:00-17:00", doctor: "张驰", department: "骨科", type: "普通号", slots: "7 / 15", status: "暂停" },
   ];
 
-  // 状态管理
-  const [filteredSchedules, setFilteredSchedules] = useState<Schedule[]>(schedules);
-  const [selectedDate, setSelectedDate] = useState<string>('2025-12-12');
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [department, setDepartment] = useState<string>("全部");
+  const [status, setStatus] = useState<"全部" | ShiftStatus>("全部");
+  const [date, setDate] = useState<string>("");
 
-  // 筛选排班
-  const filterSchedules = () => {
-    let filtered = [...schedules];
+  const filtered = useMemo(() => {
+    return mockSchedules.filter((item) => {
+      const byDept = department === "全部" ? true : item.department === department;
+      const byStatus = status === "全部" ? true : item.status === status;
+      const byDate = date ? item.date === date : true;
+      return byDept && byStatus && byDate;
+    });
+  }, [date, department, mockSchedules, status]);
 
-    // 按日期筛选
-    if (selectedDate) {
-      filtered = filtered.filter(schedule => schedule.date === selectedDate);
-    }
-
-    // 按科室筛选
-    if (selectedDepartment !== 'all') {
-      filtered = filtered.filter(schedule => schedule.department === selectedDepartment);
-    }
-
-    // 按状态筛选
-    if (selectedStatus !== 'all') {
-      filtered = filtered.filter(schedule => schedule.status === selectedStatus);
-    }
-
-    // 按搜索词筛选
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(schedule => 
-        schedule.doctorName.toLowerCase().includes(term) ||
-        schedule.department.toLowerCase().includes(term)
-      );
-    }
-
-    setFilteredSchedules(filtered);
+  const statusTone = (value: ShiftStatus) => {
+    if (value === "进行中") return "pill-success";
+    if (value === "开放") return "pill-info";
+    if (value === "满号") return "pill-warning";
+    return "pill-danger";
   };
 
-  // 监听筛选条件变化
-  React.useEffect(() => {
-    filterSchedules();
-  }, [selectedDate, selectedDepartment, selectedStatus, searchTerm]);
-
-  // 获取状态显示文本
-  const getStatusText = (status: Schedule['status']) => {
-    const statusMap = {
-      available: '可预约',
-      unavailable: '不可预约',
-      booked: '已约满'
-    };
-    return statusMap[status];
-  };
-
-  // 获取状态样式类名
-  const getStatusClass = (status: Schedule['status']) => {
-    return `status-${status}`;
-  };
-
-  // 获取科室列表
-  const departments = [...new Set(schedules.map(schedule => schedule.department))];
+  const uniqueDepartments = Array.from(new Set(mockSchedules.map((s) => s.department)));
 
   return (
-    <div className="schedule-management">
-      <h1>排班管理</h1>
-      
-      {/* 筛选和搜索 */}
-      <div className="filter-section">
-        <div className="filter-row">
+    <div className="page-root">
+      <div className="page-header">
+        <div>
+          <h1 className="page-heading">排班管理</h1>
+          <p className="page-subtitle">按日期、科室、状态快速筛查医生档期，支持标签页独立查看。</p>
+        </div>
+        <div className="page-actions">
+          <span className="pill pill-muted">模拟数据</span>
+          <button className="primary-button" type="button">
+            新建排班
+          </button>
+        </div>
+      </div>
+
+      <div className="surface-card">
+        <div className="filter-bar">
           <div className="filter-group">
-            <label>日期：</label>
-            <input 
-              type="date" 
-              value={selectedDate} 
-              onChange={(e) => setSelectedDate(e.target.value)} 
+            <span className="filter-label">日期</span>
+            <input
+              className="filter-input"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
             />
           </div>
-          
           <div className="filter-group">
-            <label>科室：</label>
-            <select 
-              value={selectedDepartment} 
-              onChange={(e) => setSelectedDepartment(e.target.value)}
+            <span className="filter-label">科室</span>
+            <select
+              className="filter-select"
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
             >
-              <option value="all">全部科室</option>
-              {departments.map(dept => (
-                <option key={dept} value={dept}>{dept}</option>
+              <option value="全部">全部</option>
+              {uniqueDepartments.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
               ))}
             </select>
           </div>
-          
           <div className="filter-group">
-            <label>状态：</label>
-            <select 
-              value={selectedStatus} 
-              onChange={(e) => setSelectedStatus(e.target.value)}
+            <span className="filter-label">状态</span>
+            <select
+              className="filter-select"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as typeof status)}
             >
-              <option value="all">全部状态</option>
-              <option value="available">可预约</option>
-              <option value="unavailable">不可预约</option>
-              <option value="booked">已约满</option>
+              <option value="全部">全部</option>
+              <option value="开放">开放</option>
+              <option value="进行中">进行中</option>
+              <option value="满号">满号</option>
+              <option value="暂停">暂停</option>
             </select>
           </div>
-          
-          <div className="filter-group search-group">
-            <input 
-              type="text" 
-              placeholder="搜索医生姓名或科室..." 
-              value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          
-          <div className="filter-group">
-            <button className="btn btn-primary" onClick={filterSchedules}>
-              筛选
-            </button>
-            <button className="btn btn-secondary" onClick={() => {
-              setSelectedDate('2025-12-12');
-              setSelectedDepartment('all');
-              setSelectedStatus('all');
-              setSearchTerm('');
-            }}>
-              重置
-            </button>
-          </div>
+          <span className="filter-chip">结果 {filtered.length} 条</span>
         </div>
-      </div>
-      
-      {/* 排班列表 */}
-      <div className="table-container">
-        <table className="table">
+
+        <table className="data-table">
           <thead>
             <tr>
-              <th>ID</th>
               <th>日期</th>
-              <th>科室</th>
-              <th>医生</th>
-              <th>时间段</th>
+              <th>时段</th>
+              <th>医生 / 科室</th>
+              <th>号源类型</th>
+              <th>占用</th>
               <th>状态</th>
-              <th>可预约人数</th>
-              <th>已预约人数</th>
-              <th>操作</th>
             </tr>
           </thead>
           <tbody>
-            {filteredSchedules.length > 0 ? (
-              filteredSchedules.map(schedule => (
-                <tr key={schedule.id}>
-                  <td>{schedule.id}</td>
-                  <td>{schedule.date}</td>
-                  <td>{schedule.department}</td>
-                  <td>{schedule.doctorName}</td>
-                  <td>{schedule.startTime} - {schedule.endTime}</td>
-                  <td>
-                    <span className={`status-badge ${getStatusClass(schedule.status)}`}>
-                      {getStatusText(schedule.status)}
-                    </span>
-                  </td>
-                  <td>{schedule.maxPatients}</td>
-                  <td>{schedule.currentPatients}</td>
-                  <td className="action-buttons">
-                    <button className="btn btn-sm btn-primary">查看</button>
-                    <button className="btn btn-sm btn-secondary">编辑</button>
-                    <button className="btn btn-sm btn-danger">删除</button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={9} className="no-data">
-                  暂无排班数据
+            {filtered.map((row) => (
+              <tr key={row.id}>
+                <td>{row.date}</td>
+                <td>{row.period}</td>
+                <td>
+                  <div>{row.doctor}</div>
+                  <div className="muted">{row.department}</div>
+                </td>
+                <td>{row.type}</td>
+                <td>{row.slots}</td>
+                <td>
+                  <span className={`pill ${statusTone(row.status)}`}>{row.status}</span>
                 </td>
               </tr>
-            )}
+            ))}
           </tbody>
         </table>
       </div>
