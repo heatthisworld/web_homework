@@ -1,5 +1,6 @@
 package com.hospital.controller;
 
+import com.hospital.entity.Department;
 import com.hospital.entity.Disease;
 import com.hospital.entity.Doctor;
 import com.hospital.entity.Patient;
@@ -8,6 +9,7 @@ import com.hospital.entity.User;
 import com.hospital.model.AdminStatsResponse;
 import com.hospital.model.RecentRegistrationDto;
 import com.hospital.model.Result;
+import com.hospital.repository.DepartmentRepository;
 import com.hospital.repository.DiseaseRepository;
 import com.hospital.repository.DoctorRepository;
 import com.hospital.repository.PatientRepository;
@@ -24,7 +26,6 @@ import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -46,6 +47,9 @@ public class AdminController {
     @Autowired
     private RegistrationRepository registrationRepository;
 
+    @Autowired
+    private DepartmentRepository departmentRepository;
+
     @GetMapping("/stats")
     public Result<AdminStatsResponse> getStats() {
         AdminStatsResponse stats = new AdminStatsResponse();
@@ -54,16 +58,7 @@ public class AdminController {
         stats.setTotalDoctors(doctorRepository.count());
         stats.setTotalPatients(patientRepository.count());
         stats.setTotalDiseases(diseaseRepository.count());
-
-        Set<String> departments = doctorRepository.findAll().stream()
-                .map(Doctor::getDepartment)
-                .filter(d -> d != null && !d.isBlank())
-                .collect(Collectors.toSet());
-        departments.addAll(diseaseRepository.findAll().stream()
-                .map(Disease::getDepartment)
-                .filter(d -> d != null && !d.isBlank())
-                .collect(Collectors.toSet()));
-        stats.setDepartmentCount(departments.size());
+        stats.setDepartmentCount(departmentRepository.count());
 
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = today.atStartOfDay();
@@ -86,12 +81,12 @@ public class AdminController {
         Map<String, Long> byDepartment = registrationRepository.findAll().stream()
                 .collect(Collectors.groupingBy(r -> {
                     if (r.getDisease() != null && r.getDisease().getDepartment() != null) {
-                        return r.getDisease().getDepartment();
+                        return r.getDisease().getDepartment().getName();
                     }
-                    if (r.getDoctor() != null) {
-                        return r.getDoctor().getDepartment();
+                    if (r.getDoctor() != null && r.getDoctor().getDepartment() != null) {
+                        return r.getDoctor().getDepartment().getName();
                     }
-                    return "未分配";
+                    return "未分配科室";
                 }, Collectors.counting()));
 
         List<AdminStatsResponse.DepartmentStat> departmentStats = byDepartment.entrySet().stream()
@@ -119,11 +114,13 @@ public class AdminController {
         RecentRegistrationDto dto = new RecentRegistrationDto();
         dto.setId(registration.getId());
         dto.setAppointmentTime(registration.getAppointmentTime());
-        dto.setDepartment(registration.getDoctor() != null ? registration.getDoctor().getDepartment() : null);
+        dto.setDepartment(registration.getDoctor() != null && registration.getDoctor().getDepartment() != null
+                ? registration.getDoctor().getDepartment().getName()
+                : null);
         dto.setDoctorName(registration.getDoctor() != null ? registration.getDoctor().getName() : null);
         dto.setPatientName(registration.getPatient() != null ? registration.getPatient().getName() : null);
         dto.setDisease(registration.getDisease() != null ? registration.getDisease().getName() : null);
-        dto.setStatus(registration.getStatus() != null ? registration.getStatus().name() : "REGISTERED");
+        dto.setStatus(registration.getStatus() != null ? registration.getStatus().name() : "WAITING");
         return dto;
     }
 }

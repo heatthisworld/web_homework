@@ -19,9 +19,22 @@ public class User {
     @Column(name = "password", nullable = false, length = 100)
     private String password;
 
+    @Column(name = "display_name", length = 50)
+    private String displayName;
+
+    @Column(name = "email", unique = true, length = 120)
+    private String email;
+
+    @Column(name = "phone", unique = true, length = 20)
+    private String phone;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     private Role role;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private Status status = Status.ACTIVE;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -29,14 +42,25 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
+
     public enum Role {
         DOCTOR, PATIENT, ADMIN
     }
 
+    public enum Status {
+        ACTIVE, INACTIVE, PENDING
+    }
+
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
+        createdAt = now;
+        updatedAt = now;
+        if (status == null) {
+            status = Status.ACTIVE;
+        }
     }
 
     @PreUpdate

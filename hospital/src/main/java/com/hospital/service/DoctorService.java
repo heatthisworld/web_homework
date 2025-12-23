@@ -11,7 +11,7 @@ public interface DoctorService {
     List<Doctor> getAllDoctors();
     Optional<Doctor> getDoctorById(Long id);
     Optional<Doctor> getDoctorByUserId(Long userId);
-    List<Doctor> getDoctorsByDepartment(String department);
+    List<Doctor> getDoctorsByDepartment(String departmentName);
     List<Doctor> searchDoctorsByName(String name);
     Doctor createDoctor(Doctor doctor);
     Doctor updateDoctor(Long id, Doctor doctor);

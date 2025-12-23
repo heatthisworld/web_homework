@@ -1,8 +1,10 @@
 package com.hospital.service.impl;
 
+import com.hospital.entity.Department;
 import com.hospital.entity.Doctor;
 import com.hospital.entity.Disease;
 import com.hospital.entity.User;
+import com.hospital.repository.DepartmentRepository;
 import com.hospital.repository.DoctorRepository;
 import com.hospital.repository.DiseaseRepository;
 import com.hospital.repository.UserRepository;
@@ -25,6 +27,9 @@ public class DoctorServiceImpl implements DoctorService {
     @Autowired
     private DiseaseRepository diseaseRepository;
 
+    @Autowired
+    private DepartmentRepository departmentRepository;
+
     @Override
     public List<Doctor> getAllDoctors() {
         return doctorRepository.findAll();
@@ -42,8 +47,11 @@ public class DoctorServiceImpl implements DoctorService {
     }
 
     @Override
-    public List<Doctor> getDoctorsByDepartment(String department) {
-        return doctorRepository.findByDepartment(department);
+    public List<Doctor> getDoctorsByDepartment(String departmentName) {
+        if (departmentName == null || departmentName.isBlank()) {
+            return doctorRepository.findAll();
+        }
+        return doctorRepository.findByDepartment_Name(departmentName);
     }
 
     @Override
@@ -53,10 +61,11 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Override
     public Doctor createDoctor(Doctor doctor) {
-        // 确保用户存在且角色为DOCTOR
+        // 确保用户存在且角色为 DOCTOR
         if (doctor.getUser() == null || !doctor.getUser().getRole().equals(User.Role.DOCTOR)) {
             throw new RuntimeException("Invalid user for doctor");
         }
+        ensureDepartmentExists(doctor.getDepartment());
         return doctorRepository.save(doctor);
     }
 
@@ -71,6 +80,7 @@ public class DoctorServiceImpl implements DoctorService {
             updatedDoctor.setPhone(doctor.getPhone());
             updatedDoctor.setDepartment(doctor.getDepartment());
             updatedDoctor.setDiseases(doctor.getDiseases());
+            ensureDepartmentExists(updatedDoctor.getDepartment());
             return doctorRepository.save(updatedDoctor);
         } else {
             throw new RuntimeException("Doctor not found with id: " + id);
@@ -91,13 +101,16 @@ public class DoctorServiceImpl implements DoctorService {
             Doctor doctor = optionalDoctor.get();
             Disease disease = optionalDisease.get();
 
-            // 检查医生已管理的病种数量是否超过3个
-            if (doctor.getDiseases().size() >= 3) {
+            // 检查医生已管理的病种数量
+            if (doctor.getDiseases() != null && doctor.getDiseases().size() >= 3) {
                 throw new RuntimeException("A doctor can manage at most 3 diseases");
             }
 
             // 检查病种是否已存在
-            if (!doctor.getDiseases().contains(disease)) {
+            if (doctor.getDiseases() == null || !doctor.getDiseases().contains(disease)) {
+                if (doctor.getDiseases() == null) {
+                    doctor.setDiseases(new java.util.ArrayList<>());
+                }
                 doctor.getDiseases().add(disease);
                 return doctorRepository.save(doctor);
             }
@@ -117,7 +130,7 @@ public class DoctorServiceImpl implements DoctorService {
             Disease disease = optionalDisease.get();
 
             // 检查病种是否存在
-            if (doctor.getDiseases().contains(disease)) {
+            if (doctor.getDiseases() != null && doctor.getDiseases().contains(disease)) {
                 doctor.getDiseases().remove(disease);
                 return doctorRepository.save(doctor);
             }
@@ -135,5 +148,18 @@ public class DoctorServiceImpl implements DoctorService {
         } else {
             throw new RuntimeException("Doctor not found with id: " + doctorId);
         }
+    }
+
+    private void ensureDepartmentExists(Department department) {
+        if (department == null) {
+            throw new RuntimeException("Department is required");
+        }
+        if (department.getId() != null) {
+            return;
+        }
+        // try to reuse by name
+        departmentRepository.findByName(department.getName()).ifPresentOrElse(found -> {
+            department.setId(found.getId());
+        }, () -> departmentRepository.save(department));
     }
 }

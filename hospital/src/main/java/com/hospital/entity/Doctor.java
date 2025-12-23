@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import com.hospital.entity.Department;
 
 @Data
 @Entity
@@ -31,8 +32,9 @@ public class Doctor {
     @Column(name = "phone", nullable = false, length = 11)
     private String phone;
 
-    @Column(name = "department", nullable = false, length = 50)
-    private String department;
+    @ManyToOne
+    @JoinColumn(name = "department_id", nullable = false)
+    private Department department;
 
     @ManyToMany
     @JoinTable(
