@@ -1,48 +1,77 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { fetchSchedules } from "../../services/adminService";
+import type { AdminSchedule } from "../../services/adminService";
 
-type ShiftStatus = "开放" | "进行中" | "满号" | "暂停";
-
-interface Schedule {
-  id: number;
-  date: string;
-  period: string;
-  doctor: string;
-  department: string;
-  type: "普通号" | "专家号" | "加号";
-  slots: string;
-  status: ShiftStatus;
-}
+type ShiftStatus = "OPEN" | "RUNNING" | "FULL" | "PAUSED";
 
 const ScheduleManagement: React.FC = () => {
-  const mockSchedules: Schedule[] = [
-    { id: 1, date: "2025-12-12", period: "09:00-12:00", doctor: "王磊", department: "内科", type: "普通号", slots: "12 / 18", status: "进行中" },
-    { id: 2, date: "2025-12-12", period: "10:00-12:00", doctor: "林静", department: "儿科", type: "专家号", slots: "满号", status: "满号" },
-    { id: 3, date: "2025-12-12", period: "14:00-17:00", doctor: "陈思", department: "外科", type: "加号", slots: "6 / 12", status: "开放" },
-    { id: 4, date: "2025-12-13", period: "09:00-11:00", doctor: "李言", department: "眼科", type: "专家号", slots: "3 / 10", status: "开放" },
-    { id: 5, date: "2025-12-13", period: "14:00-17:00", doctor: "张驰", department: "骨科", type: "普通号", slots: "7 / 15", status: "暂停" },
-  ];
-
+  const [schedules, setSchedules] = useState<AdminSchedule[]>([]);
   const [department, setDepartment] = useState<string>("全部");
   const [status, setStatus] = useState<"全部" | ShiftStatus>("全部");
   const [date, setDate] = useState<string>("");
+  const [keyword, setKeyword] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchSchedules();
+        setSchedules(data);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "加载失败");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const uniqueDepartments = useMemo(
+    () => Array.from(new Set(schedules.map((s) => s.department?.name ?? "未分配"))),
+    [schedules]
+  );
 
   const filtered = useMemo(() => {
-    return mockSchedules.filter((item) => {
-      const byDept = department === "全部" ? true : item.department === department;
+    return schedules.filter((item) => {
+      const byDept = department === "全部" ? true : (item.department?.name ?? "未分配") === department;
       const byStatus = status === "全部" ? true : item.status === status;
-      const byDate = date ? item.date === date : true;
-      return byDept && byStatus && byDate;
+      const byDate = date ? item.workDate === date : true;
+      const byKeyword = keyword
+        ? [item.doctor?.name ?? "", item.department?.name ?? ""]
+            .join(" ")
+            .toLowerCase()
+            .includes(keyword.toLowerCase())
+        : true;
+      return byDept && byStatus && byDate && byKeyword;
     });
-  }, [date, department, mockSchedules, status]);
+  }, [date, department, schedules, status, keyword]);
 
   const statusTone = (value: ShiftStatus) => {
-    if (value === "进行中") return "pill-success";
-    if (value === "开放") return "pill-info";
-    if (value === "满号") return "pill-warning";
+    if (value === "RUNNING") return "pill-success";
+    if (value === "OPEN") return "pill-info";
+    if (value === "FULL") return "pill-warning";
     return "pill-danger";
   };
 
-  const uniqueDepartments = Array.from(new Set(mockSchedules.map((s) => s.department)));
+  const statusText = (value: ShiftStatus) =>
+    value === "RUNNING" ? "进行中" : value === "OPEN" ? "开放" : value === "FULL" ? "满号" : "暂停";
+
+  if (loading) {
+    return (
+      <div className="page-root">
+        <p className="muted">加载中...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-root">
+        <p className="muted">加载失败：{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="page-root">
@@ -52,7 +81,7 @@ const ScheduleManagement: React.FC = () => {
           <p className="page-subtitle">按日期、科室、状态快速筛查医生档期，支持标签页独立查看。</p>
         </div>
         <div className="page-actions">
-          <span className="pill pill-muted">模拟数据</span>
+          <span className="pill pill-muted">实时数据</span>
           <button className="primary-button" type="button">
             新建排班
           </button>
@@ -93,11 +122,20 @@ const ScheduleManagement: React.FC = () => {
               onChange={(e) => setStatus(e.target.value as typeof status)}
             >
               <option value="全部">全部</option>
-              <option value="开放">开放</option>
-              <option value="进行中">进行中</option>
-              <option value="满号">满号</option>
-              <option value="暂停">暂停</option>
+              <option value="OPEN">开放</option>
+              <option value="RUNNING">进行中</option>
+              <option value="FULL">满号</option>
+              <option value="PAUSED">暂停</option>
             </select>
+          </div>
+          <div className="filter-group">
+            <span className="filter-label">搜索</span>
+            <input
+              className="filter-input"
+              placeholder="医生/科室"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+            />
           </div>
           <span className="filter-chip">结果 {filtered.length} 条</span>
         </div>
@@ -116,16 +154,20 @@ const ScheduleManagement: React.FC = () => {
           <tbody>
             {filtered.map((row) => (
               <tr key={row.id}>
-                <td>{row.date}</td>
-                <td>{row.period}</td>
+                <td>{row.workDate}</td>
                 <td>
-                  <div>{row.doctor}</div>
-                  <div className="muted">{row.department}</div>
+                  {row.startTime} - {row.endTime}
                 </td>
-                <td>{row.type}</td>
-                <td>{row.slots}</td>
                 <td>
-                  <span className={`pill ${statusTone(row.status)}`}>{row.status}</span>
+                  <div>{row.doctor?.name ?? "—"}</div>
+                  <div className="muted">{row.department?.name ?? "—"}</div>
+                </td>
+                <td>{row.type === "SPECIALIST" ? "专家号" : row.type === "EXTRA" ? "加号" : "普通号"}</td>
+                <td>
+                  {row.booked} / {row.capacity}
+                </td>
+                <td>
+                  <span className={`pill ${statusTone(row.status)}`}>{statusText(row.status)}</span>
                 </td>
               </tr>
             ))}

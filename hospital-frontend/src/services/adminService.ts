@@ -62,6 +62,11 @@ export interface AdminUser {
   id: number;
   username: string;
   role: AdminRole;
+  displayName?: string;
+  email?: string;
+  phone?: string;
+  status?: "ACTIVE" | "INACTIVE" | "PENDING";
+  lastLoginAt?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -69,7 +74,7 @@ export interface AdminUser {
 export interface AdminDoctor {
   id: number;
   name: string;
-  department?: string;
+  department?: string | AdminDepartment;
   title?: string;
   phone?: string;
 }
@@ -87,8 +92,45 @@ export interface AdminRegistration {
   patient?: AdminPatient;
   doctor?: AdminDoctor;
   disease?: { id: number; name: string; department?: string };
+  schedule?: { id: number };
+  type?: "REGULAR" | "SPECIALIST" | "EXTRA";
+  channel?: "ONLINE" | "OFFLINE";
+  paymentStatus?: "UNPAID" | "PAID" | "REFUNDED";
   appointmentTime?: string;
-  status: string;
+  status: "WAITING" | "CONFIRMED" | "COMPLETED" | "CANCELLED" | string;
+  notes?: string;
+}
+
+export interface AdminDepartment {
+  id: number;
+  code: string;
+  name: string;
+  leadName?: string;
+  rooms?: number;
+  focus?: string;
+  status: "OPEN" | "PAUSED" | "ADJUSTING";
+}
+
+export interface AdminSchedule {
+  id: number;
+  doctor: { id: number; name: string; department?: AdminDepartment };
+  department: AdminDepartment;
+  workDate: string;
+  startTime: string;
+  endTime: string;
+  type: "REGULAR" | "SPECIALIST" | "EXTRA";
+  status: "OPEN" | "RUNNING" | "FULL" | "PAUSED";
+  capacity: number;
+  booked: number;
+}
+
+export interface AdminAnnouncement {
+  id: number;
+  title: string;
+  content?: string;
+  status: "DRAFT" | "PUBLISHED" | "SCHEDULED";
+  audienceScope?: string;
+  publishAt?: string;
 }
 
 export const fetchAdminStats = async (): Promise<AdminStats> => {
@@ -131,6 +173,33 @@ export const fetchRegistrations = async (): Promise<AdminRegistration[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/registrations`, withCredentials());
     return await unwrapData<AdminRegistration[]>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const fetchDepartments = async (): Promise<AdminDepartment[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/departments`, withCredentials());
+    return await unwrapData<AdminDepartment[]>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const fetchSchedules = async (): Promise<AdminSchedule[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/schedules`, withCredentials());
+    return await unwrapData<AdminSchedule[]>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const fetchAnnouncements = async (): Promise<AdminAnnouncement[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/announcements`, withCredentials());
+    return await unwrapData<AdminAnnouncement[]>(response);
   } catch (error) {
     throw normalizeFetchError(error);
   }

@@ -1,54 +1,105 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { fetchAdminStats, fetchRegistrations } from "../../services/adminService";
+import type { AdminRegistration, AdminStats } from "../../services/adminService";
 
 interface MonthlyStat {
   month: string;
   registrations: number;
-  revenue: number;
-  satisfaction: number;
 }
 
 interface Ranking {
   name: string;
   department: string;
   registrations: number;
-  satisfaction: number;
 }
 
 const Statistics: React.FC = () => {
-  const monthly: MonthlyStat[] = [
-    { month: "7月", registrations: 3420, revenue: 482000, satisfaction: 96 },
-    { month: "8月", registrations: 3688, revenue: 501200, satisfaction: 95 },
-    { month: "9月", registrations: 3890, revenue: 528400, satisfaction: 97 },
-    { month: "10月", registrations: 4122, revenue: 556600, satisfaction: 96 },
-    { month: "11月", registrations: 4310, revenue: 579200, satisfaction: 97 },
-    { month: "12月", registrations: 4568, revenue: 612800, satisfaction: 98 },
-  ];
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [registrations, setRegistrations] = useState<AdminRegistration[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const doctorRanking: Ranking[] = [
-    { name: "王磊", department: "内科", registrations: 486, satisfaction: 98 },
-    { name: "林静", department: "儿科", registrations: 452, satisfaction: 97 },
-    { name: "陈思", department: "外科", registrations: 368, satisfaction: 95 },
-    { name: "李言", department: "眼科", registrations: 310, satisfaction: 96 },
-    { name: "张驰", department: "骨科", registrations: 288, satisfaction: 94 },
-  ];
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [s, regs] = await Promise.all([fetchAdminStats(), fetchRegistrations()]);
+        setStats(s);
+        setRegistrations(regs);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "加载失败");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const monthly: MonthlyStat[] = useMemo(() => {
+    const now = new Date();
+    const months: MonthlyStat[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const count = registrations.filter((r) => {
+        if (!r.appointmentTime) return false;
+        const rd = new Date(r.appointmentTime);
+        return rd.getFullYear() === d.getFullYear() && rd.getMonth() === d.getMonth();
+      }).length;
+      months.push({
+        month: `${d.getMonth() + 1}月`,
+        registrations: count,
+      });
+    }
+    return months;
+  }, [registrations]);
 
   const totalRegistrations = monthly.reduce((sum, item) => sum + item.registrations, 0);
-  const totalRevenue = monthly.reduce((sum, item) => sum + item.revenue, 0);
-  const avgSatisfaction = Math.round(
-    monthly.reduce((sum, item) => sum + item.satisfaction, 0) / monthly.length
-  );
+  const maxValue = Math.max(...monthly.map((m) => m.registrations), 1);
 
-  const maxValue = Math.max(...monthly.map((m) => m.registrations));
+  const doctorRanking: Ranking[] = useMemo(() => {
+    const map = new Map<string, { department: string; count: number }>();
+    registrations.forEach((r) => {
+      const name = r.doctor?.name ?? "未命名医生";
+      const deptRaw = r.doctor?.department ?? r.disease?.department ?? "未分配";
+      const dept = typeof deptRaw === "string" ? deptRaw : (deptRaw as any)?.name ?? "未分配";
+      const current = map.get(name) || { department: dept, count: 0 };
+      current.count += 1;
+      map.set(name, current);
+    });
+    return Array.from(map.entries())
+      .map(([name, info]) => ({
+        name,
+        department: info.department,
+        registrations: info.count,
+      }))
+      .sort((a, b) => b.registrations - a.registrations)
+      .slice(0, 5);
+  }, [registrations]);
+
+  if (loading) {
+    return (
+      <div className="page-root">
+        <p className="muted">加载中...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-root">
+        <p className="muted">加载失败：{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="page-root">
       <div className="page-header">
         <div>
           <h1 className="page-heading">统计报表</h1>
-          <p className="page-subtitle">挂号量、收入与满意度的趋势概览，适合标签页对比查看。</p>
+          <p className="page-subtitle">挂号量趋势与医生表现，来自实时数据。</p>
         </div>
         <div className="page-actions">
-          <span className="pill pill-muted">模拟数据</span>
+          <span className="pill pill-muted">实时数据</span>
           <button className="primary-button" type="button">
             导出报表
           </button>
@@ -59,25 +110,25 @@ const Statistics: React.FC = () => {
         <div className="stat-card">
           <div className="stat-icon">📅</div>
           <div className="stat-meta">
-            <div className="stat-label">半年挂号总量</div>
+            <div className="stat-label">近 6 个月挂号总量</div>
             <div className="stat-value">{totalRegistrations.toLocaleString()}</div>
-            <div className="stat-trend up">环比 +7.8%</div>
+            <div className="stat-trend up">动态计算</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">💰</div>
+          <div className="stat-icon">🏥</div>
           <div className="stat-meta">
-            <div className="stat-label">半年收入</div>
-            <div className="stat-value">¥{totalRevenue.toLocaleString()}</div>
-            <div className="stat-trend up">诊疗覆盖率 94%</div>
+            <div className="stat-label">科室覆盖</div>
+            <div className="stat-value">{stats?.departmentCount ?? 0}</div>
+            <div className="stat-trend up">按科室汇总</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">👍</div>
+          <div className="stat-icon">👥</div>
           <div className="stat-meta">
-            <div className="stat-label">平均满意度</div>
-            <div className="stat-value">{avgSatisfaction}%</div>
-            <div className="stat-trend up">比上一周期 +2%</div>
+            <div className="stat-label">患者总数</div>
+            <div className="stat-value">{stats?.totalPatients ?? 0}</div>
+            <div className="stat-trend up">用户 {stats?.totalUsers ?? 0}</div>
           </div>
         </div>
       </div>
@@ -86,7 +137,7 @@ const Statistics: React.FC = () => {
         <div className="surface-card">
           <div className="table-actions">
             <h3 className="section-title">近 6 个月挂号趋势</h3>
-            <span className="badge">柱状模拟</span>
+            <span className="badge">客户端聚合</span>
           </div>
           <div className="bar-chart">
             {monthly.map((item) => (
@@ -109,7 +160,7 @@ const Statistics: React.FC = () => {
         <div className="surface-card">
           <div className="table-actions">
             <h3 className="section-title">医生表现榜</h3>
-            <span className="pill pill-info">含满意度</span>
+            <span className="pill pill-info">按挂号量排名</span>
           </div>
           <table className="data-table">
             <thead>
@@ -117,7 +168,6 @@ const Statistics: React.FC = () => {
                 <th>医生</th>
                 <th>科室</th>
                 <th>挂号量</th>
-                <th>满意度</th>
               </tr>
             </thead>
             <tbody>
@@ -128,9 +178,6 @@ const Statistics: React.FC = () => {
                   </td>
                   <td>{item.department}</td>
                   <td>{item.registrations}</td>
-                  <td>
-                    <span className="pill pill-success">{item.satisfaction}%</span>
-                  </td>
                 </tr>
               ))}
             </tbody>

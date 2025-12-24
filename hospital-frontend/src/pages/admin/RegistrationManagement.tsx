@@ -1,59 +1,97 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { fetchRegistrations } from "../../services/adminService";
+import type { AdminRegistration } from "../../services/adminService";
 
-type RegStatus = "待确认" | "已确认" | "已完成" | "已取消";
-
-interface Registration {
-  id: number;
-  patient: string;
-  department: string;
-  doctor: string;
-  date: string;
-  time: string;
-  channel: "线上" | "线下";
-  type: "普通号" | "专家号";
-  status: RegStatus;
-  notes: string;
-}
+type RegStatus = "WAITING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
 
 const RegistrationManagement: React.FC = () => {
-  const registrations: Registration[] = [
-    { id: 1, patient: "张三", department: "内科", doctor: "王磊", date: "2025-12-12", time: "09:00", channel: "线上", type: "普通号", status: "已完成", notes: "头痛复诊" },
-    { id: 2, patient: "李四", department: "儿科", doctor: "林静", date: "2025-12-12", time: "10:00", channel: "线上", type: "专家号", status: "已确认", notes: "疫苗咨询" },
-    { id: 3, patient: "王五", department: "外科", doctor: "陈思", date: "2025-12-12", time: "14:00", channel: "线下", type: "普通号", status: "待确认", notes: "术后复查" },
-    { id: 4, patient: "赵六", department: "眼科", doctor: "李言", date: "2025-12-13", time: "09:30", channel: "线上", type: "专家号", status: "待确认", notes: "视力下降" },
-    { id: 5, patient: "孙八", department: "骨科", doctor: "张驰", date: "2025-12-13", time: "14:30", channel: "线上", type: "普通号", status: "已取消", notes: "影像检查改期" },
-  ];
-
+  const [registrations, setRegistrations] = useState<AdminRegistration[]>([]);
   const [status, setStatus] = useState<"全部" | RegStatus>("全部");
   const [department, setDepartment] = useState<string>("全部");
   const [keyword, setKeyword] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchRegistrations();
+        setRegistrations(data);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "加载失败");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const uniqueDepartments = useMemo(() => {
+    return Array.from(
+      new Set(
+        registrations.map((item) => {
+          const d = item.doctor?.department;
+          if (typeof d === "string") return d;
+          if (d && "name" in d) return (d as any).name;
+          return item.disease?.department ?? "未分配";
+        })
+      )
+    );
+  }, [registrations]);
 
   const filtered = useMemo(() => {
     return registrations.filter((item) => {
       const byStatus = status === "全部" ? true : item.status === status;
-      const byDept = department === "全部" ? true : item.department === department;
+      const deptVal = item.doctor?.department;
+      const deptName =
+        typeof deptVal === "string"
+          ? deptVal
+          : deptVal && (deptVal as any).name
+          ? (deptVal as any).name
+          : item.disease?.department ?? "未分配";
+      const byDept = department === "全部" ? true : deptName === department;
       const byKeyword = keyword
-        ? [item.patient, item.doctor, item.notes].join(" ").toLowerCase().includes(keyword.toLowerCase())
+        ? [item.patient?.name ?? "", item.doctor?.name ?? "", item.notes ?? ""]
+            .join(" ")
+            .toLowerCase()
+            .includes(keyword.toLowerCase())
         : true;
       return byStatus && byDept && byKeyword;
     });
   }, [department, keyword, registrations, status]);
 
   const statusTone = (value: RegStatus) => {
-    if (value === "已完成") return "pill-success";
-    if (value === "已确认") return "pill-info";
-    if (value === "待确认") return "pill-warning";
+    if (value === "COMPLETED") return "pill-success";
+    if (value === "CONFIRMED") return "pill-info";
+    if (value === "WAITING") return "pill-warning";
     return "pill-danger";
   };
 
-  const uniqueDepartments = Array.from(new Set(registrations.map((item) => item.department)));
+  const statusText = (value: RegStatus) =>
+    value === "COMPLETED" ? "已完成" : value === "CONFIRMED" ? "已确认" : value === "WAITING" ? "待确认" : "已取消";
 
   const stats = useMemo(() => {
-    const pending = registrations.filter((r) => r.status === "待确认").length;
-    const confirmed = registrations.filter((r) => r.status === "已确认").length;
-    const finished = registrations.filter((r) => r.status === "已完成").length;
+    const pending = registrations.filter((r) => r.status === "WAITING").length;
+    const confirmed = registrations.filter((r) => r.status === "CONFIRMED").length;
+    const finished = registrations.filter((r) => r.status === "COMPLETED").length;
     return { pending, confirmed, finished };
   }, [registrations]);
+
+  if (loading) {
+    return (
+      <div className="page-root">
+        <p className="muted">加载中...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-root">
+        <p className="muted">加载失败：{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="page-root">
@@ -63,7 +101,7 @@ const RegistrationManagement: React.FC = () => {
           <p className="page-subtitle">与排班、科室联动的挂号视图，状态一目了然。</p>
         </div>
         <div className="page-actions">
-          <span className="pill pill-muted">模拟数据</span>
+          <span className="pill pill-muted">实时数据</span>
           <button className="primary-button" type="button">
             批量确认
           </button>
@@ -112,10 +150,10 @@ const RegistrationManagement: React.FC = () => {
               onChange={(e) => setStatus(e.target.value as typeof status)}
             >
               <option value="全部">全部</option>
-              <option value="待确认">待确认</option>
-              <option value="已确认">已确认</option>
-              <option value="已完成">已完成</option>
-              <option value="已取消">已取消</option>
+              <option value="WAITING">待确认</option>
+              <option value="CONFIRMED">已确认</option>
+              <option value="COMPLETED">已完成</option>
+              <option value="CANCELLED">已取消</option>
             </select>
           </div>
           <div className="filter-group">
@@ -161,19 +199,32 @@ const RegistrationManagement: React.FC = () => {
           <tbody>
             {filtered.map((row) => (
               <tr key={row.id}>
-                <td>{row.patient}</td>
+                <td>{row.patient?.name ?? "—"}</td>
                 <td>
-                  <div>{row.department}</div>
-                  <div className="muted">{row.doctor}</div>
+                  <div>
+                    {typeof row.doctor?.department === "string"
+                      ? row.doctor?.department
+                      : (row.doctor?.department as any)?.name ?? row.disease?.department ?? "—"}
+                  </div>
+                  <div className="muted">{row.doctor?.name ?? "—"}</div>
                 </td>
-                <td>{row.date}</td>
-                <td>{row.time}</td>
-                <td>{row.channel}</td>
-                <td>{row.type}</td>
+                <td>{row.appointmentTime ? row.appointmentTime.split("T")[0] : "—"}</td>
                 <td>
-                  <span className={`pill ${statusTone(row.status)}`}>{row.status}</span>
+                  {row.appointmentTime
+                    ? new Date(row.appointmentTime).toLocaleTimeString("zh-CN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "—"}
                 </td>
-                <td>{row.notes}</td>
+                <td>{row.channel === "OFFLINE" ? "线下" : "线上"}</td>
+                <td>{row.type === "SPECIALIST" ? "专家号" : row.type === "EXTRA" ? "加号" : "普通号"}</td>
+                <td>
+                  <span className={`pill ${statusTone(row.status as RegStatus)}`}>
+                    {statusText(row.status as RegStatus)}
+                  </span>
+                </td>
+                <td>{row.notes ?? "—"}</td>
               </tr>
             ))}
           </tbody>

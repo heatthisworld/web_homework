@@ -1,131 +1,78 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { fetchUsers } from "../../services/adminService";
+import type { AdminUser } from "../../services/adminService";
 
-type UserRole = "医生" | "患者" | "管理员";
-type UserStatus = "活跃" | "停用" | "待验证";
-
-interface User {
-  id: number;
-  name: string;
-  role: UserRole;
-  department?: string;
-  phone: string;
-  email: string;
-  status: UserStatus;
-  createdAt: string;
-  lastActive: string;
-}
+type UserRole = "DOCTOR" | "PATIENT" | "ADMIN";
+type UserStatus = "ACTIVE" | "INACTIVE" | "PENDING";
 
 const UserManagement: React.FC = () => {
-  const mockUsers: User[] = [
-    {
-      id: 1001,
-      name: "王若初",
-      role: "管理员",
-      department: "信息科",
-      phone: "13800012001",
-      email: "admin01@hospital.test",
-      status: "活跃",
-      createdAt: "2025-01-05",
-      lastActive: "09:20",
-    },
-    {
-      id: 2008,
-      name: "陈俊",
-      role: "医生",
-      department: "内科",
-      phone: "13800012008",
-      email: "chenjun@hospital.test",
-      status: "活跃",
-      createdAt: "2025-02-03",
-      lastActive: "08:55",
-    },
-    {
-      id: 2016,
-      name: "林静",
-      role: "医生",
-      department: "儿科",
-      phone: "13900022016",
-      email: "linjing@hospital.test",
-      status: "活跃",
-      createdAt: "2025-02-15",
-      lastActive: "09:10",
-    },
-    {
-      id: 3055,
-      name: "李言",
-      role: "医生",
-      department: "眼科",
-      phone: "13900023055",
-      email: "liyan@hospital.test",
-      status: "待验证",
-      createdAt: "2025-03-01",
-      lastActive: "待完善",
-    },
-    {
-      id: 5011,
-      name: "周岚",
-      role: "患者",
-      phone: "13700025011",
-      email: "zhoulan@hospital.test",
-      status: "活跃",
-      createdAt: "2025-03-11",
-      lastActive: "09:32",
-    },
-    {
-      id: 5022,
-      name: "刘杰",
-      role: "患者",
-      phone: "13700025022",
-      email: "liujie@hospital.test",
-      status: "停用",
-      createdAt: "2025-03-02",
-      lastActive: "08:02",
-    },
-    {
-      id: 7003,
-      name: "沈意",
-      role: "管理员",
-      department: "运维中心",
-      phone: "13600027003",
-      email: "sheny@hospital.test",
-      status: "活跃",
-      createdAt: "2025-01-28",
-      lastActive: "09:00",
-    },
-  ];
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [roleFilter, setRoleFilter] = useState<"全部" | UserRole>("全部");
   const [statusFilter, setStatusFilter] = useState<"全部" | UserStatus>("全部");
   const [keyword, setKeyword] = useState<string>("");
 
-  const filtered = useMemo(() => {
-    return mockUsers.filter((user) => {
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchUsers();
+        setUsers(data);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "加载失败");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const filteredUsers = useMemo(() => {
+    if (loading || error) return [];
+    return users.filter((user) => {
       const byRole = roleFilter === "全部" ? true : user.role === roleFilter;
-      const byStatus =
-        statusFilter === "全部" ? true : user.status === statusFilter;
+      const byStatus = statusFilter === "全部" ? true : user.status === statusFilter;
       const byKeyword = keyword
-        ? [user.name, user.phone, user.email, user.department ?? ""]
+        ? [user.username, user.displayName ?? "", user.email ?? "", user.phone ?? ""]
             .join(" ")
             .toLowerCase()
             .includes(keyword.toLowerCase())
         : true;
       return byRole && byStatus && byKeyword;
     });
-  }, [keyword, mockUsers, roleFilter, statusFilter]);
+  }, [users, roleFilter, statusFilter, keyword, loading, error]);
 
   const stats = useMemo(() => {
-    const total = mockUsers.length;
-    const doctors = mockUsers.filter((u) => u.role === "医生").length;
-    const patients = mockUsers.filter((u) => u.role === "患者").length;
-    const locked = mockUsers.filter((u) => u.status !== "活跃").length;
+    const total = users.length;
+    const doctors = users.filter((u) => u.role === "DOCTOR").length;
+    const patients = users.filter((u) => u.role === "PATIENT").length;
+    const locked = users.filter((u) => u.status !== "ACTIVE").length;
     return { total, doctors, patients, locked };
-  }, [mockUsers]);
+  }, [users]);
 
-  const statusPill = (status: UserStatus) => {
-    if (status === "活跃") return "pill-success";
-    if (status === "待验证") return "pill-warning";
-    return "pill-danger";
-  };
+  const roleText = (role: UserRole) =>
+    role === "DOCTOR" ? "医生" : role === "PATIENT" ? "患者" : "管理员";
+  const statusText = (status?: UserStatus) =>
+    status === "INACTIVE" ? "停用" : status === "PENDING" ? "待验证" : "活跃";
+  const statusTone = (status?: UserStatus) =>
+    status === "INACTIVE" ? "pill-danger" : status === "PENDING" ? "pill-warning" : "pill-success";
+
+  if (loading) {
+    return (
+      <div className="page-root">
+        <p className="muted">加载中...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-root">
+        <p className="muted">加载失败：{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="page-root">
@@ -135,7 +82,7 @@ const UserManagement: React.FC = () => {
           <p className="page-subtitle">管理员、医生、患者统一在此维护，支持多条件筛选。</p>
         </div>
         <div className="page-actions">
-          <span className="pill pill-muted">模拟数据</span>
+          <span className="pill pill-muted">实时数据</span>
           <button className="primary-button" type="button">
             导出名单
           </button>
@@ -192,9 +139,9 @@ const UserManagement: React.FC = () => {
               onChange={(e) => setRoleFilter(e.target.value as typeof roleFilter)}
             >
               <option value="全部">全部</option>
-              <option value="管理员">管理员</option>
-              <option value="医生">医生</option>
-              <option value="患者">患者</option>
+              <option value="ADMIN">管理员</option>
+              <option value="DOCTOR">医生</option>
+              <option value="PATIENT">患者</option>
             </select>
           </div>
           <div className="filter-group">
@@ -202,14 +149,12 @@ const UserManagement: React.FC = () => {
             <select
               className="filter-select"
               value={statusFilter}
-              onChange={(e) =>
-                setStatusFilter(e.target.value as typeof statusFilter)
-              }
+              onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
             >
               <option value="全部">全部</option>
-              <option value="活跃">活跃</option>
-              <option value="待验证">待验证</option>
-              <option value="停用">停用</option>
+              <option value="ACTIVE">活跃</option>
+              <option value="PENDING">待验证</option>
+              <option value="INACTIVE">停用</option>
             </select>
           </div>
           <div className="filter-group">
@@ -221,7 +166,7 @@ const UserManagement: React.FC = () => {
               onChange={(e) => setKeyword(e.target.value)}
             />
           </div>
-          <span className="filter-chip">已筛选 {filtered.length} 人</span>
+          <span className="filter-chip">已筛选 {filteredUsers.length} 人</span>
         </div>
 
         <table className="data-table">
@@ -237,22 +182,26 @@ const UserManagement: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((user) => (
+            {filteredUsers.map((user) => (
               <tr key={user.id}>
-                <td>{user.name}</td>
+                <td>{user.displayName ?? user.username}</td>
                 <td>
-                  <div>{user.role}</div>
-                  <div className="muted">{user.department ?? "—"}</div>
+                  <div>{roleText(user.role as UserRole)}</div>
+                  <div className="muted">—</div>
                 </td>
-                <td>{user.phone}</td>
-                <td>{user.email}</td>
+                <td>{user.phone ?? "—"}</td>
+                <td>{user.email ?? "—"}</td>
                 <td>
-                  <span className={`pill ${statusPill(user.status)}`}>
-                    {user.status}
+                  <span className={`pill ${statusTone(user.status as UserStatus)}`}>
+                    {statusText(user.status as UserStatus)}
                   </span>
                 </td>
-                <td>{user.createdAt}</td>
-                <td>{user.lastActive}</td>
+                <td>
+                  {user.createdAt ? new Date(user.createdAt).toLocaleDateString("zh-CN") : "—"}
+                </td>
+                <td>
+                  {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString("zh-CN") : "—"}
+                </td>
               </tr>
             ))}
           </tbody>

@@ -1,31 +1,67 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { fetchDepartments } from "../../services/adminService";
+import type { AdminDepartment } from "../../services/adminService";
 
-type DeptStatus = "开放" | "暂停" | "调整中";
-
-interface Department {
-  id: number;
-  name: string;
-  lead: string;
-  doctors: number;
-  rooms: number;
-  status: DeptStatus;
-  focus: string;
-}
+type DeptStatus = "OPEN" | "PAUSED" | "ADJUSTING";
 
 const DepartmentManagement: React.FC = () => {
-  const departments: Department[] = [
-    { id: 1, name: "内科", lead: "王磊", doctors: 18, rooms: 12, status: "开放", focus: "慢病复诊，糖尿病随访" },
-    { id: 2, name: "儿科", lead: "林静", doctors: 12, rooms: 8, status: "开放", focus: "疫苗咨询、发热门诊" },
-    { id: 3, name: "外科", lead: "陈思", doctors: 14, rooms: 10, status: "调整中", focus: "择期手术节奏优化" },
-    { id: 4, name: "眼科", lead: "李言", doctors: 9, rooms: 6, status: "开放", focus: "白内障、视光复查" },
-    { id: 5, name: "骨科", lead: "张驰", doctors: 11, rooms: 7, status: "暂停", focus: "影像升级中，号源收敛" },
-  ];
+  const [departments, setDepartments] = useState<AdminDepartment[]>([]);
+  const [statusFilter, setStatusFilter] = useState<"全部" | DeptStatus>("全部");
+  const [keyword, setKeyword] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchDepartments();
+        setDepartments(data);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "加载失败");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const filtered = useMemo(() => {
+    return departments.filter((dept) => {
+      const byStatus = statusFilter === "全部" ? true : dept.status === statusFilter;
+      const byKeyword = keyword
+        ? [dept.name, dept.leadName ?? "", dept.focus ?? ""]
+            .join(" ")
+            .toLowerCase()
+            .includes(keyword.toLowerCase())
+        : true;
+      return byStatus && byKeyword;
+    });
+  }, [departments, statusFilter, keyword]);
 
   const statusTone = (status: DeptStatus) => {
-    if (status === "开放") return "pill-success";
-    if (status === "调整中") return "pill-warning";
+    if (status === "OPEN") return "pill-success";
+    if (status === "ADJUSTING") return "pill-warning";
     return "pill-danger";
   };
+
+  const statusText = (status: DeptStatus) =>
+    status === "OPEN" ? "开放" : status === "PAUSED" ? "暂停" : "调整中";
+
+  if (loading) {
+    return (
+      <div className="page-root">
+        <p className="muted">加载中...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-root">
+        <p className="muted">加载失败：{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="page-root">
@@ -35,7 +71,7 @@ const DepartmentManagement: React.FC = () => {
           <p className="page-subtitle">掌握各科室人力、诊室与状态，便于挂号与排班联动。</p>
         </div>
         <div className="page-actions">
-          <span className="pill pill-muted">模拟数据</span>
+          <span className="pill pill-muted">实时数据</span>
           <button className="primary-button" type="button">
             新增科室
           </button>
@@ -49,17 +85,17 @@ const DepartmentManagement: React.FC = () => {
         </div>
 
         <div className="card-grid">
-          {departments.map((dept) => (
+          {filtered.map((dept) => (
             <div key={dept.id} className="card-item">
               <div className="table-actions">
                 <strong>{dept.name}</strong>
-                <span className={`pill ${statusTone(dept.status)}`}>{dept.status}</span>
+                <span className={`pill ${statusTone(dept.status)}`}>{statusText(dept.status)}</span>
               </div>
-              <p className="muted">{dept.focus}</p>
+              <p className="muted">{dept.focus ?? "—"}</p>
               <div className="inline-list">
-                <span className="badge">负责人 {dept.lead}</span>
-                <span className="badge">在岗医生 {dept.doctors}</span>
-                <span className="badge">诊室 {dept.rooms}</span>
+                <span className="badge">负责人 {dept.leadName ?? "未设置"}</span>
+                <span className="badge">诊室 {dept.rooms ?? 0}</span>
+                <span className="badge">代码 {dept.code}</span>
               </div>
             </div>
           ))}
@@ -69,30 +105,52 @@ const DepartmentManagement: React.FC = () => {
       <div className="surface-card">
         <div className="table-actions">
           <h3 className="section-title">科室列表</h3>
-          <span className="pill pill-outline">展示可编辑字段</span>
+          <div className="filter-bar">
+            <div className="filter-group">
+              <span className="filter-label">状态</span>
+              <select
+                className="filter-select"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+              >
+                <option value="全部">全部</option>
+                <option value="OPEN">开放</option>
+                <option value="PAUSED">暂停</option>
+                <option value="ADJUSTING">调整中</option>
+              </select>
+            </div>
+            <div className="filter-group">
+              <span className="filter-label">关键词</span>
+              <input
+                className="filter-input"
+                placeholder="科室/负责人/重点"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+              />
+            </div>
+            <span className="filter-chip">结果 {filtered.length}</span>
+          </div>
         </div>
         <table className="data-table">
           <thead>
             <tr>
               <th>名称</th>
               <th>负责人</th>
-              <th>医生数</th>
               <th>诊室数</th>
               <th>状态</th>
               <th>当前重点</th>
             </tr>
           </thead>
           <tbody>
-            {departments.map((dept) => (
+            {filtered.map((dept) => (
               <tr key={dept.id}>
                 <td>{dept.name}</td>
-                <td>{dept.lead}</td>
-                <td>{dept.doctors}</td>
-                <td>{dept.rooms}</td>
+                <td>{dept.leadName ?? "—"}</td>
+                <td>{dept.rooms ?? "—"}</td>
                 <td>
-                  <span className={`pill ${statusTone(dept.status)}`}>{dept.status}</span>
+                  <span className={`pill ${statusTone(dept.status)}`}>{statusText(dept.status)}</span>
                 </td>
-                <td>{dept.focus}</td>
+                <td>{dept.focus ?? "—"}</td>
               </tr>
             ))}
           </tbody>

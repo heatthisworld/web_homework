@@ -1,29 +1,67 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { fetchAnnouncements } from "../../services/adminService";
+import type { AdminAnnouncement } from "../../services/adminService";
 
-type AnnouncementStatus = "草稿" | "已发布" | "预告";
-
-interface Announcement {
-  id: number;
-  title: string;
-  status: AnnouncementStatus;
-  audience: string;
-  publishTime: string;
-  owner: string;
-}
+type AnnouncementStatus = "DRAFT" | "PUBLISHED" | "SCHEDULED";
 
 const AnnouncementManagement: React.FC = () => {
-  const announcements: Announcement[] = [
-    { id: 1, title: "冬季流感接诊指引", status: "已发布", audience: "全院 · 6 科室", publishTime: "今天 09:00", owner: "陆晚舟" },
-    { id: 2, title: "急诊绿色通道演练", status: "预告", audience: "儿科、骨科", publishTime: "明天 14:00", owner: "陈俊" },
-    { id: 3, title: "夜间值班临时调整", status: "草稿", audience: "内科、外科", publishTime: "待确认", owner: "沈意" },
-    { id: 4, title: "设备巡检计划", status: "已发布", audience: "全院", publishTime: "昨天 16:30", owner: "王若初" },
-  ];
+  const [announcements, setAnnouncements] = useState<AdminAnnouncement[]>([]);
+  const [statusFilter, setStatusFilter] = useState<"全部" | AnnouncementStatus>("全部");
+  const [keyword, setKeyword] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchAnnouncements();
+        setAnnouncements(data);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "加载失败");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const filtered = useMemo(() => {
+    return announcements.filter((item) => {
+      const byStatus = statusFilter === "全部" ? true : item.status === statusFilter;
+      const byKeyword = keyword
+        ? [item.title, item.audienceScope ?? "", item.content ?? ""]
+            .join(" ")
+            .toLowerCase()
+            .includes(keyword.toLowerCase())
+        : true;
+      return byStatus && byKeyword;
+    });
+  }, [announcements, statusFilter, keyword]);
 
   const statusTone = (status: AnnouncementStatus) => {
-    if (status === "已发布") return "pill-success";
-    if (status === "预告") return "pill-info";
+    if (status === "PUBLISHED") return "pill-success";
+    if (status === "SCHEDULED") return "pill-info";
     return "pill-warning";
   };
+
+  const statusText = (status: AnnouncementStatus) =>
+    status === "PUBLISHED" ? "已发布" : status === "SCHEDULED" ? "预告" : "草稿";
+
+  if (loading) {
+    return (
+      <div className="page-root">
+        <p className="muted">加载中...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-root">
+        <p className="muted">加载失败：{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="page-root">
@@ -33,7 +71,7 @@ const AnnouncementManagement: React.FC = () => {
           <p className="page-subtitle">在标签页里维护公告，和仪表盘联动展示触达进度。</p>
         </div>
         <div className="page-actions">
-          <span className="pill pill-muted">模拟数据</span>
+          <span className="pill pill-muted">实时数据</span>
           <button className="primary-button" type="button">
             发布公告
           </button>
@@ -43,24 +81,57 @@ const AnnouncementManagement: React.FC = () => {
       <div className="surface-card">
         <div className="table-actions">
           <h3 className="section-title">公告列表</h3>
-          <span className="badge">点击侧栏可新建标签页</span>
+          <div className="filter-bar">
+            <div className="filter-group">
+              <span className="filter-label">状态</span>
+              <select
+                className="filter-select"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+              >
+                <option value="全部">全部</option>
+                <option value="PUBLISHED">已发布</option>
+                <option value="SCHEDULED">预告</option>
+                <option value="DRAFT">草稿</option>
+              </select>
+            </div>
+            <div className="filter-group">
+              <span className="filter-label">搜索</span>
+              <input
+                className="filter-input"
+                placeholder="标题/受众/内容"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+              />
+            </div>
+            <span className="filter-chip">结果 {filtered.length}</span>
+          </div>
         </div>
 
         <div className="announcement-list">
-          {announcements.map((item) => (
+          {filtered.map((item) => (
             <div key={item.id} className="announcement-card">
               <div>
                 <strong>{item.title}</strong>
                 <p className="muted">
-                  {item.audience} · {item.publishTime}
+                  {item.audienceScope ?? "全院"} ·{" "}
+                  {item.publishAt
+                    ? new Date(item.publishAt).toLocaleString("zh-CN", {
+                        month: "2-digit",
+                        day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "待发布"}
                 </p>
               </div>
               <div className="inline-list">
-                <span className={`pill ${statusTone(item.status)}`}>{item.status}</span>
-                <span className="badge">负责人 {item.owner}</span>
+                <span className={`pill ${statusTone(item.status)}`}>{statusText(item.status)}</span>
+                <span className="badge">ID {item.id}</span>
               </div>
             </div>
           ))}
+          {filtered.length === 0 && <p className="muted">暂无公告</p>}
         </div>
       </div>
     </div>
