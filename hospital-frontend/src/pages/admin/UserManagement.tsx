@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { fetchUsers } from "../../services/adminService";
+import { fetchUsers, createUser, updateUser, deleteUser } from "../../services/adminService";
 import type { AdminUser } from "../../services/adminService";
 
 type UserRole = "DOCTOR" | "PATIENT" | "ADMIN";
@@ -13,6 +13,20 @@ const UserManagement: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState<"全部" | UserRole>("全部");
   const [statusFilter, setStatusFilter] = useState<"全部" | UserStatus>("全部");
   const [keyword, setKeyword] = useState<string>("");
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [formData, setFormData] = useState<Omit<AdminUser, "id" | "createdAt" | "updatedAt" | "lastLoginAt">>({
+    username: "",
+    //password: "", // 添加密码字段
+    role: "PATIENT",
+    displayName: "",
+    email: "",
+    phone: "",
+    status: "ACTIVE"
+  });
+
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -58,6 +72,98 @@ const UserManagement: React.FC = () => {
   const statusTone = (status?: UserStatus) =>
     status === "INACTIVE" ? "pill-danger" : status === "PENDING" ? "pill-warning" : "pill-success";
 
+ // 表单处理函数
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    setFormError(null);
+  };
+
+  const resetForm = () => {
+    setEditingUser(null);
+    setFormData({
+      username: "",
+      password: "",
+      role: "PATIENT",
+      displayName: "",
+      email: "",
+      phone: "",
+      status: "ACTIVE"
+    });
+    setFormError(null);
+  };
+
+  const handleOpenModal = () => {
+    resetForm();
+    setIsModalOpen(true);
+  };
+
+  const handleEditUser = (user: AdminUser) => {
+    setEditingUser(user);
+    setFormData({
+      username: user.username,
+      password: "", // 编辑时密码可选
+      role: user.role,
+      displayName: user.displayName || "",
+      email: user.email || "",
+      phone: user.phone || "",
+      status: user.status || "ACTIVE"
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("handleSubmit called");
+    setFormError(null);
+
+    try {
+      // 验证必填字段
+      if (!formData.username.trim()) {
+        throw new Error("请输入用户名");
+      }
+      if (!editingUser && !formData.password) {
+        throw new Error("请输入密码");
+      }
+
+      const userData = { ...formData };
+      if (!userData.password) {
+        // 如果是编辑且密码为空，不包含密码字段
+        delete userData.password;
+      }
+
+      console.log("准备提交数据:", userData);
+      let updatedUser;
+      if (editingUser) {
+        // 更新用户
+        updatedUser = await updateUser(editingUser.id, userData);
+        console.log("更新用户成功:", updatedUser);
+        setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u));
+      } else {
+        // 创建用户
+        updatedUser = await createUser(userData);
+        console.log("创建用户成功:", updatedUser);
+        setUsers([...users, updatedUser]);
+      }
+
+      setIsModalOpen(false);
+    } catch (e) {
+      console.error("提交失败:", e);
+      setFormError(e instanceof Error ? e.message : "操作失败");
+    }
+  };
+
+  const handleDeleteUser = async (id: number, username: string) => {
+    if (window.confirm(`确定要删除用户 ${username} 吗？此操作不可恢复。`)) {
+      try {
+        await deleteUser(id);
+        setUsers(users.filter(user => user.id !== id));
+      } catch (e) {
+        alert(e instanceof Error ? e.message : "删除失败");
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="page-root">
@@ -83,8 +189,8 @@ const UserManagement: React.FC = () => {
         </div>
         <div className="page-actions">
           <span className="pill pill-muted">实时数据</span>
-          <button className="primary-button" type="button">
-            导出名单
+          <button className="primary-button" type="button" onClick={handleOpenModal}>
+            新增用户
           </button>
         </div>
       </div>
@@ -179,6 +285,7 @@ const UserManagement: React.FC = () => {
               <th>状态</th>
               <th>创建时间</th>
               <th>最近活动</th>
+              <th>操作</th>
             </tr>
           </thead>
           <tbody>
@@ -202,11 +309,252 @@ const UserManagement: React.FC = () => {
                 <td>
                   {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString("zh-CN") : "—"}
                 </td>
+                <td>
+                  <div className="action-buttons">
+                    <button 
+                      className="secondary-button" 
+                      type="button"
+                      onClick={() => handleEditUser(user)}
+                    >
+                      编辑
+                    </button>
+                    <button 
+                      className="danger-button" 
+                      type="button"
+                      onClick={() => handleDeleteUser(user.id, user.username)}
+                    >
+                      删除
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* 用户表单模态框 */}
+      {isModalOpen && (
+        <div className="modal-overlay" style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0, 
+          backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          zIndex: 1000 
+        }}>
+          <div className="modal" style={{ 
+            backgroundColor: 'white', 
+            borderRadius: '8px', 
+            padding: '24px', 
+            width: '100%', 
+            maxWidth: '500px', 
+            maxHeight: '80vh', 
+            overflowY: 'auto', 
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)' 
+          }}>
+            <div className="modal-header" style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              marginBottom: '20px' 
+            }}>
+              <h2 style={{ margin: 0, fontSize: '20px' }}>{editingUser ? "编辑用户" : "新增用户"}</h2>
+              <button 
+                className="close-button" 
+                onClick={() => setIsModalOpen(false)} 
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  fontSize: '24px', 
+                  cursor: 'pointer', 
+                  color: '#666' 
+                }}
+              >
+                &times;
+              </button>
+            </div>
+            <form onSubmit={handleSubmit}>
+              <div className="modal-body">
+                {formError && <div className="error-message" style={{ color: 'red', marginBottom: '16px' }}>{formError}</div>}
+                
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label htmlFor="username" style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>用户名 *</label>
+                  <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    placeholder="请输入用户名"
+                    style={{ 
+                      width: '100%', 
+                      padding: '8px 12px', 
+                      border: '1px solid #ddd', 
+                      borderRadius: '4px' 
+                    }}
+                  />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label htmlFor="password" style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>{editingUser ? "密码 (可选)" : "密码 *"}</label>
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    placeholder="请输入密码"
+                    style={{ 
+                      width: '100%', 
+                      padding: '8px 12px', 
+                      border: '1px solid #ddd', 
+                      borderRadius: '4px' 
+                    }}
+                  />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label htmlFor="role" style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>角色 *</label>
+                  <select
+                    id="role"
+                    name="role"
+                    value={formData.role}
+                    onChange={handleInputChange}
+                    style={{ 
+                      width: '100%', 
+                      padding: '8px 12px', 
+                      border: '1px solid #ddd', 
+                      borderRadius: '4px' 
+                    }}
+                  >
+                    <option value="ADMIN">管理员</option>
+                    <option value="DOCTOR">医生</option>
+                    <option value="PATIENT">患者</option>
+                  </select>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label htmlFor="displayName" style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>显示名称</label>
+                  <input
+                    type="text"
+                    id="displayName"
+                    name="displayName"
+                    value={formData.displayName}
+                    onChange={handleInputChange}
+                    placeholder="请输入显示名称"
+                    style={{ 
+                      width: '100%', 
+                      padding: '8px 12px', 
+                      border: '1px solid #ddd', 
+                      borderRadius: '4px' 
+                    }}
+                  />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label htmlFor="email" style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>邮箱</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="请输入邮箱"
+                    style={{ 
+                      width: '100%', 
+                      padding: '8px 12px', 
+                      border: '1px solid #ddd', 
+                      borderRadius: '4px' 
+                    }}
+                  />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label htmlFor="phone" style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>电话</label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    placeholder="请输入电话"
+                    style={{ 
+                      width: '100%', 
+                      padding: '8px 12px', 
+                      border: '1px solid #ddd', 
+                      borderRadius: '4px' 
+                    }}
+                  />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '24px' }}>
+                  <label htmlFor="status" style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>状态 *</label>
+                  <select
+                    id="status"
+                    name="status"
+                    value={formData.status}
+                    onChange={handleInputChange}
+                    style={{ 
+                      width: '100%', 
+                      padding: '8px 12px', 
+                      border: '1px solid #ddd', 
+                      borderRadius: '4px' 
+                    }}
+                  >
+                    <option value="ACTIVE">活跃</option>
+                    <option value="PENDING">待验证</option>
+                    <option value="INACTIVE">停用</option>
+                  </select>
+                </div>
+              </div>
+              <div className="modal-footer" style={{ 
+                display: 'flex', 
+                justifyContent: 'flex-end', 
+                gap: '12px' 
+              }}>
+                <button 
+                  type="button" 
+                  className="secondary-button" 
+                  onClick={() => setIsModalOpen(false)}
+                  style={{ 
+                    padding: '8px 16px', 
+                    backgroundColor: '#f0f0f0', 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    cursor: 'pointer' 
+                  }}
+                >
+                  取消
+                </button>
+                <button 
+                  type="submit" 
+                  className="primary-button"
+                  style={{ 
+                    padding: '8px 16px', 
+                    backgroundColor: '#1890ff', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    cursor: 'pointer' 
+                  }}
+                  onClick={(e) => {
+                    console.log("保存按钮点击");
+                    // 直接调用handleSubmit以确保执行
+                    handleSubmit(e);
+                  }}
+                >
+                  {editingUser ? "保存修改" : "创建用户"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

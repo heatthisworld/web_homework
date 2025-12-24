@@ -151,6 +151,43 @@ export const fetchUsers = async (): Promise<AdminUser[]> => {
   }
 };
 
+export const createUser = async (userData: Omit<AdminUser, "id" | "createdAt" | "updatedAt" | "lastLoginAt">): Promise<AdminUser> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users`, withCredentials({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userData)
+    }));
+    return await unwrapData<AdminUser>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const updateUser = async (id: number, userData: Partial<Omit<AdminUser, "id" | "createdAt" | "updatedAt" | "lastLoginAt">>): Promise<AdminUser> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/${id}`, withCredentials({
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userData)
+    }));
+    return await unwrapData<AdminUser>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const deleteUser = async (id: number): Promise<void> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/${id}`, withCredentials({
+      method: "DELETE"
+    }));
+    await unwrapData<void>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
 export const fetchDoctors = async (): Promise<AdminDoctor[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/doctors`, withCredentials());
