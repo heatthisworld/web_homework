@@ -14,16 +14,6 @@ interface RegistrationPageProps {
   debugMode: boolean;
 }
 
-type DepartmentOption = { id: number; name: string };
-
-const mockDepartments: DepartmentOption[] = [
-  { id: 1, name: "内科" },
-  { id: 2, name: "外科" },
-  { id: 3, name: "儿科" },
-  { id: 4, name: "妇产科" },
-  { id: 5, name: "眼科" },
-];
-
 const mockDoctors: DoctorSummary[] = [
   { id: 1, name: "张医生", department: "内科", title: "主任医师" },
   { id: 2, name: "李医生", department: "内科", title: "主治医师" },
@@ -39,21 +29,27 @@ const mockDiseases: Disease[] = [
 const timeSlots = ["08:30", "09:00", "10:00", "14:00", "15:00", "16:00"];
 
 const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
-  const [departments, setDepartments] = useState<DepartmentOption[]>(mockDepartments);
   const [doctors, setDoctors] = useState<DoctorSummary[]>(mockDoctors);
   const [diseases, setDiseases] = useState<Disease[]>(mockDiseases);
   const [patient, setPatient] = useState<PatientDetails | null>(null);
-  const [selectedDepartment, setSelectedDepartment] = useState<number | null>(null);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
   const [selectedDisease, setSelectedDisease] = useState<number | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
-  const [expandedSection, setExpandedSection] = useState<"department" | "doctor" | "time" | null>(null);
+  const [expandedSection, setExpandedSection] = useState<"department" | "doctor" | "date" | "time" | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // 获取所有科室
+  const departments = useMemo(() => {
+    return [...new Set(doctors.map(d => d.department))];
+  }, [doctors]);
+
   useEffect(() => {
     let cancelled = false;
+
     const loadData = async () => {
       if (debugMode) {
         setPatient({
@@ -78,12 +74,8 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
         ]);
         if (cancelled) return;
         setPatient(patientDetail);
-        setDoctors(doctorList);
-        setDiseases(diseaseList);
-        const deps = Array.from(new Set(doctorList.map((d) => d.department))).map(
-          (name, index) => ({ id: index + 1, name }),
-        );
-        setDepartments(deps.length ? deps : mockDepartments);
+        setDoctors(doctorList.length ? doctorList : mockDoctors);
+        setDiseases(diseaseList.length ? diseaseList : mockDiseases);
       } catch (err) {
         if (cancelled) return;
         setError(
@@ -104,11 +96,11 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
         });
         setDoctors(mockDoctors);
         setDiseases(mockDiseases);
-        setDepartments(mockDepartments);
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
+
     loadData();
     return () => {
       cancelled = true;
@@ -117,28 +109,28 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
 
   const filteredDoctors = useMemo(() => {
     if (!selectedDepartment) return doctors;
-    const deptName = departments.find((d) => d.id === selectedDepartment)?.name;
-    if (!deptName) return doctors;
-    return doctors.filter((doc) => doc.department === deptName);
-  }, [selectedDepartment, doctors, departments]);
+    return doctors.filter((doc) => doc.department === selectedDepartment);
+  }, [selectedDepartment, doctors]);
 
   const availableDiseases = useMemo(() => {
     if (!selectedDepartment) return diseases;
-    const deptName = departments.find((d) => d.id === selectedDepartment)?.name;
-    if (!deptName) return diseases;
-    return diseases.filter((d) => d.department === deptName);
-  }, [selectedDepartment, diseases, departments]);
+    return diseases.filter((d) => d.department === selectedDepartment);
+  }, [selectedDepartment, diseases]);
 
   const handleSubmit = async () => {
-    if (!patient || selectedDoctor === null || selectedDisease === null || !selectedTime) return;
-    if (debugMode) {
-      setRegistrationSuccess(true);
-      setTimeout(() => setRegistrationSuccess(false), 1500);
+    if (!patient || !selectedDoctor || !selectedDisease || !selectedDate || !selectedTime) {
+      setError("请完成所有选择");
       return;
     }
+
+    if (debugMode) {
+      setRegistrationSuccess(true);
+      setTimeout(() => setRegistrationSuccess(false), 3000);
+      return;
+    }
+
     try {
-      const today = new Date();
-      const appointmentTime = `${today.toISOString().split("T")[0]}T${selectedTime}:00`;
+      const appointmentTime = `${selectedDate}T${selectedTime}:00`;
       await createRegistration({
         patientId: patient.id,
         doctorId: selectedDoctor,
@@ -146,7 +138,18 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
         appointmentTime,
       });
       setRegistrationSuccess(true);
-      setTimeout(() => setRegistrationSuccess(false), 1500);
+      setError("");
+
+      // 重置选择
+      setTimeout(() => {
+        setRegistrationSuccess(false);
+        setSelectedDepartment("");
+        setSelectedDoctor(null);
+        setSelectedDisease(null);
+        setSelectedDate("");
+        setSelectedTime(null);
+        setExpandedSection(null);
+      }, 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "提交挂号失败");
     }
@@ -178,11 +181,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
             <div className="selection-info">
               <div className="info-item">
                 <span className="info-label">科室:</span>
-                <span className="info-value">
-                  {selectedDepartment
-                    ? departments.find((dept) => dept.id === selectedDepartment)?.name
-                    : "未选择"}
-                </span>
+                <span className="info-value">{selectedDepartment || "未选择"}</span>
               </div>
               <div className="info-item">
                 <span className="info-label">医生:</span>
@@ -199,6 +198,10 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
                     ? diseases.find((d) => d.id === selectedDisease)?.name
                     : "未选择"}
                 </span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">日期:</span>
+                <span className="info-value">{selectedDate || "未选择"}</span>
               </div>
               <div className="info-item">
                 <span className="info-label">时间:</span>
@@ -227,9 +230,17 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
               <span className="arrow">{expandedSection === "doctor" ? "▲" : "▼"}</span>
             </button>
             <button
+              className={`selection-btn ${expandedSection === "date" ? "expanded" : ""} ${selectedDate ? "selected" : ""}`}
+              onClick={() => setExpandedSection(expandedSection === "date" ? null : "date")}
+              disabled={!selectedDoctor}
+            >
+              选择日期
+              <span className="arrow">{expandedSection === "date" ? "▲" : "▼"}</span>
+            </button>
+            <button
               className={`selection-btn ${expandedSection === "time" ? "expanded" : ""} ${selectedTime ? "selected" : ""}`}
               onClick={() => setExpandedSection(expandedSection === "time" ? null : "time")}
-              disabled={!selectedDoctor}
+              disabled={!selectedDate}
             >
               选择时间
               <span className="arrow">{expandedSection === "time" ? "▲" : "▼"}</span>
@@ -242,16 +253,17 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
               <div className="department-options">
                 {departments.map((dept) => (
                   <div
-                    key={dept.id}
-                    className={`option-item ${selectedDepartment === dept.id ? "selected" : ""}`}
+                    key={dept}
+                    className={`option-item ${selectedDepartment === dept ? "selected" : ""}`}
                     onClick={() => {
-                      setSelectedDepartment(dept.id);
+                      setSelectedDepartment(dept);
                       setSelectedDoctor(null);
                       setSelectedDisease(null);
+                      setSelectedDate("");
                       setSelectedTime(null);
                     }}
                   >
-                    <div className="option-name">{dept.name}</div>
+                    <div className="option-name">{dept}</div>
                     <div className="option-desc">常见疾病诊疗</div>
                   </div>
                 ))}
@@ -268,6 +280,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
                       setSelectedDoctor(doctor.id);
                       const disease = availableDiseases.find((d) => d.department === doctor.department);
                       setSelectedDisease(disease ? disease.id : null);
+                      setSelectedDate("");
                       setSelectedTime(null);
                     }}
                   >
@@ -277,6 +290,21 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {expandedSection === "date" && (
+              <div className="date-options">
+                <input
+                  type="date"
+                  className="date-input"
+                  min={new Date().toISOString().split('T')[0]}
+                  value={selectedDate}
+                  onChange={(e) => {
+                    setSelectedDate(e.target.value);
+                    setSelectedTime(null);
+                  }}
+                />
               </div>
             )}
 
@@ -298,7 +326,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
           <button
             className="submit-btn"
             onClick={handleSubmit}
-            disabled={!patient || !selectedDoctor || !selectedDisease || !selectedTime}
+            disabled={!patient || !selectedDoctor || !selectedDisease || !selectedDate || !selectedTime}
           >
             确认挂号
           </button>

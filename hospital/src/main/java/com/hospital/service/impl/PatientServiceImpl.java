@@ -69,12 +69,22 @@ public class PatientServiceImpl implements PatientService {
         Optional<Patient> existingPatient = patientRepository.findById(id);
         if (existingPatient.isPresent()) {
             Patient updatedPatient = existingPatient.get();
-            updatedPatient.setName(patient.getName());
-            updatedPatient.setGender(patient.getGender());
-            updatedPatient.setAge(patient.getAge());
-            updatedPatient.setIdCard(patient.getIdCard());
-            updatedPatient.setPhone(patient.getPhone());
-            updatedPatient.setAddress(patient.getAddress());
+
+            // 只更新非空字段
+            if (patient.getName() != null && !patient.getName().isEmpty()) {
+                updatedPatient.setName(patient.getName());
+            }
+            if (patient.getAge() != null) {
+                updatedPatient.setAge(patient.getAge());
+            }
+            if (patient.getPhone() != null && !patient.getPhone().isEmpty()) {
+                updatedPatient.setPhone(patient.getPhone());
+            }
+            if (patient.getAddress() != null && !patient.getAddress().isEmpty()) {
+                updatedPatient.setAddress(patient.getAddress());
+            }
+            // gender、idCard、user 等字段不更新，保持原值
+
             return patientRepository.save(updatedPatient);
         } else {
             throw new RuntimeException("Patient not found with id: " + id);

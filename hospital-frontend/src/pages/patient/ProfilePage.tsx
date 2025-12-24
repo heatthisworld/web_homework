@@ -27,6 +27,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ debugMode }) => {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     name: "",
+    gender: "MALE" as "MALE" | "FEMALE",
+    age: 0,
     phone: "",
     address: "",
   });
@@ -41,6 +43,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ debugMode }) => {
         setUserInfo(mockUser);
         setForm({
           name: mockUser.name || "",
+          gender: mockUser.gender || "MALE",
+          age: mockUser.age || 0,
           phone: mockUser.phone || "",
           address: mockUser.address || "",
         });
@@ -53,6 +57,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ debugMode }) => {
         setUserInfo(detail);
         setForm({
           name: detail.name || "",
+          gender: detail.gender || "MALE",
+          age: detail.age || 0,
           phone: detail.phone || "",
           address: detail.address || "",
         });
@@ -64,6 +70,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ debugMode }) => {
         setUserInfo(mockUser);
         setForm({
           name: mockUser.name || "",
+          gender: mockUser.gender || "MALE",
+          age: mockUser.age || 0,
           phone: mockUser.phone || "",
           address: mockUser.address || "",
         });
@@ -82,20 +90,26 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ debugMode }) => {
       setUserInfo({ ...userInfo, ...form });
       setEditing(false);
       setMessage("已保存（调试模式，仅本地）");
+      setTimeout(() => setMessage(""), 3000);
       return;
     }
+
     try {
       setMessage("");
+      setError("");
       await updatePatientProfile(userInfo.id, {
         name: form.name,
+        age: form.age,
         phone: form.phone,
         address: form.address,
       });
       setUserInfo({ ...userInfo, ...form });
       setEditing(false);
       setMessage("保存成功");
+      setTimeout(() => setMessage(""), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "保存失败");
+      setTimeout(() => setError(""), 3000);
     }
   };
 
@@ -140,6 +154,34 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ debugMode }) => {
             />
           ) : (
             <span className="info-value">{userInfo.name}</span>
+          )}
+        </div>
+        <div className="info-item">
+          <span className="info-label">性别:</span>
+          {editing ? (
+            <select
+              className="auth-input"
+              value={form.gender}
+              onChange={(e) => setForm({ ...form, gender: e.target.value as "MALE" | "FEMALE" })}
+            >
+              <option value="MALE">男</option>
+              <option value="FEMALE">女</option>
+            </select>
+          ) : (
+            <span className="info-value">{userInfo.gender === "MALE" ? "男" : "女"}</span>
+          )}
+        </div>
+        <div className="info-item">
+          <span className="info-label">年龄:</span>
+          {editing ? (
+            <input
+              type="number"
+              className="auth-input"
+              value={form.age}
+              onChange={(e) => setForm({ ...form, age: parseInt(e.target.value) || 0 })}
+            />
+          ) : (
+            <span className="info-value">{userInfo.age}</span>
           )}
         </div>
         <div className="info-item">
