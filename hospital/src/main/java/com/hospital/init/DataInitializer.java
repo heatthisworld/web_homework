@@ -1,31 +1,39 @@
 package com.hospital.init;
 
 import com.github.javafaker.Faker;
-import com.hospital.entity.Disease;
+import com.hospital.entity.Announcement;
+import com.hospital.entity.Department;
 import com.hospital.entity.Doctor;
+import com.hospital.entity.Disease;
 import com.hospital.entity.MedicalRecord;
 import com.hospital.entity.Patient;
 import com.hospital.entity.Registration;
+import com.hospital.entity.Schedule;
 import com.hospital.entity.User;
+import com.hospital.repository.AnnouncementRepository;
+import com.hospital.repository.DepartmentRepository;
 import com.hospital.repository.DiseaseRepository;
 import com.hospital.repository.DoctorRepository;
 import com.hospital.repository.MedicalRecordRepository;
 import com.hospital.repository.PatientRepository;
 import com.hospital.repository.RegistrationRepository;
+import com.hospital.repository.ScheduleRepository;
 import com.hospital.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -49,6 +57,15 @@ public class DataInitializer implements CommandLineRunner {
     private MedicalRecordRepository medicalRecordRepository;
 
     @Autowired
+    private DepartmentRepository departmentRepository;
+
+    @Autowired
+    private ScheduleRepository scheduleRepository;
+
+    @Autowired
+    private AnnouncementRepository announcementRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     private final Faker faker = new Faker(new Locale("zh-CN"));
@@ -70,22 +87,28 @@ public class DataInitializer implements CommandLineRunner {
         System.out.println("Seeding demo data for hospital system...");
 
         createAdminUser();
-        List<Disease> diseases = createDiseases();
-        List<Doctor> doctors = createDoctors(diseases);
+        List<Department> departments = createDepartments();
+        List<Disease> diseases = createDiseases(departments);
+        List<Doctor> doctors = createDoctors(departments, diseases);
         List<Patient> patients = createPatients();
-        List<Registration> registrations = createRegistrations(patients, doctors, diseases);
+        List<Schedule> schedules = createSchedules(doctors);
+        List<Registration> registrations = createRegistrations(patients, doctors, diseases, schedules);
         createMedicalRecords(registrations);
+        createAnnouncements();
 
         System.out.println("Demo data ready.");
     }
 
     private void clearAllData() {
         System.out.println("Clearing existing data...");
+        announcementRepository.deleteAll();
         medicalRecordRepository.deleteAll();
         registrationRepository.deleteAll();
+        scheduleRepository.deleteAll();
         patientRepository.deleteAll();
         doctorRepository.deleteAll();
         diseaseRepository.deleteAll();
+        departmentRepository.deleteAll();
         userRepository.deleteAll();
     }
 
@@ -94,15 +117,31 @@ public class DataInitializer implements CommandLineRunner {
         admin.setUsername("admin");
         admin.setPassword(passwordEncoder.encode("admin123"));
         admin.setRole(User.Role.ADMIN);
+        admin.setDisplayName("系统管理员");
+        admin.setStatus(User.Status.ACTIVE);
         userRepository.save(admin);
         System.out.println("Created admin user admin/admin123");
     }
 
-    private List<Disease> createDiseases() {
-        List<Disease> diseases = new ArrayList<>();
-        String[] departments = {"内科", "外科", "儿科", "妇产科", "眼科", "耳鼻喉科", "皮肤科", "口腔科"};
+    private List<Department> createDepartments() {
+        List<Department> list = new ArrayList<>();
+        String[] names = {"内科", "外科", "儿科", "妇产科", "眼科", "耳鼻喉科", "皮肤科", "口腔科"};
+        for (int i = 0; i < names.length; i++) {
+            Department dept = new Department();
+            dept.setCode("D" + (100 + i));
+            dept.setName(names[i]);
+            dept.setLeadName(faker.name().fullName());
+            dept.setRooms(6 + random.nextInt(6));
+            dept.setStatus(Department.Status.OPEN);
+            dept.setFocus(faker.lorem().sentence());
+            list.add(departmentRepository.save(dept));
+        }
+        return list;
+    }
 
-        for (String department : departments) {
+    private List<Disease> createDiseases(List<Department> departments) {
+        List<Disease> diseases = new ArrayList<>();
+        for (Department department : departments) {
             for (int i = 0; i < 2; i++) {
                 Disease disease = new Disease();
                 disease.setName(faker.medical().diseaseName());
@@ -111,14 +150,12 @@ public class DataInitializer implements CommandLineRunner {
                 diseases.add(diseaseRepository.save(disease));
             }
         }
-
         System.out.println("Created " + diseases.size() + " diseases.");
         return diseases;
     }
 
-    private List<Doctor> createDoctors(List<Disease> diseases) {
+    private List<Doctor> createDoctors(List<Department> departments, List<Disease> diseases) {
         List<Doctor> doctors = new ArrayList<>();
-        String[] departments = {"内科", "外科", "儿科", "妇产科", "眼科", "耳鼻喉科", "皮肤科", "口腔科"};
         String[] titles = {"主任医师", "副主任医师", "主治医师", "住院医师"};
 
         for (int i = 0; i < 10; i++) {
@@ -126,9 +163,11 @@ public class DataInitializer implements CommandLineRunner {
             user.setUsername("doctor" + (i + 1));
             user.setPassword(passwordEncoder.encode("doctor123"));
             user.setRole(User.Role.DOCTOR);
+            user.setDisplayName("医生" + (i + 1));
+            user.setStatus(User.Status.ACTIVE);
             userRepository.save(user);
 
-            String department = departments[random.nextInt(departments.length)];
+            Department department = departments.get(random.nextInt(departments.size()));
 
             Doctor doctor = new Doctor();
             doctor.setUser(user);
@@ -153,6 +192,8 @@ public class DataInitializer implements CommandLineRunner {
             user.setUsername("patient" + (i + 1));
             user.setPassword(passwordEncoder.encode("patient123"));
             user.setRole(User.Role.PATIENT);
+            user.setDisplayName("患者" + (i + 1));
+            user.setStatus(User.Status.ACTIVE);
             userRepository.save(user);
 
             Patient patient = new Patient();
@@ -170,20 +211,49 @@ public class DataInitializer implements CommandLineRunner {
         return patients;
     }
 
-    private List<Registration> createRegistrations(List<Patient> patients, List<Doctor> doctors, List<Disease> diseases) {
+    private List<Schedule> createSchedules(List<Doctor> doctors) {
+        List<Schedule> schedules = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+        for (Doctor doctor : doctors) {
+            for (int i = 0; i < 2; i++) {
+                Schedule schedule = new Schedule();
+                schedule.setDoctor(doctor);
+                schedule.setDepartment(doctor.getDepartment());
+                schedule.setWorkDate(today.plusDays(i));
+                schedule.setStartTime(LocalTime.of(9, 0));
+                schedule.setEndTime(LocalTime.of(12, 0));
+                schedule.setType(Schedule.ScheduleType.REGULAR);
+                schedule.setStatus(Schedule.ScheduleStatus.OPEN);
+                schedule.setCapacity(12);
+                schedule.setBooked(random.nextInt(12));
+                schedules.add(scheduleRepository.save(schedule));
+            }
+        }
+        System.out.println("Created " + schedules.size() + " schedules.");
+        return schedules;
+    }
+
+    private List<Registration> createRegistrations(List<Patient> patients, List<Doctor> doctors, List<Disease> diseases, List<Schedule> schedules) {
         List<Registration> registrations = new ArrayList<>();
         LocalDateTime now = LocalDateTime.now();
 
         for (Patient patient : patients) {
-            int registrationCount = random.nextInt(4) + 2; // 2-5 records per patient
+            int registrationCount = random.nextInt(3) + 2; // 2-4 records per patient
 
             for (int i = 0; i < registrationCount; i++) {
                 Doctor doctor = doctors.get(random.nextInt(doctors.size()));
-                Disease disease = diseases.get(random.nextInt(diseases.size()));
+                Disease disease = diseases.stream()
+                        .filter(d -> d.getDepartment().equals(doctor.getDepartment()))
+                        .findAny()
+                        .orElse(diseases.get(random.nextInt(diseases.size())));
+                Schedule schedule = schedules.stream()
+                        .filter(s -> s.getDoctor().equals(doctor))
+                        .findAny()
+                        .orElse(null);
 
                 LocalDateTime appointmentTime = now
                         .minusDays(random.nextInt(5))
-                        .plusDays(random.nextInt(20))
+                        .plusDays(random.nextInt(10))
                         .withHour(8 + random.nextInt(9))
                         .withMinute(0);
 
@@ -191,8 +261,15 @@ public class DataInitializer implements CommandLineRunner {
                 registration.setPatient(patient);
                 registration.setDoctor(doctor);
                 registration.setDisease(disease);
+                registration.setSchedule(schedule);
                 registration.setAppointmentTime(appointmentTime);
+                registration.setRegistrationTime(now.minusHours(random.nextInt(48)));
+                registration.setChannel(random.nextBoolean() ? Registration.Channel.ONLINE : Registration.Channel.OFFLINE);
+                registration.setType(random.nextBoolean() ? Registration.RegistrationType.REGULAR : Registration.RegistrationType.SPECIALIST);
                 registration.setStatus(pickStatus(appointmentTime));
+                registration.setFee(new BigDecimal("30.00"));
+                registration.setPaymentStatus(Registration.PaymentStatus.PAID);
+                registration.setNotes(faker.lorem().sentence());
 
                 registrations.add(registrationRepository.save(registration));
             }
@@ -210,7 +287,7 @@ public class DataInitializer implements CommandLineRunner {
             if (registration.getStatus() == Registration.Status.CANCELLED) {
                 continue;
             }
-            if (registration.getStatus() == Registration.Status.REGISTERED && random.nextDouble() < 0.4) {
+            if (registration.getStatus() == Registration.Status.WAITING && random.nextDouble() < 0.4) {
                 continue;
             }
 
@@ -240,23 +317,34 @@ public class DataInitializer implements CommandLineRunner {
         System.out.println("Created " + recordCount + " medical records.");
     }
 
+    private void createAnnouncements() {
+        Announcement announcement = new Announcement();
+        announcement.setTitle("冬季流感接诊指引");
+        announcement.setContent("请各科室注意防护，保障就诊秩序。");
+        announcement.setStatus(Announcement.Status.PUBLISHED);
+        announcement.setAudienceScope("全院");
+        announcement.setPublishAt(LocalDateTime.now());
+        announcementRepository.save(announcement);
+    }
+
     private Registration.Status pickStatus(LocalDateTime appointmentTime) {
         LocalDateTime now = LocalDateTime.now();
         if (appointmentTime.isBefore(now)) {
-            return random.nextDouble() < 0.15 ? Registration.Status.CANCELLED : Registration.Status.CONSULTED;
+            return random.nextDouble() < 0.15 ? Registration.Status.CANCELLED : Registration.Status.COMPLETED;
         }
-        return random.nextDouble() < 0.2 ? Registration.Status.CANCELLED : Registration.Status.REGISTERED;
+        return random.nextDouble() < 0.2 ? Registration.Status.CANCELLED : Registration.Status.CONFIRMED;
     }
 
-    private List<Disease> pickRandomDiseasesForDepartment(List<Disease> diseases, String department) {
+    private List<Disease> pickRandomDiseasesForDepartment(List<Disease> diseases, Department department) {
         List<Disease> candidates = diseases.stream()
                 .filter(d -> d.getDepartment().equals(department))
-                .collect(Collectors.toList());
+                .toList();
         if (candidates.isEmpty()) {
             return List.of();
         }
-        Collections.shuffle(candidates, random);
-        int limit = Math.max(1, Math.min(3, candidates.size()));
-        return new ArrayList<>(candidates.subList(0, limit));
+        List<Disease> shuffled = new ArrayList<>(candidates);
+        Collections.shuffle(shuffled, random);
+        int limit = Math.max(1, Math.min(3, shuffled.size()));
+        return new ArrayList<>(shuffled.subList(0, limit));
     }
 }

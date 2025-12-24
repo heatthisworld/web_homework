@@ -1,47 +1,61 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
 
-interface SidebarProps {
-  activeMenu: string;
+export interface SidebarItem {
+  key: string;
+  label: string;
+  hint?: string;
+  icon?: string;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeMenu }) => {
-  const navigate = useNavigate();
-  
-  const menuItems = [
-    { key: 'dashboard', label: '仪表盘', icon: '📊', path: '' },
-    { key: 'users', label: '用户管理', icon: '👥', path: 'users' },
-    { key: 'departments', label: '科室管理', icon: '🏥', path: 'departments' },
-    { key: 'schedule', label: '排班管理', icon: '📅', path: 'schedule' },
-    { key: 'registrations', label: '挂号管理', icon: '📋', path: 'registrations' },
-    { key: 'statistics', label: '统计报表', icon: '📈', path: 'statistics' },
-    { key: 'settings', label: '系统设置', icon: '⚙️', path: 'settings' },
-  ];
+interface SidebarProps {
+  activeKey: string;
+  items: SidebarItem[];
+  onSelect: (key: string) => void;
+}
 
-  const handleMenuClick = (path: string) => {
-    navigate(`/admin/${path}`);
-  };
-
+const Sidebar: React.FC<SidebarProps> = ({ activeKey, items, onSelect }) => {
   return (
-    <div className="sidebar">
+    <aside className="sidebar">
       <div className="sidebar-header">
-        <div className="sidebar-logo">系统管理员</div>
-      </div>
-      
-      <div className="sidebar-menu">
-        {menuItems.map(item => (
-          <div 
-            key={item.key}
-            className={`menu-item ${activeMenu === item.key ? 'active' : ''}`}
-            onClick={() => handleMenuClick(item.path)}
-            style={{ cursor: 'pointer' }}
-          >
-            <span className="menu-item-icon">{item.icon}</span>
-            <span className="menu-item-label">{item.label}</span>
+        <div className="sidebar-logo">
+          <div className="sidebar-mark">H</div>
+          <div className="sidebar-title">
+            <span>Hospital Admin</span>
+            <small>后台驾驶舱</small>
           </div>
-        ))}
+        </div>
       </div>
-    </div>
+
+      <nav className="sidebar-menu">
+        {items.map((item) => (
+          <button
+            key={item.key}
+            className={`sidebar-item ${
+              activeKey === item.key ? "active" : ""
+            }`}
+            onClick={() => onSelect(item.key)}
+            type="button"
+          >
+            <span className="sidebar-icon">{item.icon ?? "•"}</span>
+            <span className="sidebar-text">
+              <span className="sidebar-label">{item.label}</span>
+              {item.hint && <small className="sidebar-hint">{item.hint}</small>}
+            </span>
+          </button>
+        ))}
+      </nav>
+
+      <div className="sidebar-footer">
+        <div className="sidebar-footline">
+          <span className="footline-dot" />
+          <span>值班监控已开启</span>
+        </div>
+        <div className="sidebar-footline secondary">
+          <span className="footline-dot alt" />
+          <span>模拟数据展示</span>
+        </div>
+      </div>
+    </aside>
   );
 };
 

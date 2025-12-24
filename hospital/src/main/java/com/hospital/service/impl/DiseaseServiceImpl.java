@@ -27,7 +27,7 @@ public class DiseaseServiceImpl implements DiseaseService {
 
     @Override
     public List<Disease> getDiseasesByDepartment(String department) {
-        return diseaseRepository.findByDepartment(department);
+        return diseaseRepository.findByDepartment_Name(department);
     }
 
     @Override

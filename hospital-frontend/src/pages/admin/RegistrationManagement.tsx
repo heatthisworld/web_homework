@@ -1,423 +1,232 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from "react";
+import { fetchRegistrations } from "../../services/adminService";
+import type { AdminRegistration } from "../../services/adminService";
 
-interface Registration {
-  id: number;
-  patientId: number;
-  patientName: string;
-  gender: string;
-  age: number;
-  department: string;
-  doctorName: string;
-  date: string;
-  time: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
-  symptoms: string;
-  registrationType: 'online' | 'offline';
-}
+type RegStatus = "WAITING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
 
 const RegistrationManagement: React.FC = () => {
-  // 模拟数据
-  const registrations: Registration[] = [
-    { 
-      id: 1, 
-      patientId: 101, 
-      patientName: '张三', 
-      gender: '男', 
-      age: 35, 
-      department: '内科', 
-      doctorName: '张医生', 
-      date: '2025-12-11', 
-      time: '09:00', 
-      status: 'completed', 
-      symptoms: '头痛、发热',
-      registrationType: 'online'
-    },
-    { 
-      id: 2, 
-      patientId: 102, 
-      patientName: '李四', 
-      gender: '女', 
-      age: 28, 
-      department: '内科', 
-      doctorName: '张医生', 
-      date: '2025-12-11', 
-      time: '10:00', 
-      status: 'completed', 
-      symptoms: '咳嗽、喉咙痛',
-      registrationType: 'online'
-    },
-    { 
-      id: 3, 
-      patientId: 103, 
-      patientName: '王五', 
-      gender: '男', 
-      age: 42, 
-      department: '外科', 
-      doctorName: '李医生', 
-      date: '2025-12-12', 
-      time: '14:00', 
-      status: 'confirmed', 
-      symptoms: '腹痛、腹泻',
-      registrationType: 'offline'
-    },
-    { 
-      id: 4, 
-      patientId: 104, 
-      patientName: '赵六', 
-      gender: '女', 
-      age: 50, 
-      department: '内科', 
-      doctorName: '张医生', 
-      date: '2025-12-12', 
-      time: '15:00', 
-      status: 'pending', 
-      symptoms: '高血压、头晕',
-      registrationType: 'online'
-    },
-    { 
-      id: 5, 
-      patientId: 105, 
-      patientName: '钱七', 
-      gender: '男', 
-      age: 38, 
-      department: '儿科', 
-      doctorName: '王医生', 
-      date: '2025-12-13', 
-      time: '09:30', 
-      status: 'pending', 
-      symptoms: '胸闷、气短',
-      registrationType: 'online'
-    },
-    { 
-      id: 6, 
-      patientId: 106, 
-      patientName: '孙八', 
-      gender: '女', 
-      age: 25, 
-      department: '妇产科', 
-      doctorName: '赵医生', 
-      date: '2025-12-13', 
-      time: '10:00', 
-      status: 'confirmed', 
-      symptoms: '孕期检查',
-      registrationType: 'offline'
-    },
-    { 
-      id: 7, 
-      patientId: 107, 
-      patientName: '周九', 
-      gender: '男', 
-      age: 60, 
-      department: '眼科', 
-      doctorName: '刘医生', 
-      date: '2025-12-14', 
-      time: '09:00', 
-      status: 'pending', 
-      symptoms: '视力模糊',
-      registrationType: 'online'
-    },
-  ];
+  const [registrations, setRegistrations] = useState<AdminRegistration[]>([]);
+  const [status, setStatus] = useState<"全部" | RegStatus>("全部");
+  const [department, setDepartment] = useState<string>("全部");
+  const [keyword, setKeyword] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // 状态管理
-  const [filteredRegistrations, setFilteredRegistrations] = useState<Registration[]>(registrations);
-  const [selectedDate, setSelectedDate] = useState<string>('');
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedRegistrations, setSelectedRegistrations] = useState<number[]>([]);
-
-  // 筛选挂号记录
-  const filterRegistrations = () => {
-    let filtered = [...registrations];
-
-    // 按日期筛选
-    if (selectedDate) {
-      filtered = filtered.filter(reg => reg.date === selectedDate);
-    }
-
-    // 按科室筛选
-    if (selectedDepartment !== 'all') {
-      filtered = filtered.filter(reg => reg.department === selectedDepartment);
-    }
-
-    // 按状态筛选
-    if (selectedStatus !== 'all') {
-      filtered = filtered.filter(reg => reg.status === selectedStatus);
-    }
-
-    // 按搜索词筛选
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(reg => 
-        reg.patientName.toLowerCase().includes(term) ||
-        reg.patientId.toString().includes(term) ||
-        reg.symptoms.toLowerCase().includes(term)
-      );
-    }
-
-    setFilteredRegistrations(filtered);
-  };
-
-  // 监听筛选条件变化
-  React.useEffect(() => {
-    filterRegistrations();
-  }, [selectedDate, selectedDepartment, selectedStatus, searchTerm]);
-
-  // 更新挂号状态
-  const updateRegistrationStatus = (id: number, status: Registration['status']) => {
-    setFilteredRegistrations(prev => 
-      prev.map(reg => 
-        reg.id === id ? { ...reg, status } : reg
-      )
-    );
-  };
-
-  // 批量更新状态
-  const batchUpdateStatus = (status: Registration['status']) => {
-    if (selectedRegistrations.length === 0) return;
-    
-    setFilteredRegistrations(prev => 
-      prev.map(reg => 
-        selectedRegistrations.includes(reg.id) ? { ...reg, status } : reg
-      )
-    );
-    
-    setSelectedRegistrations([]);
-  };
-
-  // 切换选择状态
-  const toggleSelectRegistration = (id: number) => {
-    setSelectedRegistrations(prev => 
-      prev.includes(id)
-        ? prev.filter(regId => regId !== id)
-        : [...prev, id]
-    );
-  };
-
-  // 全选/取消全选
-  const toggleSelectAll = () => {
-    if (selectedRegistrations.length === filteredRegistrations.length) {
-      setSelectedRegistrations([]);
-    } else {
-      setSelectedRegistrations(filteredRegistrations.map(reg => reg.id));
-    }
-  };
-
-  // 获取状态显示文本
-  const getStatusText = (status: Registration['status']) => {
-    const statusMap = {
-      pending: '待确认',
-      confirmed: '已确认',
-      cancelled: '已取消',
-      completed: '已完成'
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchRegistrations();
+        setRegistrations(data);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "加载失败");
+      } finally {
+        setLoading(false);
+      }
     };
-    return statusMap[status];
+    load();
+  }, []);
+
+  const uniqueDepartments = useMemo(() => {
+    return Array.from(
+      new Set(
+        registrations.map((item) => {
+          const d = item.doctor?.department;
+          if (typeof d === "string") return d;
+          if (d && "name" in d) return (d as any).name;
+          return item.disease?.department ?? "未分配";
+        })
+      )
+    );
+  }, [registrations]);
+
+  const filtered = useMemo(() => {
+    return registrations.filter((item) => {
+      const byStatus = status === "全部" ? true : item.status === status;
+      const deptVal = item.doctor?.department;
+      const deptName =
+        typeof deptVal === "string"
+          ? deptVal
+          : deptVal && (deptVal as any).name
+          ? (deptVal as any).name
+          : item.disease?.department ?? "未分配";
+      const byDept = department === "全部" ? true : deptName === department;
+      const byKeyword = keyword
+        ? [item.patient?.name ?? "", item.doctor?.name ?? "", item.notes ?? ""]
+            .join(" ")
+            .toLowerCase()
+            .includes(keyword.toLowerCase())
+        : true;
+      return byStatus && byDept && byKeyword;
+    });
+  }, [department, keyword, registrations, status]);
+
+  const statusTone = (value: RegStatus) => {
+    if (value === "COMPLETED") return "pill-success";
+    if (value === "CONFIRMED") return "pill-info";
+    if (value === "WAITING") return "pill-warning";
+    return "pill-danger";
   };
 
-  // 获取状态样式类名
-  const getStatusClass = (status: Registration['status']) => {
-    return `status-${status}`;
-  };
+  const statusText = (value: RegStatus) =>
+    value === "COMPLETED" ? "已完成" : value === "CONFIRMED" ? "已确认" : value === "WAITING" ? "待确认" : "已取消";
 
-  // 获取挂号类型显示文本
-  const getRegistrationTypeText = (type: Registration['registrationType']) => {
-    return type === 'online' ? '线上' : '线下';
-  };
+  const stats = useMemo(() => {
+    const pending = registrations.filter((r) => r.status === "WAITING").length;
+    const confirmed = registrations.filter((r) => r.status === "CONFIRMED").length;
+    const finished = registrations.filter((r) => r.status === "COMPLETED").length;
+    return { pending, confirmed, finished };
+  }, [registrations]);
 
-  // 获取科室列表
-  const departments = [...new Set(registrations.map(reg => reg.department))];
+  if (loading) {
+    return (
+      <div className="page-root">
+        <p className="muted">加载中...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-root">
+        <p className="muted">加载失败：{error}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="registration-management">
-      <h1>挂号管理</h1>
-      
-      {/* 筛选和搜索 */}
-      <div className="filter-section">
-        <div className="filter-row">
-          <div className="filter-group">
-            <label>日期：</label>
-            <input 
-              type="date" 
-              value={selectedDate} 
-              onChange={(e) => setSelectedDate(e.target.value)} 
-            />
+    <div className="page-root">
+      <div className="page-header">
+        <div>
+          <h1 className="page-heading">挂号管理</h1>
+          <p className="page-subtitle">与排班、科室联动的挂号视图，状态一目了然。</p>
+        </div>
+        <div className="page-actions">
+          <span className="pill pill-muted">实时数据</span>
+          <button className="primary-button" type="button">
+            批量确认
+          </button>
+        </div>
+      </div>
+
+      <div className="stat-grid">
+        <div className="stat-card">
+          <div className="stat-icon">⏳</div>
+          <div className="stat-meta">
+            <div className="stat-label">待确认</div>
+            <div className="stat-value">{stats.pending}</div>
+            <div className="stat-trend warning">含专家号</div>
           </div>
-          
-          <div className="filter-group">
-            <label>科室：</label>
-            <select 
-              value={selectedDepartment} 
-              onChange={(e) => setSelectedDepartment(e.target.value)}
-            >
-              <option value="all">全部科室</option>
-              {departments.map(dept => (
-                <option key={dept} value={dept}>{dept}</option>
-              ))}
-            </select>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">✅</div>
+          <div className="stat-meta">
+            <div className="stat-label">已确认</div>
+            <div className="stat-value">{stats.confirmed}</div>
+            <div className="stat-trend up">即时提醒已推送</div>
           </div>
-          
-          <div className="filter-group">
-            <label>状态：</label>
-            <select 
-              value={selectedStatus} 
-              onChange={(e) => setSelectedStatus(e.target.value)}
-            >
-              <option value="all">全部状态</option>
-              <option value="pending">待确认</option>
-              <option value="confirmed">已确认</option>
-              <option value="cancelled">已取消</option>
-              <option value="completed">已完成</option>
-            </select>
-          </div>
-          
-          <div className="filter-group search-group">
-            <input 
-              type="text" 
-              placeholder="搜索患者姓名、ID或症状..." 
-              value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          
-          <div className="filter-group">
-            <button className="btn btn-primary" onClick={filterRegistrations}>
-              筛选
-            </button>
-            <button className="btn btn-secondary" onClick={() => {
-              setSelectedDate('');
-              setSelectedDepartment('all');
-              setSelectedStatus('all');
-              setSearchTerm('');
-            }}>
-              重置
-            </button>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">🏁</div>
+          <div className="stat-meta">
+            <div className="stat-label">已完成</div>
+            <div className="stat-value">{stats.finished}</div>
+            <div className="stat-trend up">按时完成率 94%</div>
           </div>
         </div>
       </div>
-      
-      {/* 批量操作 */}
-      {selectedRegistrations.length > 0 && (
-        <div className="batch-actions">
-          <span>已选择 {selectedRegistrations.length} 条记录</span>
-          <div className="batch-buttons">
-            <button 
-              className="btn btn-primary" 
-              onClick={() => batchUpdateStatus('confirmed')}
-            >
-              批量确认
-            </button>
-            <button 
-              className="btn btn-danger" 
-              onClick={() => batchUpdateStatus('cancelled')}
-            >
-              批量取消
-            </button>
-            <button 
-              className="btn btn-success" 
-              onClick={() => batchUpdateStatus('completed')}
-            >
-              批量完成
-            </button>
-          </div>
+
+      <div className="surface-card">
+        <div className="table-actions">
+          <h3 className="section-title">挂号列表</h3>
+          <span className="badge">与标签页联动</span>
         </div>
-      )}
-      
-      {/* 挂号列表 */}
-      <div className="table-container">
-        <table className="table">
+
+        <div className="filter-bar">
+          <div className="filter-group">
+            <span className="filter-label">状态</span>
+            <select
+              className="filter-select"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as typeof status)}
+            >
+              <option value="全部">全部</option>
+              <option value="WAITING">待确认</option>
+              <option value="CONFIRMED">已确认</option>
+              <option value="COMPLETED">已完成</option>
+              <option value="CANCELLED">已取消</option>
+            </select>
+          </div>
+          <div className="filter-group">
+            <span className="filter-label">科室</span>
+            <select
+              className="filter-select"
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+            >
+              <option value="全部">全部</option>
+              {uniqueDepartments.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-group">
+            <span className="filter-label">搜索</span>
+            <input
+              className="filter-input"
+              placeholder="患者 / 医生 / 备注"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+            />
+          </div>
+          <span className="filter-chip">结果 {filtered.length}</span>
+        </div>
+
+        <table className="data-table">
           <thead>
             <tr>
-              <th>
-                <input 
-                  type="checkbox" 
-                  checked={selectedRegistrations.length === filteredRegistrations.length && filteredRegistrations.length > 0} 
-                  onChange={toggleSelectAll} 
-                />
-              </th>
-              <th>患者ID</th>
-              <th>患者姓名</th>
-              <th>性别</th>
-              <th>年龄</th>
-              <th>科室</th>
-              <th>医生</th>
+              <th>患者</th>
+              <th>科室 / 医生</th>
               <th>日期</th>
               <th>时间</th>
+              <th>渠道</th>
               <th>类型</th>
-              <th>症状</th>
               <th>状态</th>
-              <th>操作</th>
+              <th>备注</th>
             </tr>
           </thead>
           <tbody>
-            {filteredRegistrations.length > 0 ? (
-              filteredRegistrations.map(registration => (
-                <tr key={registration.id}>
-                  <td>
-                    <input 
-                      type="checkbox" 
-                      checked={selectedRegistrations.includes(registration.id)} 
-                      onChange={() => toggleSelectRegistration(registration.id)} 
-                    />
-                  </td>
-                  <td>{registration.patientId}</td>
-                  <td>{registration.patientName}</td>
-                  <td>{registration.gender}</td>
-                  <td>{registration.age}</td>
-                  <td>{registration.department}</td>
-                  <td>{registration.doctorName}</td>
-                  <td>{registration.date}</td>
-                  <td>{registration.time}</td>
-                  <td>{getRegistrationTypeText(registration.registrationType)}</td>
-                  <td>{registration.symptoms}</td>
-                  <td>
-                    <span className={`status-badge ${getStatusClass(registration.status)}`}>
-                      {getStatusText(registration.status)}
-                    </span>
-                  </td>
-                  <td className="action-buttons">
-                    <button className="btn btn-sm btn-primary">查看</button>
-                    {registration.status === 'pending' && (
-                      <>  
-                        <button 
-                          className="btn btn-sm btn-success" 
-                          onClick={() => updateRegistrationStatus(registration.id, 'confirmed')}
-                        >
-                          确认
-                        </button>
-                        <button 
-                          className="btn btn-sm btn-danger" 
-                          onClick={() => updateRegistrationStatus(registration.id, 'cancelled')}
-                        >
-                          取消
-                        </button>
-                      </>
-                    )}
-                    {registration.status === 'confirmed' && (
-                      <>  
-                        <button 
-                          className="btn btn-sm btn-success" 
-                          onClick={() => updateRegistrationStatus(registration.id, 'completed')}
-                        >
-                          完成
-                        </button>
-                        <button 
-                          className="btn btn-sm btn-danger" 
-                          onClick={() => updateRegistrationStatus(registration.id, 'cancelled')}
-                        >
-                          取消
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={13} className="no-data">
-                  暂无挂号记录
+            {filtered.map((row) => (
+              <tr key={row.id}>
+                <td>{row.patient?.name ?? "—"}</td>
+                <td>
+                  <div>
+                    {typeof row.doctor?.department === "string"
+                      ? row.doctor?.department
+                      : (row.doctor?.department as any)?.name ?? row.disease?.department ?? "—"}
+                  </div>
+                  <div className="muted">{row.doctor?.name ?? "—"}</div>
                 </td>
+                <td>{row.appointmentTime ? row.appointmentTime.split("T")[0] : "—"}</td>
+                <td>
+                  {row.appointmentTime
+                    ? new Date(row.appointmentTime).toLocaleTimeString("zh-CN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "—"}
+                </td>
+                <td>{row.channel === "OFFLINE" ? "线下" : "线上"}</td>
+                <td>{row.type === "SPECIALIST" ? "专家号" : row.type === "EXTRA" ? "加号" : "普通号"}</td>
+                <td>
+                  <span className={`pill ${statusTone(row.status as RegStatus)}`}>
+                    {statusText(row.status as RegStatus)}
+                  </span>
+                </td>
+                <td>{row.notes ?? "—"}</td>
               </tr>
-            )}
+            ))}
           </tbody>
         </table>
       </div>

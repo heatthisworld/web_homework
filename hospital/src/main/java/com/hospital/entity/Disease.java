@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import com.hospital.entity.Department;
 
 @Data
 @Entity
@@ -19,8 +20,9 @@ public class Disease {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "department", nullable = false, length = 50)
-    private String department;
+    @ManyToOne
+    @JoinColumn(name = "department_id", nullable = false)
+    private Department department;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

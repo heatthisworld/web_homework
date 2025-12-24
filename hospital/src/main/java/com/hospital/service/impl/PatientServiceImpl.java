@@ -165,7 +165,9 @@ public class PatientServiceImpl implements PatientService {
                     PatientDetailsDto.VisitRecordDto dto = new PatientDetailsDto.VisitRecordDto();
                     dto.setId(registration.getId());
                     dto.setAppointmentTime(registration.getAppointmentTime());
-                    dto.setDepartment(registration.getDoctor() != null ? registration.getDoctor().getDepartment() : null);
+                    dto.setDepartment(registration.getDoctor() != null && registration.getDoctor().getDepartment() != null
+                            ? registration.getDoctor().getDepartment().getName()
+                            : null);
                     dto.setDoctor(registration.getDoctor() != null ? registration.getDoctor().getName() : null);
                     dto.setDisease(registration.getDisease() != null ? registration.getDisease().getName() : null);
                     dto.setStatus(mapVisitStatus(registration.getStatus()));
@@ -196,9 +198,10 @@ public class PatientServiceImpl implements PatientService {
             return "pending";
         }
         return switch (status) {
-            case CONSULTED -> "completed";
+            case COMPLETED -> "completed";
             case CANCELLED -> "cancelled";
-            case REGISTERED -> "pending";
+            case CONFIRMED -> "confirmed";
+            case WAITING -> "pending";
         };
     }
 }

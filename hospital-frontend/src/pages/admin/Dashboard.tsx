@@ -1,100 +1,211 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from "react";
+import { fetchAdminStats, fetchAnnouncements } from "../../services/adminService";
+import type { AdminAnnouncement, AdminStats } from "../../services/adminService";
 
 const Dashboard: React.FC = () => {
-  // 模拟数据
-  const statistics = [
-    { id: 1, title: '总用户数', value: '1,258', icon: '👥', color: '#3498db' },
-    { id: 2, title: '医生数量', value: '86', icon: '👨‍⚕️', color: '#2ecc71' },
-    { id: 3, title: '患者数量', value: '1,172', icon: '👤', color: '#f39c12' },
-    { id: 4, title: '科室数量', value: '12', icon: '🏥', color: '#e74c3c' },
-    { id: 5, title: '今日挂号', value: '156', icon: '📋', color: '#9b59b6' },
-    { id: 6, title: '本月挂号', value: '4,238', icon: '📅', color: '#1abc9c' },
-  ];
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [announcements, setAnnouncements] = useState<AdminAnnouncement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const recentActivities = [
-    { id: 1, user: '张三', action: '新增了医生账号', time: '2小时前' },
-    { id: 2, user: '李四', action: '修改了科室信息', time: '4小时前' },
-    { id: 3, user: '王五', action: '审核了挂号记录', time: '6小时前' },
-    { id: 4, user: '赵六', action: '更新了系统设置', time: '1天前' },
-    { id: 5, user: '钱七', action: '添加了排班记录', time: '1天前' },
-  ];
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [statsRes, annRes] = await Promise.all([
+          fetchAdminStats(),
+          fetchAnnouncements().catch(() => []),
+        ]);
+        setStats(statsRes);
+        setAnnouncements(annRes);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "加载失败");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
-  const departmentStats = [
-    { id: 1, name: '内科', count: 1245 },
-    { id: 2, name: '外科', count: 892 },
-    { id: 3, name: '儿科', count: 654 },
-    { id: 4, name: '妇产科', count: 432 },
-    { id: 5, name: '眼科', count: 321 },
-  ];
+  const computedMetrics = useMemo(() => {
+    if (!stats) return [];
+    return [
+      {
+        label: "今日挂号",
+        value: stats.todayRegistrations.toString(),
+        trend: "+",
+        detail: `本月累计 ${stats.monthRegistrations}`,
+      },
+      {
+        label: "在岗医生",
+        value: stats.totalDoctors.toString(),
+        trend: "+",
+        detail: `科室 ${stats.departmentCount}`,
+      },
+      {
+        label: "患者总数",
+        value: stats.totalPatients.toString(),
+        trend: "",
+        detail: `用户 ${stats.totalUsers}`,
+      },
+      {
+        label: "病种覆盖",
+        value: stats.totalDiseases.toString(),
+        trend: "",
+        detail: "疾病库总量",
+      },
+    ];
+  }, [stats]);
+
+  const departmentHeat = useMemo(() => {
+    if (!stats?.registrationByDepartment?.length) return [];
+    const max = Math.max(...stats.registrationByDepartment.map((d) => d.count));
+    return stats.registrationByDepartment.map((d) => ({
+      name: d.department || "未分配科室",
+      rate: max ? Math.round((d.count / max) * 100) : 0,
+      delta: "",
+      highlight: `挂号量 ${d.count}`,
+    }));
+  }, [stats]);
+
+  const recentActivities = useMemo(() => {
+    if (!stats?.recentRegistrations) return [];
+    return stats.recentRegistrations.slice(0, 5).map((r) => ({
+      time: r.appointmentTime
+        ? new Date(r.appointmentTime).toLocaleString("zh-CN", {
+            hour: "2-digit",
+            minute: "2-digit",
+            month: "2-digit",
+            day: "2-digit",
+          })
+        : "--",
+      text: `${r.patientName ?? "患者"} 预约 ${
+        r.doctorName ?? "医生"
+      } (${r.department ?? "科室"})`,
+      tag: r.status ?? "状态",
+    }));
+  }, [stats]);
+
+  if (loading) {
+    return (
+      <div className="page-root">
+        <p className="muted">加载中...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-root">
+        <p className="muted">加载失败：{error}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="dashboard">
-      <h1>系统仪表盘</h1>
-      <p className="dashboard-date">{new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}</p>
+    <div className="page-root">
+      <div className="page-header">
+        <div>
+          <h1 className="page-heading">仪表盘</h1>
+          <p className="page-subtitle">掌握今日挂号、排班与公告动态，默认载入一张仪表盘标签。</p>
+        </div>
+        <div className="page-actions">
+          <span className="pill pill-muted">模拟数据</span>
+          <button className="primary-button" type="button">
+            快速刷新
+          </button>
+        </div>
+      </div>
 
-      {/* 统计卡片 */}
-      <div className="stats-cards">
-        {statistics.map(stat => (
-          <div key={stat.id} className="stat-card">
-            <div className="stat-icon" style={{ color: stat.color }}>{stat.icon}</div>
-            <div className="stat-content">
-              <div className="stat-title">{stat.title}</div>
-              <div className="stat-value">{stat.value}</div>
+      <div className="stat-grid">
+        {computedMetrics.map((item) => (
+          <div key={item.label} className="stat-card">
+            <div className="stat-icon">◎</div>
+            <div className="stat-meta">
+              <div className="stat-label">{item.label}</div>
+              <div className="stat-value">{item.value}</div>
+              <div className="stat-trend up">{item.detail}</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* 部门统计和最近活动 */}
-      <div className="dashboard-row">
-        {/* 部门统计 */}
-        <div className="dashboard-column">
-          <div className="card">
-            <div className="card-header">
-              <h2>科室挂号统计</h2>
-            </div>
-            <div className="department-stats">
-              {departmentStats.map(dept => (
-                <div key={dept.id} className="department-stat-item">
-                  <div className="department-stat-info">
-                    <div className="department-stat-name">{dept.name}</div>
-                    <div className="department-stat-bar">
-                      <div 
-                        className="department-stat-fill" 
-                        style={{ 
-                          width: `${(dept.count / Math.max(...departmentStats.map(d => d.count))) * 100}%`,
-                          backgroundColor: '#3498db'
-                        }}
-                      ></div>
-                    </div>
-                  </div>
-                  <div className="department-stat-count">{dept.count}</div>
+      <div className="split-grid">
+        <div className="surface-card">
+          <div className="table-actions">
+            <h3 className="section-title">挂号按科室</h3>
+            <span className="badge">
+              {new Date().toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" })}
+            </span>
+          </div>
+          <div className="list-grid">
+            {departmentHeat.length === 0 && <p className="muted">暂无数据</p>}
+            {departmentHeat.map((dept) => (
+              <div key={dept.name} className="card-item">
+                <div className="table-actions">
+                  <strong>{dept.name}</strong>
+                  <span className="badge">{dept.highlight}</span>
                 </div>
-              ))}
-            </div>
+                <div className="bar">
+                  <div className="bar-fill" style={{ width: `${dept.rate}%` }} />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* 最近活动 */}
-        <div className="dashboard-column">
-          <div className="card">
-            <div className="card-header">
-              <h2>最近活动</h2>
-            </div>
-            <div className="activities-list">
-              {recentActivities.map(activity => (
-                <div key={activity.id} className="activity-item">
-                  <div className="activity-icon">🔔</div>
-                  <div className="activity-content">
-                    <div className="activity-text">
-                      <strong>{activity.user}</strong> {activity.action}
-                    </div>
-                    <div className="activity-time">{activity.time}</div>
+        <div className="surface-card">
+          <div className="table-actions">
+            <h3 className="section-title">近期挂号动态</h3>
+            <span className="pill pill-outline">最新 5 条</span>
+          </div>
+          <div className="timeline">
+            {recentActivities.length === 0 && <p className="muted">暂无记录</p>}
+            {recentActivities.map((item) => (
+              <div key={item.time + item.text} className="timeline-item">
+                <div className="timeline-time">{item.time}</div>
+                <div className="timeline-content">
+                  <div className="inline-list">
+                    <span className="pill pill-neutral">{item.tag}</span>
+                    <span>{item.text}</span>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
+        </div>
+      </div>
+
+      <div className="surface-card">
+        <div className="table-actions">
+          <h3 className="section-title">公告播报</h3>
+          <span className="pill pill-info">来源：公告管理</span>
+        </div>
+        <div className="announcement-list">
+          {announcements.length === 0 && <p className="muted">暂无公告</p>}
+          {announcements.map((item) => (
+            <div key={item.id} className="announcement-card">
+              <div>
+                <strong>{item.title}</strong>
+                <p className="muted">
+                  {item.audienceScope ?? "全院"} ·{" "}
+                  {item.publishAt
+                    ? new Date(item.publishAt).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+                    : "待发布"}
+                </p>
+              </div>
+              <span
+                className={`pill ${
+                  item.status === "PUBLISHED"
+                    ? "pill-success"
+                    : item.status === "SCHEDULED"
+                    ? "pill-info"
+                    : "pill-warning"
+                }`}
+              >
+                {item.status}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
