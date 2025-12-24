@@ -10,7 +10,7 @@ import ScheduleManagement from "./ScheduleManagement";
 import RegistrationManagement from "./RegistrationManagement";
 import Statistics from "./Statistics";
 import AnnouncementManagement from "./AnnouncementManagement";
-import { getUserInfo, fetchCurrentUser, clearUserInfo, type LoginResponse } from "../../services/authService";
+import { getUserInfo, fetchCurrentUser, clearUserInfo,logout, type LoginResponse } from "../../services/authService";
 
 type AdminPageConfig = {
   key: string;
@@ -229,7 +229,17 @@ const AdminApp: React.FC = () => {
       onTabChange={handleTabChange}
       onTabClose={handleTabClose}
       currentUser={currentUser}
-      onLogout={() => navigate("/")}
+      onLogout={async () => {
+        try {
+          await logout();
+        } catch (error) {
+          console.error("登出失败:", error);
+        } finally {
+          // 确保清除用户信息并跳转登录页
+          clearUserInfo();
+          navigate("/");
+        }
+      }}
     >
       <Routes>
         <Route index element={<Dashboard />} />
