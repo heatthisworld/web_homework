@@ -52,6 +52,10 @@ public class UserServiceImpl implements UserService {
                 updatedUser.setPassword(passwordEncoder.encode(user.getPassword()));
             }
             updatedUser.setRole(user.getRole());
+            updatedUser.setDisplayName(user.getDisplayName());
+            updatedUser.setEmail(user.getEmail());
+            updatedUser.setPhone(user.getPhone());
+            updatedUser.setStatus(user.getStatus());
             return userRepository.save(updatedUser);
         } else {
             throw new RuntimeException("User not found with id: " + id);

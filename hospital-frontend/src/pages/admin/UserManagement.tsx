@@ -138,12 +138,12 @@ const UserManagement: React.FC = () => {
         // 更新用户
         updatedUser = await updateUser(editingUser.id, userData);
         console.log("更新用户成功:", updatedUser);
-        setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u));
+        setUsers(prevUsers => prevUsers.map(u => u.id === updatedUser.id ? updatedUser : u));
       } else {
         // 创建用户
         updatedUser = await createUser(userData);
         console.log("创建用户成功:", updatedUser);
-        setUsers([...users, updatedUser]);
+        setUsers(prevUsers => [...prevUsers, updatedUser]);
       }
 
       setIsModalOpen(false);
@@ -157,7 +157,7 @@ const UserManagement: React.FC = () => {
     if (window.confirm(`确定要删除用户 ${username} 吗？此操作不可恢复。`)) {
       try {
         await deleteUser(id);
-        setUsers(users.filter(user => user.id !== id));
+        setUsers(prevUsers => prevUsers.filter(user => user.id !== id));
       } catch (e) {
         alert(e instanceof Error ? e.message : "删除失败");
       }
@@ -541,11 +541,6 @@ const UserManagement: React.FC = () => {
                     border: 'none', 
                     borderRadius: '4px', 
                     cursor: 'pointer' 
-                  }}
-                  onClick={(e) => {
-                    console.log("保存按钮点击");
-                    // 直接调用handleSubmit以确保执行
-                    handleSubmit(e);
                   }}
                 >
                   {editingUser ? "保存修改" : "创建用户"}
