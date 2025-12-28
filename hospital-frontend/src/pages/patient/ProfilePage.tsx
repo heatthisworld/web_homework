@@ -16,7 +16,7 @@ const mockUser: PatientDetails = {
   name: "张三",
   gender: "MALE",
   age: 35,
-  phone: "138****1234",
+  phone: "13800001234",
   address: "北京市朝阳区朝阳北路123号",
   medicalHistory: [],
   visitHistory: [],
@@ -32,6 +32,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ debugMode }) => {
     phone: "",
     address: "",
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -85,7 +86,64 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ debugMode }) => {
     };
   }, [debugMode]);
 
+  const validateField = (name: string, value: string | number) => {
+    switch (name) {
+      case "name":
+        if (!value) return "姓名不能为空";
+        if (String(value).length > 50) return "姓名最多50个字符";
+        return "";
+      case "age":
+        const age = Number(value);
+        if (isNaN(age) || age < 0 || age > 150) return "请输入有效年龄(0-150)";
+        return "";
+      case "phone":
+        if (!value) return "手机号不能为空";
+        const phoneStr = String(value);
+        if (phoneStr.length !== 11) return "手机号必须为11位";
+        if (!/^1[3-9]\d{9}$/.test(phoneStr)) return "手机号格式不正确";
+        return "";
+      case "address":
+        if (String(value).length > 200) return "地址最多200个字符";
+        return "";
+      default:
+        return "";
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+
+    let filteredValue: string | number = value;
+    if (name === "phone") {
+      filteredValue = value.replace(/\D/g, "").slice(0, 11);
+    } else if (name === "age") {
+      filteredValue = parseInt(value.replace(/\D/g, "").slice(0, 3)) || 0;
+    } else if (name === "name") {
+      filteredValue = value.slice(0, 50);
+    } else if (name === "address") {
+      filteredValue = value.slice(0, 200);
+    }
+
+    setForm({ ...form, [name]: filteredValue });
+
+    const error = validateField(name, filteredValue);
+    setErrors({ ...errors, [name]: error });
+  };
+
   const onSave = async () => {
+    const newErrors: Record<string, string> = {};
+    ["name", "age", "phone", "address"].forEach((key) => {
+      const error = validateField(key, form[key as keyof typeof form]);
+      if (error) newErrors[key] = error;
+    });
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setError("请修正表单错误");
+      setTimeout(() => setError(""), 3000);
+      return;
+    }
+
     if (debugMode) {
       setUserInfo({ ...userInfo, ...form });
       setEditing(false);
@@ -126,7 +184,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ debugMode }) => {
       {error && <div className="error-message">{error}</div>}
       {message && <div className="success-message">{message}</div>}
 
-      {/* 用户信息卡片 */}
       <div className="user-info-card">
         <img
           src="/src/assets/Defaulthead.png"
@@ -142,98 +199,127 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ debugMode }) => {
         </div>
       </div>
 
-      {/* 详细信息 */}
-      <div className="detail-info">
-        <div className="info-item">
-          <span className="info-label">姓名:</span>
-          {editing ? (
-            <input
-              className="auth-input"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-          ) : (
-            <span className="info-value">{userInfo.name}</span>
-          )}
-        </div>
-        <div className="info-item">
-          <span className="info-label">性别:</span>
-          {editing ? (
-            <select
-              className="auth-input"
-              value={form.gender}
-              onChange={(e) => setForm({ ...form, gender: e.target.value as "MALE" | "FEMALE" })}
-            >
-              <option value="MALE">男</option>
-              <option value="FEMALE">女</option>
-            </select>
-          ) : (
-            <span className="info-value">{userInfo.gender === "MALE" ? "男" : "女"}</span>
-          )}
-        </div>
-        <div className="info-item">
-          <span className="info-label">年龄:</span>
-          {editing ? (
-            <input
-              type="number"
-              className="auth-input"
-              value={form.age}
-              onChange={(e) => setForm({ ...form, age: parseInt(e.target.value) || 0 })}
-            />
-          ) : (
-            <span className="info-value">{userInfo.age}</span>
-          )}
-        </div>
-        <div className="info-item">
-          <span className="info-label">手机号:</span>
-          {editing ? (
-            <input
-              className="auth-input"
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            />
-          ) : (
-            <span className="info-value">{userInfo.phone}</span>
-          )}
-        </div>
-        <div className="info-item">
-          <span className="info-label">联系地址:</span>
-          {editing ? (
-            <input
-              className="auth-input"
-              value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-            />
-          ) : (
-            <span className="info-value">{userInfo.address}</span>
-          )}
+      {/* 基本资料 */}
+      <div className="info-section">
+        <h4 className="section-title">基本资料</h4>
+        <div className="info-list">
+          <div className="info-row">
+            <span className="info-label">姓名:</span>
+            {editing ? (
+              <div className="info-input-wrapper">
+                <input
+                  className="info-input"
+                  value={form.name}
+                  onChange={handleChange}
+                  name="name"
+                  maxLength={50}
+                />
+                {errors.name && <div className="field-error">{errors.name}</div>}
+              </div>
+            ) : (
+              <span className="info-value">{userInfo.name}</span>
+            )}
+          </div>
+
+          <div className="info-row">
+            <span className="info-label">性别:</span>
+            {editing ? (
+              <select
+                className="info-input"
+                value={form.gender}
+                onChange={handleChange}
+                name="gender"
+              >
+                <option value="MALE">男</option>
+                <option value="FEMALE">女</option>
+              </select>
+            ) : (
+              <span className="info-value">{userInfo.gender === "MALE" ? "男" : "女"}</span>
+            )}
+          </div>
+
+          <div className="info-row">
+            <span className="info-label">年龄:</span>
+            {editing ? (
+              <div className="info-input-wrapper">
+                <input
+                  type="text"
+                  className="info-input"
+                  value={form.age || ""}
+                  onChange={handleChange}
+                  name="age"
+                  placeholder="0-150"
+                />
+                {errors.age && <div className="field-error">{errors.age}</div>}
+              </div>
+            ) : (
+              <span className="info-value">{userInfo.age}</span>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="menu-section">
-        <h4>操作</h4>
-        <div className="menu-list">
-          <div className="menu-item">
-            <div className="menu-icon">📝</div>
-            <div className="menu-label">编辑信息</div>
-            <div className="menu-arrow">
-              <button className="auth-btn" onClick={() => setEditing(!editing)}>
-                {editing ? "取消" : "编辑"}
-              </button>
-            </div>
-          </div>
-          {editing && (
-            <div className="menu-item">
-              <div className="menu-icon">💾</div>
-              <div className="menu-label">保存更改</div>
-              <div className="menu-arrow">
-                <button className="auth-btn" onClick={onSave}>
-                  保存
-                </button>
+      {/* 联系方式 */}
+      <div className="info-section">
+        <h4 className="section-title">联系方式</h4>
+        <div className="info-list">
+          <div className="info-row">
+            <span className="info-label">手机号:</span>
+            {editing ? (
+              <div className="info-input-wrapper">
+                <input
+                  type="text"
+                  className="info-input"
+                  value={form.phone}
+                  onChange={handleChange}
+                  name="phone"
+                  placeholder="11位手机号"
+                  maxLength={11}
+                />
+                {errors.phone && <div className="field-error">{errors.phone}</div>}
               </div>
-            </div>
-          )}
+            ) : (
+              <span className="info-value">{userInfo.phone}</span>
+            )}
+          </div>
+
+          <div className="info-row">
+            <span className="info-label">联系地址:</span>
+            {editing ? (
+              <div className="info-input-wrapper">
+                <input
+                  className="info-input"
+                  value={form.address}
+                  onChange={handleChange}
+                  name="address"
+                  placeholder="最多200字符"
+                  maxLength={200}
+                />
+                {errors.address && <div className="field-error">{errors.address}</div>}
+              </div>
+            ) : (
+              <span className="info-value">{userInfo.address}</span>
+            )}
+          </div>
         </div>
+      </div>
+
+      {/* 操作按钮 */}
+      <div className="action-buttons">
+        {editing ? (
+          <>
+            <button className="primary-btn" onClick={onSave}>
+              保存
+            </button>
+            <button className="secondary-btn" onClick={() => setEditing(false)}>
+              取消
+            </button>
+          </>
+        ) : (
+          <button className="primary-btn" onClick={() => setEditing(true)}>
+            编辑信息
+          </button>
+        )}
       </div>
     </div>
   );

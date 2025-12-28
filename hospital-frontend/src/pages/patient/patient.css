@@ -1,13 +1,7 @@
-/* 首页样式 */
-.home-page {
-  padding: 15px;
-  background-color: #f5f7fa;
-}
-
 /* 患者首页样式优化 */
 .patient-home {
   padding: 15px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f5f5f5;
   min-height: 100vh;
 }
 
@@ -35,10 +29,10 @@
 .error-message {
   background: rgba(239, 68, 68, 0.9);
   color: white;
-  padding: 12px;
+  padding: 14px;
   border-radius: 8px;
   margin-bottom: 15px;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 /* 用户信息卡片 */
@@ -57,7 +51,7 @@
   height: 70px;
   border-radius: 50%;
   margin-right: 15px;
-  border: 3px solid #667eea;
+  border: 3px solid #409eff;
 }
 
 .user-info h3 {
@@ -98,14 +92,16 @@
   flex-direction: column;
   align-items: center;
   padding: 16px 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f8f9fa;
   border-radius: 12px;
   cursor: pointer;
   transition: transform 0.2s;
+  border: 1px solid #e9ecef;
 }
 
 .quick-access-item:hover {
   transform: translateY(-4px);
+  background: #e9ecef;
 }
 
 .quick-access-icon {
@@ -115,7 +111,7 @@
 
 .quick-access-label {
   font-size: 13px;
-  color: white;
+  color: #495057;
   font-weight: 500;
 }
 
@@ -146,7 +142,7 @@
   padding: 12px;
   background: #f7fafc;
   border-radius: 8px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #409eff;
 }
 
 .visit-date {
@@ -251,7 +247,7 @@
 /* 科室和医生查询页面 */
 .patient-page {
   padding: 15px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f5f5f5;
   min-height: 100vh;
 }
 
@@ -336,7 +332,7 @@
 .view-doctors-btn,
 .book-btn {
   padding: 8px 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #409eff;
   color: white;
   border: none;
   border-radius: 8px;
@@ -385,240 +381,420 @@
 
 /* 挂号页面样式 */
 .registration-page {
-  padding: 15px;
-  background-color: #f5f7fa;
+    padding: 16px;
+    background-color: #f5f7fa;
+    min-height: 100vh;
 }
 
-/* 当前选择信息 */
-.current-selection {
-  background-color: #fff;
-  border-radius: 12px;
-  padding: 15px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+.registration-page h3 {
+    font-size: 22px;
+    margin: 0 0 16px 0;
+    color: #303133;
+    font-weight: 700;
 }
 
-.current-selection h4 {
-  margin: 0 0 15px 0;
-  font-size: 16px;
-  color: #303133;
+/* 左右分栏布局 */
+.registration-layout {
+    display: flex;
+    gap: 16px;
+    min-height: calc(100vh - 120px);
 }
 
-.selection-info {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* 左侧科室导航 */
+.department-sidebar {
+    width: 160px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    flex-shrink: 0;
+    height: fit-content;
+    position: sticky;
+    top: 16px;
 }
 
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-  background-color: #f5f7fa;
-  border-radius: 8px;
+.sidebar-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #303133;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e4e7ed;
 }
 
-.info-label {
-  font-size: 14px;
-  color: #606266;
+.department-nav-item {
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    font-size: 15px;
+    color: #606266;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
 }
 
-.info-value {
-  font-size: 14px;
-  font-weight: 500;
-  color: #303133;
+.department-nav-item:hover {
+    background: #f5f7fa;
+    color: #409eff;
 }
 
-/* 选择按钮区域 */
-.selection-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
+.department-nav-item.active {
+    background: #409eff;
+    color: #fff;
+    font-weight: 600;
 }
 
-.selection-btn {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  padding: 15px 20px;
-  background-color: #fff;
-  border: 1px solid #dcdfe6;
-  border-radius: 12px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.05);
+/* 右侧医生列表区域 */
+.doctor-list-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+    max-height: calc(100vh - 120px);
+    padding-right: 8px;
 }
 
-.selection-btn:hover {
-  border-color: #409eff;
-  box-shadow: 0 2px 12px 0 rgba(64, 158, 255, 0.1);
+.doctor-list-area::-webkit-scrollbar {
+    width: 6px;
 }
 
-.selection-btn.expanded {
-  border-color: #409eff;
-  background-color: #ecf5ff;
+.doctor-list-area::-webkit-scrollbar-track {
+    background: transparent;
 }
 
-.selection-btn.selected {
-  border-color: #67c23a;
-  background-color: #f0f9eb;
+.doctor-list-area::-webkit-scrollbar-thumb {
+    background: #dcdfe6;
+    border-radius: 3px;
 }
 
-.selection-btn.selected::after {
-  content: '✓';
-  color: #67c23a;
-  font-weight: bold;
-  margin-left: 10px;
+.doctor-list-area::-webkit-scrollbar-thumb:hover {
+    background: #c0c4cc;
 }
 
-.selection-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background-color: #f5f7fa;
-  border-color: #dcdfe6;
+.no-doctors {
+    text-align: center;
+    padding: 60px;
+    color: #909399;
+    background: #fff;
+    border-radius: 12px;
+    font-size: 15px;
 }
 
-.arrow {
-  font-size: 12px;
-  color: #909399;
-  transition: transform 0.3s ease;
+/* 医生卡片（横向布局） */
+.doctor-card-horizontal {
+    background: #fff;
+    border-radius: 12px;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s;
+    border: 1px solid #e4e7ed;
 }
 
-/* 选项展开区域 */
-.options-section {
-  background-color: #fff;
-  border-radius: 12px;
-  padding: 15px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+.doctor-card-horizontal:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #409eff;
 }
 
-/* 选项通用样式 */
-.option-item {
-  padding: 15px;
-  margin-bottom: 10px;
-  background-color: #f5f7fa;
-  border: 1px solid #e4e7ed;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
+.doctor-avatar-large {
+    font-size: 48px;
+    flex-shrink: 0;
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f2f5;
+    border-radius: 12px;
 }
 
-.option-item:last-child {
-  margin-bottom: 0;
+.doctor-info-area {
+    flex: 1;
+    min-width: 0;
 }
 
-.option-item:hover {
-  border-color: #409eff;
-  background-color: #ecf5ff;
+.doctor-info-area h4 {
+    margin: 0 0 6px 0;
+    font-size: 18px;
+    color: #303133;
+    font-weight: 600;
 }
 
-.option-item.selected {
-  border-color: #409eff;
-  background-color: #ecf5ff;
-  color: #409eff;
-  font-weight: 500;
+.doctor-info-area .doctor-title {
+    margin: 4px 0;
+    font-size: 15px;
+    color: #606266;
+    font-weight: 500;
 }
 
-.option-name {
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 5px;
+.doctor-info-area .doctor-department {
+    margin: 4px 0;
+    font-size: 14px;
+    color: #909399;
 }
 
-.option-desc {
-  font-size: 14px;
-  color: #606266;
+.book-button {
+    padding: 12px 28px;
+    background: #409eff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
 }
 
-/* 时间选项样式 */
-.time-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
+.book-button:hover {
+    background: #66b1ff;
+    transform: translateY(-1px);
 }
 
-.time-option-item {
-  flex: 1 1 calc(33.333% - 10px);
-  padding: 15px;
-  background-color: #f5f7fa;
-  border: 1px solid #e4e7ed;
-  border-radius: 8px;
-  text-align: center;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 80px;
+.book-button:active {
+    transform: translateY(0);
 }
 
-.time-option-item:hover {
-  border-color: #409eff;
-  background-color: #ecf5ff;
+/* 弹窗样式 */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s;
 }
 
-.time-option-item.selected {
-  border-color: #409eff;
-  background-color: #409eff;
-  color: #fff;
-  font-weight: 500;
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
-/* 提交按钮 */
-.submit-btn {
-  width: 100%;
-  padding: 15px;
-  background-color: #409eff;
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  font-size: 18px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px 0 rgba(64, 158, 255, 0.3);
+.modal-content {
+    background: #fff;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 460px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    animation: slideUp 0.3s;
 }
 
-.submit-btn:hover:not(:disabled) {
-  background-color: #66b1ff;
-  box-shadow: 0 4px 12px 0 rgba(64, 158, 255, 0.4);
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.submit-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background-color: #a0cfff;
-  box-shadow: none;
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid #e4e7ed;
+}
+
+.modal-header h4 {
+    margin: 0;
+    font-size: 18px;
+    color: #303133;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #909399;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: #f5f7fa;
+    color: #606266;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-doctor-info {
+    padding: 14px;
+    background: #f5f7fa;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 16px;
+    color: #303133;
+    font-weight: 600;
+}
+
+.time-select-group {
+    margin-bottom: 20px;
+}
+
+.time-select-group label {
+    display: block;
+    font-size: 15px;
+    color: #606266;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.time-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #dcdfe6;
+    border-radius: 10px;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.time-input:focus {
+    outline: none;
+    border-color: #409eff;
+    box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.1);
+}
+
+.time-slots-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.time-slot {
+    padding: 14px;
+    text-align: center;
+    border: 1px solid #dcdfe6;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+    background: #fff;
+}
+
+.time-slot:hover {
+    border-color: #409eff;
+    background: #ecf5ff;
+    transform: translateY(-1px);
+}
+
+.time-slot.selected {
+    background: #409eff;
+    color: #fff;
+    border-color: #409eff;
+}
+
+.modal-footer {
+    padding: 16px 20px 20px;
+    border-top: 1px solid #e4e7ed;
+}
+
+.modal-footer .submit-btn {
+    width: 100%;
+    padding: 14px;
+    background: #409eff;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-footer .submit-btn:hover:not(:disabled) {
+    background: #66b1ff;
+    transform: translateY(-1px);
+}
+
+.modal-footer .submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
 }
 
 /* 成功消息 */
 .success-message {
-  background-color: #f0f9eb;
-  border: 1px solid #e1f3d8;
-  border-radius: 12px;
-  padding: 20px;
-  text-align: center;
-  color: #67c23a;
-  margin: 20px 0;
+    background: #f0f9eb;
+    border: 1px solid #c2e7b0;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    color: #67c23a;
+    margin-bottom: 16px;
 }
 
 .success-message h4 {
-  margin: 0 0 10px 0;
-  font-size: 18px;
+    margin: 0 0 10px 0;
+    font-size: 20px;
+    font-weight: 600;
 }
 
 .success-message p {
-  margin: 0;
-  font-size: 14px;
+    margin: 0;
+    font-size: 16px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .registration-layout {
+        flex-direction: column;
+    }
+
+    .department-sidebar {
+        width: 100%;
+        position: static;
+    }
+
+    .department-nav-item {
+        display: inline-block;
+        margin-right: 8px;
+    }
+
+    .doctor-card-horizontal {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .doctor-avatar-large {
+        margin: 0 auto;
+    }
+
+    .book-button {
+        width: 100%;
+    }
+
+    .time-slots-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 /* 记录页面样式 */
 .records-page {
   padding: 15px;
-  background-color: #f5f7fa;
+  background-color: #f5f5f5;
 }
 
 .records-page h3 {
@@ -725,7 +901,7 @@
 /* 个人中心样式 */
 .profile-page {
   padding: 15px;
-  background-color: #f5f7fa;
+  background-color: #f5f5f5;
 }
 
 .user-info-card {
@@ -777,6 +953,28 @@
 .info-value {
   font-size: 14px;
   color: #303133;
+}
+
+.info-select {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #303133;
+  background-color: #fff;
+  cursor: pointer;
+}
+
+.info-select:disabled {
+  background-color: #f5f7fa;
+  cursor: not-allowed;
+  color: #c0c4cc;
+}
+
+.info-select:focus {
+  outline: none;
+  border-color: #409eff;
 }
 
 .menu-section {
@@ -861,4 +1059,130 @@
   .quick-access-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+    /* 在现有样式基础上添加 */
+
+    .field-error {
+        color: #f56c6c;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: flex-start;
+        padding: 12px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    /* 信息分组区域 */
+    .info-section {
+        background: #fff;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #303133;
+        margin: 0 0 12px 0;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e4e7ed;
+    }
+
+    .info-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .info-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .info-label {
+        font-size: 15px;
+        color: #606266;
+        min-width: 80px;
+        flex-shrink: 0;
+        padding-top: 2px;
+    }
+
+    .info-value {
+        font-size: 15px;
+        color: #303133;
+        font-weight: 600;
+        flex: 1;
+    }
+
+    .info-input-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .info-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #dcdfe6;
+        border-radius: 8px;
+        font-size: 15px;
+        color: #303133;
+        background-color: #fff;
+        transition: all 0.2s;
+    }
+
+    .info-input:focus {
+        outline: none;
+        border-color: #409eff;
+        box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
+    }
+
+    /* 操作按钮区域 */
+    .action-buttons {
+        display: flex;
+        gap: 12px;
+        padding: 0 16px;
+    }
+
+    .primary-btn {
+        flex: 1;
+        padding: 12px;
+        background: #409eff;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .primary-btn:hover {
+        background: #66b1ff;
+    }
+
+    .secondary-btn {
+        flex: 1;
+        padding: 12px;
+        background: #fff;
+        color: #606266;
+        border: 1px solid #dcdfe6;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .secondary-btn:hover {
+        background: #f5f7fa;
+        border-color: #c0c4cc;
+    }
 }
