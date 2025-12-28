@@ -1,17 +1,18 @@
 import React, { useState } from "react";
 import "../../mobile.css";
-import { register } from "../../services/authService";
+import { login, register, saveUserInfo } from "../../services/authService";
 
 interface RegisterFormProps {
   onSwitch: () => void;
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitch }) => {
+  const [step, setStep] = useState(0); // 0: 账号, 1: 基本信息, 2: 联系方式
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [name, setName] = useState("");
-  const [gender, setGender] = useState<'MALE' | 'FEMALE'>("MALE");
+  const [gender, setGender] = useState<"MALE" | "FEMALE">("MALE");
   const [age, setAge] = useState("");
   const [idCard, setIdCard] = useState("");
   const [phone, setPhone] = useState("");
@@ -20,28 +21,59 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitch }) => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const validateStep = (currentStep: number) => {
+    if (currentStep === 0) {
+      if (!username || !password || !confirm) {
+        setError("请填写用户名和密码");
+        return false;
+      }
+      if (password !== confirm) {
+        setError("两次密码不一致");
+        return false;
+      }
+      if (password.length < 6) {
+        setError("密码长度不能少于6位");
+        return false;
+      }
+    }
+    if (currentStep === 1) {
+      if (!name || !age) {
+        setError("请填写姓名和年龄");
+        return false;
+      }
+      const ageNum = parseInt(age, 10);
+      if (isNaN(ageNum) || ageNum < 0 || ageNum > 150) {
+        setError("请输入有效的年龄");
+        return false;
+      }
+    }
+    if (currentStep === 2) {
+      if (!idCard || !phone || !address) {
+        setError("请填写身份证、电话和地址");
+        return false;
+      }
+    }
+    setError("");
+    return true;
+  };
+
+  const handleNext = () => {
+    if (validateStep(step)) {
+      setStep((prev) => Math.min(prev + 1, 2));
+    }
+  };
+
+  const handleBack = () => {
+    setError("");
+    setStep((prev) => Math.max(prev - 1, 0));
+  };
+
   const handleRegister = async () => {
-    if (!username || !password || !confirm || !name || !age || !idCard || !phone || !address) {
-      setError("请填写所有必填字段");
-      return;
-    }
-
-    if (password !== confirm) {
-      setError("两次密码不一致");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("密码长度不能少于6个字符");
+    if (!validateStep(0) || !validateStep(1) || !validateStep(2)) {
       return;
     }
 
     const ageNum = parseInt(age, 10);
-    if (isNaN(ageNum) || ageNum < 0 || ageNum > 150) {
-      setError("请输入有效的年龄");
-      return;
-    }
-
     setLoading(true);
     setError("");
     setSuccess("");
@@ -50,17 +82,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitch }) => {
       await register({
         username,
         password,
-        role: 'PATIENT',
+        role: "PATIENT",
         name,
         gender,
         age: ageNum,
         idCard,
         phone,
-        address
+        address,
       });
-      setSuccess("注册成功，请登录");
-      // 重置表单
-      setUsername("");
+      const loginRes = await login({ username, password });
+      saveUserInfo(loginRes);
+      setSuccess("注册成功，已自动登录");
       setPassword("");
       setConfirm("");
       setName("");
@@ -69,6 +101,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitch }) => {
       setIdCard("");
       setPhone("");
       setAddress("");
+      setStep(0);
     } catch (err) {
       setError(err instanceof Error ? err.message : "注册失败");
     } finally {
@@ -79,96 +112,111 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitch }) => {
   return (
     <div className="auth-card">
       <h2 className="auth-title">注册</h2>
-      <p className="auth-subtitle">仅支持患者注册</p>
 
       {error && <div className="auth-error">{error}</div>}
       {success && <div className="auth-success">{success}</div>}
 
-      <input
-        className="auth-input"
-        type="text"
-        placeholder="请输入用户名"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-      />
+      {step === 0 && (
+        <>
+          <input
+            className="auth-input"
+            type="text"
+            placeholder="请输入用户名"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <input
+            className="auth-input"
+            type="password"
+            placeholder="请输入密码"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <input
+            className="auth-input"
+            type="password"
+            placeholder="请再次输入密码"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+          />
+        </>
+      )}
 
-      <input
-        className="auth-input"
-        type="password"
-        placeholder="请输入密码"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
+      {step === 1 && (
+        <>
+          <input
+            className="auth-input"
+            type="text"
+            placeholder="请输入姓名"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <select
+            className="auth-input"
+            value={gender}
+            onChange={(e) => setGender(e.target.value as "MALE" | "FEMALE")}
+          >
+            <option value="MALE">男</option>
+            <option value="FEMALE">女</option>
+          </select>
+          <input
+            className="auth-input"
+            type="number"
+            placeholder="请输入年龄"
+            value={age}
+            onChange={(e) => setAge(e.target.value)}
+            min="0"
+            max="150"
+          />
+        </>
+      )}
 
-      <input
-        className="auth-input"
-        type="password"
-        placeholder="请再次输入密码"
-        value={confirm}
-        onChange={(e) => setConfirm(e.target.value)}
-      />
+      {step === 2 && (
+        <>
+          <input
+            className="auth-input"
+            type="text"
+            placeholder="请输入身份证号码"
+            value={idCard}
+            onChange={(e) => setIdCard(e.target.value)}
+          />
+          <input
+            className="auth-input"
+            type="tel"
+            placeholder="请输入手机号"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+          <input
+            className="auth-input"
+            type="text"
+            placeholder="请输入地址"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+          />
+        </>
+      )}
 
-      <input
-        className="auth-input"
-        type="text"
-        placeholder="请输入姓名"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
-
-      <select
-        className="auth-input"
-        value={gender}
-        onChange={(e) => setGender(e.target.value as 'MALE' | 'FEMALE')}
-      >
-        <option value="MALE">男</option>
-        <option value="FEMALE">女</option>
-      </select>
-
-      <input
-        className="auth-input"
-        type="number"
-        placeholder="请输入年龄"
-        value={age}
-        onChange={(e) => setAge(e.target.value)}
-        min="0"
-        max="150"
-      />
-
-      <input
-        className="auth-input"
-        type="text"
-        placeholder="请输入身份证号码"
-        value={idCard}
-        onChange={(e) => setIdCard(e.target.value)}
-      />
-
-      <input
-        className="auth-input"
-        type="tel"
-        placeholder="请输入手机号码"
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-      />
-
-      <input
-        className="auth-input"
-        type="text"
-        placeholder="请输入地址"
-        value={address}
-        onChange={(e) => setAddress(e.target.value)}
-      />
-
-      <button
-        className="auth-btn"
-        onClick={handleRegister}
-        disabled={loading}
-      >
-        {loading ? "注册中..." : "注册"}
-      </button>
+      <div className="auth-step-actions">
+        {step > 0 && (
+          <button className="auth-btn secondary" onClick={handleBack} disabled={loading}>
+            上一步
+          </button>
+        )}
+        {step < 2 && (
+          <button className="auth-btn" onClick={handleNext} disabled={loading}>
+            继续
+          </button>
+        )}
+        {step === 2 && (
+          <button className="auth-btn" onClick={handleRegister} disabled={loading}>
+            {loading ? "提交中..." : "提交注册"}
+          </button>
+        )}
+      </div>
 
       <div className="switch-text">
-        已有账号？
+        已有账号，
         <span className="switch-link" onClick={onSwitch}>
           去登录
         </span>

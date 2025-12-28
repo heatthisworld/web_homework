@@ -133,7 +133,7 @@ export const register = async (
 ): Promise<RegisterResponse> => {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/users`,
+      `${API_BASE_URL}/auth/register`,
       withCredentials({
         method: "POST",
         headers: {

@@ -4,7 +4,11 @@ import com.hospital.entity.User;
 import com.hospital.model.Result;
 import com.hospital.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,18 +37,6 @@ public class UserController {
         Optional<User> user = userService.getUserByUsername(username);
         return user.map(Result::success)
                 .orElseGet(() -> Result.error(404, "用户不存在"));
-    }
-
-    @PostMapping
-    public Result<User> createUser(@RequestBody User user) {
-        User createdUser = userService.createUser(user);
-        return Result.success(createdUser);
-    }
-
-    @PutMapping("/{id}")
-    public Result<User> updateUser(@PathVariable Long id, @RequestBody User user) {
-        User updatedUser = userService.updateUser(id, user);
-        return Result.success(updatedUser);
     }
 
     @DeleteMapping("/{id}")
