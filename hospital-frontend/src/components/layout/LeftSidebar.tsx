@@ -6,6 +6,7 @@ interface LeftSidebarProps {
   onClose: () => void;
   debugMode?: boolean;
   onToggleDebugMode?: (value: boolean) => void;
+  onLogout?: () => void;
 }
 
 const LeftSidebar: React.FC<LeftSidebarProps> = ({
@@ -13,6 +14,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
   onClose,
   debugMode = false,
   onToggleDebugMode,
+  onLogout,
 }) => {
   return (
     <>
@@ -36,8 +38,16 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
             checked={debugMode}
             onChange={(e) => onToggleDebugMode?.(e.target.checked)}
           />
-          <span className="toggle-label">开启 Debug 模式（使用模拟数据）</span>
+          <span className="toggle-label">打开 Debug 模式（使用模拟数据）</span>
         </label>
+
+        <div
+          className="sidebar-item"
+          style={{ color: "#ef4444", fontWeight: 700, marginTop: 12, cursor: "pointer" }}
+          onClick={onLogout}
+        >
+          🚪 退出登录
+        </div>
       </div>
     </>
   );

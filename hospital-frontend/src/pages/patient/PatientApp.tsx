@@ -7,6 +7,7 @@ import DepartmentsPage from './DepartmentsPage';
 import RegistrationPage from './RegistrationPage';
 import RecordsPage from './RecordsPage';
 import ProfilePage from './ProfilePage';
+import { clearAuthCookie, clearUserInfo } from '../../services/authService';
 
 const PatientApp: React.FC = () => {
   const navigate = useNavigate();
@@ -43,6 +44,12 @@ const PatientApp: React.FC = () => {
     navigate(`/patient/${key === 'home' ? '' : key}`);
   };
 
+  const handleLogout = () => {
+    clearAuthCookie();
+    clearUserInfo();
+    navigate('/');
+  };
+
   return (
     <Layout
       tabs={tabs}
@@ -50,6 +57,7 @@ const PatientApp: React.FC = () => {
       onTabChange={handleTabChange}
       debugMode={debugMode}
       onToggleDebugMode={setDebugMode}
+      onLogout={handleLogout}
       title="医院挂号系统"
     >
       <Routes>
@@ -58,7 +66,7 @@ const PatientApp: React.FC = () => {
         <Route path="/departments" element={<DepartmentsPage />} />
         <Route path="/registration" element={<RegistrationPage debugMode={debugMode} />} />
         <Route path="/records" element={<RecordsPage debugMode={debugMode} />} />
-        <Route path="/profile" element={<ProfilePage debugMode={debugMode} />} />
+        <Route path="/profile" element={<ProfilePage debugMode={debugMode} onLogout={handleLogout} />} />
       </Routes>
     </Layout>
   );

@@ -8,6 +8,7 @@ import {
 
 interface ProfilePageProps {
   debugMode: boolean;
+  onLogout?: () => void;
 }
 
 const mockUser: PatientDetails = {
@@ -22,7 +23,7 @@ const mockUser: PatientDetails = {
   visitHistory: [],
 };
 
-const ProfilePage: React.FC<ProfilePageProps> = ({ debugMode }) => {
+const ProfilePage: React.FC<ProfilePageProps> = ({ debugMode, onLogout }) => {
   const [userInfo, setUserInfo] = useState<PatientDetails>(mockUser);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
@@ -316,9 +317,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ debugMode }) => {
             </button>
           </>
         ) : (
-          <button className="primary-btn" onClick={() => setEditing(true)}>
-            编辑信息
-          </button>
+          <>
+            <button className="primary-btn" onClick={() => setEditing(true)}>
+              编辑信息
+            </button>
+            <button className="secondary-btn danger" onClick={onLogout}>
+              退出登录
+            </button>
+          </>
         )}
       </div>
     </div>

@@ -86,6 +86,11 @@ export const clearUserInfo = () => {
   localStorage.removeItem("user");
 };
 
+export const clearAuthCookie = () => {
+  const expires = "Thu, 01 Jan 1970 00:00:00 GMT";
+  document.cookie = `HOSPITAL_AUTH_TOKEN=; expires=${expires}; path=/`;
+};
+
 export const isLoggedIn = () => {
   return !!getUserInfo();
 };
