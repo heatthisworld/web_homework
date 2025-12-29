@@ -5,7 +5,6 @@ interface UserInfo {
   id: number;
   name: string;
   gender: string;
-  age: number;
   phone: string;
   email: string;
   department: string;
@@ -19,7 +18,6 @@ const Settings: React.FC = () => {
     id: 1,
     name: '张医生',
     gender: '男',
-    age: 45,
     phone: '138****1234',
     email: 'zhangsan@hospital.com',
     department: '内科',
@@ -39,7 +37,6 @@ const Settings: React.FC = () => {
     systemNotifications: true
   });
   const [preferences, setPreferences] = useState({
-    darkMode: false,
     language: 'zh-CN',
     defaultView: 'dashboard',
     autoSave: true
@@ -163,19 +160,6 @@ const Settings: React.FC = () => {
                         </select>
                       ) : (
                         <div className="form-value">{formData.gender}</div>
-                      )}
-                    </div>
-                    
-                    <div className="form-group">
-                      <label>年龄</label>
-                      {editing ? (
-                        <input 
-                          type="number" 
-                          value={formData.age} 
-                          onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) })}
-                        />
-                      ) : (
-                        <div className="form-value">{formData.age}</div>
                       )}
                     </div>
                   </div>
@@ -351,20 +335,6 @@ const Settings: React.FC = () => {
               <h3>系统偏好</h3>
               
               <div className="preference-options">
-                <div className="option-item">
-                  <div className="option-info">
-                    <div className="option-title">深色模式</div>
-                    <div className="option-description">启用深色主题</div>
-                  </div>
-                  <div className="option-toggle">
-                    <input 
-                      type="checkbox" 
-                      checked={preferences.darkMode} 
-                      onChange={(e) => setPreferences({ ...preferences, darkMode: e.target.checked })}
-                    />
-                  </div>
-                </div>
-                
                 <div className="option-item">
                   <div className="option-info">
                     <div className="option-title">语言</div>

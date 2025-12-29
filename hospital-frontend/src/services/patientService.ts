@@ -92,11 +92,26 @@ const parseJson = async <T>(response: Response): Promise<T> => {
 };
 
 const unwrapData = async <T>(response: Response): Promise<T> => {
-  const payload = await parseJson<ApiEnvelope<T>>(response);
-  if (payload.code !== 0) {
-    throw new Error(payload.msg || `请求失败，错误码：${payload.code}`);
+  const payload = await parseJson(response);
+  
+  // 检查是否符合标准ApiEnvelope格式
+  if (typeof payload === 'object' && payload !== null) {
+    // 处理标准格式
+    if ('code' in payload && 'data' in payload) {
+      const apiPayload = payload as ApiEnvelope<T>;
+      if (apiPayload.code !== 0) {
+        throw new Error(apiPayload.msg || `请求失败，错误码：${apiPayload.code}`);
+      }
+      return apiPayload.data;
+    }
+    // 处理非标准格式（直接返回数据）
+    console.warn('服务器返回非标准格式，已尝试兼容处理');
+    return payload as T;
   }
-  return payload.data;
+  
+  // 处理非对象格式
+  console.warn('服务器返回非对象格式，已尝试兼容处理');
+  return payload as T;
 };
 
 const normalizeFetchError = (error: unknown) => {

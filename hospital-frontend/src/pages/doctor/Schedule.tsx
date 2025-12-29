@@ -1,116 +1,116 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Schedule.css';
+import {
+  getWorkingHours,
+  updateWorkingHours,
+  submitLeaveRequest,
+  getRegistrations
+} from '../../services/doctorService';
+import type {
+  WorkingHour,
+  LeaveRequest,
+  Registration
+} from '../../services/doctorService';
 
-interface ScheduleItem {
-  id: number;
-  date: string;
-  time: string;
-  patientName: string;
-  patientId: number;
-  status: 'confirmed' | 'pending' | 'cancelled';
-  department: string;
-  symptoms: string;
-}
-
-interface WorkingHour {
-  id: number;
-  day: string;
-  startTime: string;
-  endTime: string;
-  isWorking: boolean;
-}
-
-interface LeaveRequest {
-  id: number;
-  date: string;
-  reason: string;
-  status: 'pending' | 'approved' | 'rejected';
-}
+const dayMap = {
+  0: '周日',
+  1: '周一',
+  2: '周二',
+  3: '周三',
+  4: '周四',
+  5: '周五',
+  6: '周六'
+};
 
 const Schedule: React.FC = () => {
-  // 模拟数据
-  const scheduleItems: ScheduleItem[] = [
-    {
-      id: 1,
-      date: '2025-12-11',
-      time: '09:00',
-      patientName: '张三',
-      patientId: 101,
-      status: 'confirmed',
-      department: '内科',
-      symptoms: '头痛、发热'
-    },
-    {
-      id: 2,
-      date: '2025-12-11',
-      time: '10:00',
-      patientName: '李四',
-      patientId: 102,
-      status: 'pending',
-      department: '内科',
-      symptoms: '咳嗽、喉咙痛'
-    },
-    {
-      id: 3,
-      date: '2025-12-11',
-      time: '14:00',
-      patientName: '王五',
-      patientId: 103,
-      status: 'confirmed',
-      department: '内科',
-      symptoms: '腹痛、腹泻'
-    },
-    {
-      id: 4,
-      date: '2025-12-12',
-      time: '09:30',
-      patientName: '钱七',
-      patientId: 105,
-      status: 'pending',
-      department: '内科',
-      symptoms: '胸闷、气短'
-    }
-  ];
-
-  const workingHours: WorkingHour[] = [
-    { id: 1, day: '周一', startTime: '08:00', endTime: '17:00', isWorking: true },
-    { id: 2, day: '周二', startTime: '08:00', endTime: '17:00', isWorking: true },
-    { id: 3, day: '周三', startTime: '08:00', endTime: '17:00', isWorking: true },
-    { id: 4, day: '周四', startTime: '08:00', endTime: '17:00', isWorking: true },
-    { id: 5, day: '周五', startTime: '08:00', endTime: '17:00', isWorking: true },
-    { id: 6, day: '周六', startTime: '09:00', endTime: '15:00', isWorking: true },
-    { id: 7, day: '周日', startTime: '', endTime: '', isWorking: false }
-  ];
-
-  const leaveRequests: LeaveRequest[] = [
-    { id: 1, date: '2025-12-18', reason: '个人原因', status: 'pending' },
-    { id: 2, date: '2025-12-25', reason: '节假日', status: 'approved' }
-  ];
+  // 状态管理
+  const [scheduleItems, setScheduleItems] = useState<Registration[]>([]);
+  const [workingHours, setWorkingHours] = useState<WorkingHour[]>([]);
+  const [leaveRequests] = useState<LeaveRequest[]>([]);
 
   // 状态管理
   const [activeTab, setActiveTab] = useState<'schedule' | 'workingHours' | 'leave'>('schedule');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [editingWorkingHour, setEditingWorkingHour] = useState<WorkingHour | null>(null);
   const [newLeaveRequest, setNewLeaveRequest] = useState<{ date: string; reason: string }>({ date: '', reason: '' });
+  const [loading, setLoading] = useState({ schedule: false, workingHours: false, leaveRequests: false });
+  // const [error, setError] = useState<string | null>(null);
 
   // 筛选当天的日程
-  const todaySchedule = scheduleItems.filter(item => item.date === selectedDate);
+  const todaySchedule = scheduleItems.filter(item => item.appointmentTime.startsWith(selectedDate));
+
+  // 获取数据
+  useEffect(() => {
+    // 获取预约日程
+    const fetchSchedule = async () => {
+          setLoading(prev => ({ ...prev, schedule: true }));
+          try {
+            const data = await getRegistrations();
+            setScheduleItems(data);
+          } catch (err) {
+            console.error('获取预约日程失败:', err);
+            alert('获取预约日程失败');
+          } finally {
+            setLoading(prev => ({ ...prev, schedule: false }));
+          }
+        };
+
+        // 获取工作时间
+        const fetchWorkingHours = async () => {
+          setLoading(prev => ({ ...prev, workingHours: true }));
+          try {
+            const data = await getWorkingHours();
+            setWorkingHours(data);
+          } catch (err) {
+            console.error('获取工作时间失败:', err);
+            // 不显示错误信息，让doctorService中的模拟数据机制处理
+          } finally {
+            setLoading(prev => ({ ...prev, workingHours: false }));
+          }
+        };
+
+    fetchSchedule();
+    fetchWorkingHours();
+  }, []);
 
   // 提交调休申请
-  const submitLeaveRequest = () => {
+  const handleSubmitLeaveRequest = async () => {
     if (newLeaveRequest.date && newLeaveRequest.reason) {
-      // 这里可以添加提交逻辑
-      alert('调休申请已提交');
-      setNewLeaveRequest({ date: '', reason: '' });
+      try {
+        await submitLeaveRequest({
+          startDate: newLeaveRequest.date,
+          endDate: newLeaveRequest.date,
+          reason: newLeaveRequest.reason
+        });
+        alert('调休申请已提交');
+        setNewLeaveRequest({ date: '', reason: '' });
+      } catch (err) {
+        console.error('提交调休申请失败:', err);
+        alert('提交调休申请失败');
+      }
     }
   };
 
   // 保存工作时间
-  const saveWorkingHour = () => {
+  const saveWorkingHour = async () => {
     if (editingWorkingHour) {
-      // 这里可以添加保存逻辑
-      alert('工作时间已保存');
-      setEditingWorkingHour(null);
+      try {
+        // 更新本地工作时间列表
+        const updatedWorkingHours = workingHours.map(hour => 
+          hour.id === editingWorkingHour.id ? editingWorkingHour : hour
+        );
+        
+        // 保存到服务器
+        await updateWorkingHours(updatedWorkingHours);
+        
+        // 更新本地状态
+        setWorkingHours(updatedWorkingHours);
+        alert('工作时间已保存');
+        setEditingWorkingHour(null);
+      } catch (err) {
+        console.error('保存工作时间失败:', err);
+        alert('保存工作时间失败');
+      }
     }
   };
 
@@ -161,14 +161,15 @@ const Schedule: React.FC = () => {
               {todaySchedule.length > 0 ? (
                 todaySchedule.map(item => (
                   <div key={item.id} className={`schedule-item status-${item.status}`}>
-                    <div className="schedule-time">{item.time}</div>
+                    <div className="schedule-time">{item.appointmentTime.split('T')[1].substring(0, 5)}</div>
                     <div className="schedule-info">
                       <div className="patient-name">{item.patientName} (ID: {item.patientId})</div>
-                      <div className="patient-details">{item.department} | {item.symptoms}</div>
+                      <div className="patient-details">{item.department} | {item.disease}</div>
                     </div>
                     <div className={`schedule-status status-${item.status}`}>
-                      {item.status === 'confirmed' ? '已确认' : 
-                       item.status === 'pending' ? '待确认' : '已取消'}
+                      {item.status === 'processing' ? '处理中' : 
+                       item.status === 'pending' ? '待确认' : 
+                       item.status === 'completed' ? '已完成' : '已取消'}
                     </div>
                   </div>
                 ))
@@ -185,63 +186,69 @@ const Schedule: React.FC = () => {
             <h2>出诊时间设置</h2>
             
             <div className="working-hours-list">
-              {workingHours.map(hour => (
-                <div key={hour.id} className="working-hour-item">
-                  <div className="day-info">
-                    <div className="day-name">{hour.day}</div>
-                    <div className="working-toggle">
-                      <input 
-                        type="checkbox" 
-                        checked={hour.isWorking} 
-                        onChange={(e) => {
-                          setEditingWorkingHour({
-                            ...hour,
-                            isWorking: e.target.checked
-                          });
-                        }}
-                      />
-                      <label>{hour.isWorking ? '出诊' : '休息'}</label>
+              {loading.workingHours ? (
+                <div className="loading">正在加载工作时间...</div>
+              ) : workingHours.length > 0 ? (
+                workingHours.map(hour => (
+                  <div key={hour.id} className="working-hour-item">
+                    <div className="day-info">
+                      <div className="day-name">{dayMap[hour.dayOfWeek as keyof typeof dayMap]}</div>
+                      <div className="working-toggle">
+                        <input 
+                          type="checkbox" 
+                          checked={hour.isWorking} 
+                          onChange={(e) => {
+                            setEditingWorkingHour({
+                              ...hour,
+                              isWorking: e.target.checked
+                            });
+                          }}
+                        />
+                        <label>{hour.isWorking ? '出诊' : '休息'}</label>
+                      </div>
                     </div>
+                    
+                    {hour.isWorking && (
+                      <div className="time-setting">
+                        {editingWorkingHour?.id === hour.id ? (
+                          <div className="time-editing">
+                            <input 
+                              type="time" 
+                              value={hour.startTime} 
+                              onChange={(e) => {
+                                setEditingWorkingHour(prev => prev ? { ...prev, startTime: e.target.value } : null);
+                              }}
+                            />
+                            <span>至</span>
+                            <input 
+                              type="time" 
+                              value={hour.endTime} 
+                              onChange={(e) => {
+                                setEditingWorkingHour(prev => prev ? { ...prev, endTime: e.target.value } : null);
+                              }}
+                            />
+                            <button className="save-btn" onClick={saveWorkingHour}>保存</button>
+                          </div>
+                        ) : (
+                          <div className="time-display">
+                            <span>{hour.startTime}</span>
+                            <span>至</span>
+                            <span>{hour.endTime}</span>
+                            <button 
+                              className="edit-btn" 
+                              onClick={() => setEditingWorkingHour(hour)}
+                            >
+                              编辑
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  
-                  {hour.isWorking && (
-                    <div className="time-setting">
-                      {editingWorkingHour?.id === hour.id ? (
-                        <div className="time-editing">
-                          <input 
-                            type="time" 
-                            value={hour.startTime} 
-                            onChange={(e) => {
-                              setEditingWorkingHour(prev => prev ? { ...prev, startTime: e.target.value } : null);
-                            }}
-                          />
-                          <span>至</span>
-                          <input 
-                            type="time" 
-                            value={hour.endTime} 
-                            onChange={(e) => {
-                              setEditingWorkingHour(prev => prev ? { ...prev, endTime: e.target.value } : null);
-                            }}
-                          />
-                          <button className="save-btn" onClick={saveWorkingHour}>保存</button>
-                        </div>
-                      ) : (
-                        <div className="time-display">
-                          <span>{hour.startTime}</span>
-                          <span>至</span>
-                          <span>{hour.endTime}</span>
-                          <button 
-                            className="edit-btn" 
-                            onClick={() => setEditingWorkingHour(hour)}
-                          >
-                            编辑
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="no-data">暂无工作时间设置</div>
+              )}
             </div>
           </div>
         )}
@@ -275,7 +282,7 @@ const Schedule: React.FC = () => {
                   </div>
                   <button 
                     className="submit-btn" 
-                    onClick={submitLeaveRequest}
+                    onClick={handleSubmitLeaveRequest}
                     disabled={!newLeaveRequest.date || !newLeaveRequest.reason}
                   >
                     提交申请
@@ -290,7 +297,7 @@ const Schedule: React.FC = () => {
               {leaveRequests.length > 0 ? (
                 leaveRequests.map(request => (
                   <div key={request.id} className={`leave-request-item status-${request.status}`}>
-                    <div className="leave-date">{request.date}</div>
+                    <div className="leave-date">{request.startDate}</div>
                     <div className="leave-reason">{request.reason}</div>
                     <div className={`leave-status status-${request.status}`}>
                       {request.status === 'pending' ? '待审批' : 
