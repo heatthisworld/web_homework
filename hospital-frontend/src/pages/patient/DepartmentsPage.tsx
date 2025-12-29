@@ -1,68 +1,39 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import "./patient.css";
-import { fetchDoctors } from "../../services/patientService";
-
-interface Department {
-  name: string;
-  doctorCount: number;
-  description: string;
-}
+import { usePatientData } from "./PatientApp";
 
 const DepartmentsPage: React.FC = () => {
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [filteredDepartments, setFilteredDepartments] = useState<Department[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { doctors } = usePatientData();
   const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    const loadDepartments = async () => {
-      try {
-        const doctors = await fetchDoctors();
-        const deptMap = new Map<string, number>();
-        
-        doctors.forEach(doctor => {
-          deptMap.set(doctor.department, (deptMap.get(doctor.department) || 0) + 1);
-        });
-        
-        const deptList: Department[] = Array.from(deptMap.entries()).map(([name, count]) => ({
-          name,
-          doctorCount: count,
-          description: `${name}诊疗服务`
-        }));
-        
-        setDepartments(deptList);
-        setFilteredDepartments(deptList);
-      } catch (error) {
-        console.error("加载科室列表失败", error);
-      } finally {
-        setLoading(false);
+  const departments = useMemo(() => {
+    const deptMap = new Map<string, number>();
+    doctors.forEach(doctor => {
+      // 处理 department 字段，可能是字符串或对象
+      let deptName: string;
+      if (typeof doctor.department === "string") {
+        deptName = doctor.department;
+      } else if (doctor.department && typeof doctor.department === "object") {
+        deptName = (doctor.department as any).name || "未知科室";
+      } else {
+        deptName = "未知科室";
       }
-    };
-    loadDepartments();
-  }, []);
+      deptMap.set(deptName, (deptMap.get(deptName) || 0) + 1);
+    });
 
-  useEffect(() => {
-    if (searchTerm) {
-      setFilteredDepartments(
-        departments.filter(dept =>
-          dept.name.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      );
-    } else {
-      setFilteredDepartments(departments);
-    }
-  }, [searchTerm, departments]);
+    return Array.from(deptMap.entries()).map(([name, count]) => ({
+      name,
+      doctorCount: count,
+      description: `${name}诊疗服务`
+    }));
+  }, [doctors]);
 
-  if (loading) {
-    return (
-      <div className="patient-page">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>正在加载科室列表...</p>
-        </div>
-      </div>
+  const filteredDepartments = useMemo(() => {
+    if (!searchTerm) return departments;
+    return departments.filter(dept =>
+      dept.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }
+  }, [searchTerm, departments]);
 
   return (
     <div className="patient-page">

@@ -262,4 +262,19 @@ export const createRegistration = async (
   } catch (error) {
     throw normalizeFetchError(error);
   }
+
+};
+
+export const cancelRegistration = async (id: number): Promise<void> => {
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/registrations/${id}/status/CANCELLED`,
+            withCredentials({
+                method: "PUT",
+            }),
+        );
+        await unwrapData<unknown>(response);
+    } catch (error) {
+        throw normalizeFetchError(error);
+    }
 };

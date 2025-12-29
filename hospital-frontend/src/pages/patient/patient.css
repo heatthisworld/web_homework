@@ -1063,152 +1063,328 @@
   background-color: #fde2e2;
 }
 
+/* 新增信息展示区域 */
+.info-section {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 16px;
+  color: #1a202c;
+  font-weight: 600;
+}
+
+.edit-btn {
+  padding: 6px 16px;
+  background: #409eff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edit-btn:hover {
+  background: #66b1ff;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 12px;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 15px;
+  color: #606266;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.info-value {
+  font-size: 15px;
+  color: #303133;
+  font-weight: 600;
+  flex: 1;
+}
+
+.info-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 6px;
+  font-size: 15px;
+  transition: all 0.2s;
+}
+
+.info-input:focus {
+  outline: none;
+  border-color: #409eff;
+  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.1);
+}
+
+.field-error {
+  color: #f56c6c;
+  font-size: 12px;
+  margin: -8px 0 8px 92px;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e4e7ed;
+}
+
+.save-btn, .cancel-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.save-btn {
+  background: #409eff;
+  color: #fff;
+}
+
+.save-btn:hover {
+  background: #66b1ff;
+}
+
+.cancel-btn {
+  background: #f5f7fa;
+  color: #606266;
+}
+
+.cancel-btn:hover {
+  background: #e4e7ed;
+}
+
+.secondary-btn.danger {
+  background: #fef0f0;
+  color: #f56c6c;
+  border: 1px solid #fbc4c4;
+}
+
+.secondary-btn.danger:hover {
+  background: #fde2e2;
+}
+
+/* 医生查询模块 */
+.doctor-search-section {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.doctor-search-section h4 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: #1a202c;
+    font-weight: 600;
+}
+
+.section-header-inline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.view-all {
+    font-size: 14px;
+    color: #409eff;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.view-all:hover {
+    text-decoration: underline;
+}
+
+/* 医生列表网格 */
+.doctor-list-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.doctor-card-compact {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid #e9ecef;
+}
+
+.doctor-card-compact:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background: #e9ecef;
+}
+
+.doctor-avatar-small {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #f0f2f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.doctor-avatar-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.doctor-info-compact {
+    flex: 1;
+    min-width: 0;
+}
+
+.doctor-info-compact h5 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    color: #1a202c;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.doctor-title-small,
+.doctor-department-small {
+    margin: 2px 0;
+    font-size: 12px;
+    color: #718096;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.no-doctors {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 30px;
+    color: #909399;
+    font-size: 14px;
+}
+
 /* 响应式设计 */
-@media (max-width: 480px) {
-  .home-page, .registration-page, .records-page, .profile-page {
-    padding: 10px;
-  }
-  
-  .quick-menu {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .user-card, .user-info-card {
-    padding: 15px;
-  }
-  
-  .user-avatar {
-    width: 50px;
-    height: 50px;
-  }
-
-  .quick-access-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-    /* 在现有样式基础上添加 */
-
-    .field-error {
-        color: #f56c6c;
-        font-size: 12px;
-        margin-top: 4px;
+@media (max-width: 768px) {
+    .doctor-list-grid {
+        grid-template-columns: 1fr;
     }
 
-    .info-item {
-        display: flex;
-        align-items: flex-start;
-        padding: 12px 0;
-        border-bottom: 1px solid #f0f0f0;
-    }
-
-    /* 信息分组区域 */
-    .info-section {
-        background: #fff;
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 16px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    }
-
-    .section-title {
-        font-size: 16px;
-        font-weight: 600;
-        color: #303133;
-        margin: 0 0 12px 0;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #e4e7ed;
-    }
-
-    .info-list {
-        display: flex;
+    .filter-section {
         flex-direction: column;
-        gap: 12px;
     }
 
-    .info-row {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
+    .filter-section .search-box {
+        margin-bottom: 10px;
     }
 
-    .info-label {
-        font-size: 15px;
-        color: #606266;
-        min-width: 80px;
-        flex-shrink: 0;
-        padding-top: 2px;
-    }
-
-    .info-value {
-        font-size: 15px;
-        color: #303133;
-        font-weight: 600;
-        flex: 1;
-    }
-
-    .info-input-wrapper {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .info-input {
+    .department-filter {
         width: 100%;
-        padding: 10px 12px;
-        border: 1px solid #dcdfe6;
-        border-radius: 8px;
-        font-size: 15px;
-        color: #303133;
-        background-color: #fff;
-        transition: all 0.2s;
     }
+}
+/* 日期选择提示 */
+.date-hint {
+    font-size: 13px;
+    color: #909399;
+    margin-bottom: 8px;
+    padding: 6px 10px;
+    background: #f0f9ff;
+    border-radius: 6px;
+    border-left: 3px solid #409eff;
+}
 
-    .info-input:focus {
-        outline: none;
-        border-color: #409eff;
-        box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
-    }
+/* 日期输入包装器 */
+.date-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
-    /* 操作按钮区域 */
-    .action-buttons {
-        display: flex;
-        gap: 12px;
-        padding: 0 16px;
-    }
+/* 星期标签 */
+.weekday-label {
+    font-size: 15px;
+    color: #409eff;
+    font-weight: 600;
+    padding: 8px 12px;
+    background: #ecf5ff;
+    border-radius: 8px;
+    white-space: nowrap;
+}
 
-    .primary-btn {
-        flex: 1;
-        padding: 12px;
-        background: #409eff;
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
+/* 日期下拉框样式 */
+.date-select {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px 14px;
+    border: 1px solid #dcdfe6;
+    border-radius: 10px;
+    font-size: 16px;
+    transition: all 0.2s;
+    background-color: #fff;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23606266' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 40px;
+}
 
-    .primary-btn:hover {
-        background: #66b1ff;
-    }
+.date-select:focus {
+    outline: none;
+    border-color: #409eff;
+    box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.1);
+}
 
-    .secondary-btn {
-        flex: 1;
-        padding: 12px;
-        background: #fff;
-        color: #606266;
-        border: 1px solid #dcdfe6;
-        border-radius: 8px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .secondary-btn:hover {
-        background: #f5f7fa;
-        border-color: #c0c4cc;
-    }
+.date-select option {
+    padding: 10px;
+    font-size: 15px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

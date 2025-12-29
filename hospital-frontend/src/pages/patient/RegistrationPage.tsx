@@ -1,28 +1,29 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import "./patient.css";
 import {
   createRegistration,
-  fetchCurrentPatientDetails,
-  fetchDoctors,
-  type DoctorSummary,
-  type PatientDetails,
 } from "../../services/patientService";
+import { usePatientData } from "./PatientApp";
 
 interface RegistrationPageProps {
   debugMode: boolean;
 }
 
-const mockDoctors: DoctorSummary[] = [
-  { id: 1, name: "张医生", department: "内科", title: "主任医师", avatarUrl: "/files/Default.gif" },
-  { id: 2, name: "李医生", department: "内科", title: "主治医师", avatarUrl: "/files/Default.gif" },
-  { id: 3, name: "王医生", department: "儿科", title: "副主任医师", avatarUrl: "/files/Default.gif" },
-];
+interface DoctorSummary {
+  id: number;
+  name: string;
+  department: string | { name: string };
+  title?: string;
+  avatarUrl?: string;
+}
 
 const timeSlots = ["08:30", "09:00", "10:00", "14:00", "15:00", "16:00"];
 
+// 配置：可选择的未来天数
+const FUTURE_DAYS_LIMIT = 7;
+
 const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
-  const [doctors, setDoctors] = useState<DoctorSummary[]>(mockDoctors);
-  const [patient, setPatient] = useState<PatientDetails | null>(null);
+  const { doctors, patient, refresh } = usePatientData();
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [selectedDoctor, setSelectedDoctor] = useState<DoctorSummary | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>("");
@@ -30,81 +31,47 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
 
   const departments = useMemo(() => {
     const deptSet = new Set<string>();
     doctors.forEach(d => {
-      const deptName = typeof d.department === "string" ? d.department : (d as any).department?.name;
+      const deptName = typeof d.department === "string" ? d.department : d.department?.name;
       if (deptName) deptSet.add(deptName);
     });
     return Array.from(deptSet);
   }, [doctors]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadData = async () => {
-      if (debugMode) {
-        setPatient({
-          id: 0,
-          username: "patient@example.com",
-          name: "张三",
-          gender: "MALE",
-          age: 30,
-          phone: "13800000000",
-          address: "北京朝阳",
-          medicalHistory: [],
-          visitHistory: [],
-        });
-        setLoading(false);
-        return;
-      }
-      try {
-        const [patientDetail, doctorList] = await Promise.all([
-          fetchCurrentPatientDetails(),
-          fetchDoctors(),
-        ]);
-        if (cancelled) return;
-        setPatient(patientDetail);
-        setDoctors(doctorList.length ? doctorList : mockDoctors);
-      } catch (err) {
-        if (cancelled) return;
-        setError(
-          err instanceof Error
-            ? `${err.message}，已启用示例数据`
-            : "加载失败，已启用示例数据",
-        );
-        setPatient({
-          id: 0,
-          username: "patient@example.com",
-          name: "张三",
-          gender: "MALE",
-          age: 30,
-          phone: "13800000000",
-          address: "北京朝阳",
-          medicalHistory: [],
-          visitHistory: [],
-        });
-        setDoctors(mockDoctors);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    loadData();
-    return () => {
-      cancelled = true;
-    };
-  }, [debugMode]);
-
   const filteredDoctors = useMemo(() => {
     if (!selectedDepartment) return doctors;
     return doctors.filter((doc) => {
-      const deptName = typeof doc.department === "string" ? doc.department : (doc as any).department?.name;
+      const deptName = typeof doc.department === "string" ? doc.department : doc.department?.name;
       return deptName === selectedDepartment;
     });
   }, [selectedDepartment, doctors]);
+
+  // 生成可选日期列表
+  const availableDates = useMemo(() => {
+    const dates: { value: string; label: string }[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i <= FUTURE_DAYS_LIMIT; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() + i);
+
+      const dateStr = date.toISOString().split('T')[0];
+      const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+      const weekday = weekdays[date.getDay()];
+
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      const label = i === 0 ? `今天 ${month}月${day}日 ${weekday}` : `${month}月${day}日 ${weekday}`;
+
+      dates.push({ value: dateStr, label });
+    }
+
+    return dates;
+  }, []);
 
   const handleBookClick = (doctor: DoctorSummary) => {
     setSelectedDoctor(doctor);
@@ -138,6 +105,8 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
       setShowTimeModal(false);
       setError("");
 
+      await refresh();
+
       setTimeout(() => {
         setRegistrationSuccess(false);
         setSelectedDoctor(null);
@@ -148,14 +117,6 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
       setError(err instanceof Error ? err.message : "提交挂号失败");
     }
   };
-
-  if (loading) {
-    return (
-      <div className="registration-page">
-        <div className="announcement-item">正在加载，请稍候...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="registration-page">
@@ -170,7 +131,6 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
       )}
 
       <div className="registration-layout">
-        {/* 左侧科室导航 */}
         <div className="department-sidebar">
           <div className="sidebar-title">选择科室</div>
           <div
@@ -190,7 +150,6 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
           ))}
         </div>
 
-        {/* 右侧医生列表 */}
         <div className="doctor-list-area">
           {filteredDoctors.length === 0 ? (
             <div className="no-doctors">该科室暂无医生</div>
@@ -203,7 +162,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
               const deptName =
                 typeof doctor.department === "string"
                   ? doctor.department
-                  : (doctor as any).department?.name;
+                  : doctor.department?.name;
               return (
                 <div key={doctor.id} className="doctor-card-horizontal">
                   <div className="doctor-avatar-large">
@@ -212,9 +171,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
                   <div className="doctor-info-area">
                     <h4>{doctor.name}</h4>
                     <p className="doctor-title">{doctor.title}</p>
-                    <p className="doctor-department">
-                      {deptName}
-                    </p>
+                    <p className="doctor-department">{deptName}</p>
                   </div>
                   <button className="book-button" onClick={() => handleBookClick(doctor)}>
                     预约挂号
@@ -240,13 +197,19 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
               </div>
               <div className="time-select-group">
                 <label>日期:</label>
-                <input
-                  type="date"
-                  className="time-input"
-                  min={new Date().toISOString().split('T')[0]}
+                <div className="date-hint">仅可选择未来{FUTURE_DAYS_LIMIT}天内</div>
+                <select
+                  className="date-select"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                />
+                >
+                  <option value="">请选择日期</option>
+                  {availableDates.map((date) => (
+                    <option key={date.value} value={date.value}>
+                      {date.label}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="time-select-group">
                 <label>时间:</label>

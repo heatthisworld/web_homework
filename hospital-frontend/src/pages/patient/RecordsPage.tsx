@@ -1,9 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useMemo } from "react";
 import "./patient.css";
-import {
-  fetchCurrentPatientDetails,
-  type PatientDetails,
-} from "../../services/patientService";
+import { usePatientData } from "./PatientApp";
+import { cancelRegistration } from "../../services/patientService";
 
 interface RecordsPageProps {
   debugMode: boolean;
@@ -23,92 +21,85 @@ const mockMedicalRecords = [
 
 const RecordsPage: React.FC<RecordsPageProps> = ({ debugMode }) => {
   const [activeTab, setActiveTab] = useState<"registration" | "medical">("registration");
-  const [patientDetails, setPatientDetails] = useState<PatientDetails | null>(null);
+  const { patient, refresh } = usePatientData();
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [cancelledIds, setCancelledIds] = useState<Set<number>>(new Set());
 
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      if (debugMode) {
-        setPatientDetails({
-          id: 0,
-          username: "patient@example.com",
-          name: "张三",
-          gender: "MALE",
-          age: 30,
-          phone: "13800000000",
-          address: "北京朝阳",
-          medicalHistory: [],
-          visitHistory: [],
-        });
-        setLoading(false);
-        return;
-      }
-      try {
-        const details = await fetchCurrentPatientDetails();
-        if (cancelled) return;
-        setPatientDetails(details);
-      } catch (err) {
-        if (cancelled) return;
-        setError(
-          err instanceof Error ? `${err.message}，已显示示例数据` : "加载失败，已显示示例数据",
-        );
-        setPatientDetails({
-          id: 0,
-          username: "patient@example.com",
-          name: "张三",
-          gender: "MALE",
-          age: 30,
-          phone: "13800000000",
-          address: "北京朝阳",
-          medicalHistory: [],
-          visitHistory: [],
-        });
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [debugMode]);
+  const registrationRecords = useMemo(() => {
+    if (debugMode) return mockRegistrationRecords;
+    if (!patient?.visitHistory) return [];
 
-  const registrationRecords = debugMode
-    ? mockRegistrationRecords
-    : patientDetails?.visitHistory.map((v) => ({
+    return patient.visitHistory
+      .map((v) => ({
         id: v.id,
         department: v.department || "-",
         doctor: v.doctor || "-",
         date: v.appointmentTime?.split("T")[0] || "-",
         time: v.appointmentTime?.split("T")[1]?.slice(0, 5) || "-",
-        status: v.status === "completed" ? "已就诊" : v.status === "cancelled" ? "已取消" : "待就诊",
+        status: cancelledIds.has(v.id) ? "已取消" : (v.status === "completed" ? "已就诊" : v.status === "cancelled" ? "已取消" : "待就诊"),
         recordId: `REG-${v.id}`,
-      })) || [];
+      }))
+      // 过滤掉已取消的记录
+      .filter(record => record.status !== "已取消");
+  }, [debugMode, patient, cancelledIds]);
 
-  const medicalRecords = debugMode
-    ? mockMedicalRecords
-    : patientDetails?.medicalHistory.map((m) => ({
-        id: m.id,
-        department: "-",
-        doctor: m.doctor || "-",
-        date: m.visitDate?.split("T")[0] || "-",
-        diagnosis: m.diagnosis || "-",
-        medications: m.medications || [],
-      })) || [];
+  const medicalRecords = useMemo(() => {
+    if (debugMode) return mockMedicalRecords;
+    if (!patient?.medicalHistory) return [];
 
-  if (loading) {
-    return (
-      <div className="records-page patient-page">
-        <div className="announcement-item">正在加载，请稍候...</div>
-      </div>
-    );
-  }
+    return patient.medicalHistory.map((m) => ({
+      id: m.id,
+      department: "-",
+      doctor: m.doctor || "-",
+      date: m.visitDate?.split("T")[0] || "-",
+      diagnosis: m.diagnosis || "-",
+      medications: m.medications || [],
+    }));
+  }, [debugMode, patient]);
+
+  const handleCancelRegistration = async (id: number) => {
+    if (!window.confirm("确定要取消这个挂号吗？")) {
+      return;
+    }
+
+    setCancellingId(id);
+    setError("");
+    setMessage("");
+
+    if (debugMode) {
+      setCancelledIds(prev => new Set(prev).add(id));
+      setMessage("取消成功（调试模式）");
+      setCancellingId(null);
+      setTimeout(() => setMessage(""), 2000);
+      return;
+    }
+
+    try {
+      await cancelRegistration(id);
+      setCancelledIds(prev => new Set(prev).add(id));
+      setMessage("取消挂号成功");
+
+      // 刷新数据
+      await refresh();
+
+      setTimeout(() => setMessage(""), 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "取消挂号失败");
+      setTimeout(() => setError(""), 3000);
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  if (!patient) return null;
 
   return (
     <div className="records-page patient-page">
       <h3>我的记录</h3>
+
+      {message && <div className="success-message">{message}</div>}
       {error && <div className="error-message">{error}</div>}
 
       <div className="internal-tabs">
@@ -133,20 +124,22 @@ const RecordsPage: React.FC<RecordsPageProps> = ({ debugMode }) => {
               <div key={record.id} className="record-item">
                 <div className="record-header">
                   <div className="record-department">{record.department}</div>
-                  <div className="record-status">{record.status}</div>
+                  <div className={`record-status ${record.status}`}>{record.status}</div>
                 </div>
                 <div className="record-content">
-                  <p>
-                    <strong>医生:</strong> {record.doctor}
-                  </p>
-                  <p>
-                    <strong>时间:</strong> {record.date} {record.time}
-                  </p>
-                  <p>
-                    <strong>挂号ID:</strong> {record.recordId}
-                  </p>
+                  <p><strong>医生:</strong> {record.doctor}</p>
+                  <p><strong>时间:</strong> {record.date} {record.time}</p>
+                  <p><strong>挂号ID:</strong> {record.recordId}</p>
                 </div>
-                {record.status === "待就诊" && <button className="cancel-btn">取消挂号</button>}
+                {record.status === "待就诊" && (
+                  <button
+                    className="cancel-btn"
+                    onClick={() => handleCancelRegistration(record.id)}
+                    disabled={cancellingId === record.id}
+                  >
+                    {cancellingId === record.id ? "取消中..." : "取消挂号"}
+                  </button>
+                )}
               </div>
             ))
           ) : (
@@ -165,15 +158,9 @@ const RecordsPage: React.FC<RecordsPageProps> = ({ debugMode }) => {
                   <div className="record-date">{record.date}</div>
                 </div>
                 <div className="record-content">
-                  <p>
-                    <strong>医生:</strong> {record.doctor}
-                  </p>
-                  <p>
-                    <strong>诊断:</strong> {record.diagnosis}
-                  </p>
-                  <p>
-                    <strong>用药:</strong> {record.medications.join(", ")}
-                  </p>
+                  <p><strong>医生:</strong> {record.doctor}</p>
+                  <p><strong>诊断:</strong> {record.diagnosis}</p>
+                  <p><strong>用药:</strong> {record.medications.join(", ")}</p>
                 </div>
               </div>
             ))
