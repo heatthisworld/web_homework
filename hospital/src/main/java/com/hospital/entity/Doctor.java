@@ -32,6 +32,9 @@ public class Doctor {
     @Column(name = "phone", nullable = false, length = 11)
     private String phone;
 
+    @Column(name = "avatar_url", length = 255)
+    private String avatarUrl;
+
     @ManyToOne
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
@@ -58,6 +61,9 @@ public class Doctor {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (avatarUrl == null || avatarUrl.isBlank()) {
+            avatarUrl = "/files/Default.gif";
+        }
     }
 
     @PreUpdate

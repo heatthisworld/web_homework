@@ -7,7 +7,7 @@ const TopNav: React.FC = () => {
         <div className="top-nav-title">医生管理平台</div>
         <div className="top-nav-search">
           <span className="search-icon">🔍</span>
-          <input type="text" placeholder="搜索患者、挂号记录..." />
+          <input type="text" placeholder="搜索患者、挂号记录.." />
         </div>
       </div>
       

@@ -26,23 +26,21 @@ const DoctorsPage: React.FC = () => {
 
   useEffect(() => {
     let filtered = doctors;
-    
+
     if (searchTerm) {
-      filtered = filtered.filter(doctor =>
-        doctor.name.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter((doctor) =>
+        doctor.name.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
-    
+
     if (selectedDepartment) {
-      filtered = filtered.filter(doctor =>
-        doctor.department === selectedDepartment
-      );
+      filtered = filtered.filter((doctor) => doctor.department === selectedDepartment);
     }
-    
+
     setFilteredDoctors(filtered);
   }, [searchTerm, selectedDepartment, doctors]);
 
-  const departments = [...new Set(doctors.map(d => d.department))];
+  const departments = [...new Set(doctors.map((d) => d.department))];
 
   if (loading) {
     return (
@@ -58,7 +56,7 @@ const DoctorsPage: React.FC = () => {
   return (
     <div className="patient-page">
       <h3>医生查询</h3>
-      
+
       <div className="filter-section">
         <div className="search-box">
           <input
@@ -68,30 +66,40 @@ const DoctorsPage: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        
+
         <select
           value={selectedDepartment}
           onChange={(e) => setSelectedDepartment(e.target.value)}
           className="department-filter"
         >
           <option value="">全部科室</option>
-          {departments.map(dept => (
-            <option key={dept} value={dept}>{dept}</option>
+          {departments.map((dept) => (
+            <option key={dept} value={dept}>
+              {dept}
+            </option>
           ))}
         </select>
       </div>
 
       <div className="doctor-list">
-        {filteredDoctors.map((doctor) => (
-          <div key={doctor.id} className="doctor-card">
-            <div className="doctor-avatar">👨‍⚕️</div>
-            <div className="doctor-info">
-              <h4>{doctor.name}</h4>
-              <p className="doctor-title">{doctor.title || "医师"}</p>
-              <p className="doctor-department">{doctor.department}</p>
+        {filteredDoctors.map((doctor) => {
+          const avatarSrc =
+            doctor.avatarUrl && doctor.avatarUrl.trim() !== ""
+              ? doctor.avatarUrl
+              : "/files/Default.gif";
+          return (
+            <div key={doctor.id} className="doctor-card">
+              <div className="doctor-avatar">
+                <img src={avatarSrc} alt={`${doctor.name}头像`} />
+              </div>
+              <div className="doctor-info">
+                <h4>{doctor.name}</h4>
+                <p className="doctor-title">{doctor.title || "医生"}</p>
+                <p className="doctor-department">{doctor.department}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

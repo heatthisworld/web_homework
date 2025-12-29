@@ -177,6 +177,7 @@ public class DataInitializer implements CommandLineRunner {
             doctor.setPhone(faker.phoneNumber().cellPhone());
             doctor.setDepartment(department);
             doctor.setDiseases(pickRandomDiseasesForDepartment(diseases, department));
+            doctor.setAvatarUrl("/files/Default.gif");
             doctors.add(doctorRepository.save(doctor));
         }
 

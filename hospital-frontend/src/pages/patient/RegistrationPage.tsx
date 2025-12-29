@@ -13,9 +13,9 @@ interface RegistrationPageProps {
 }
 
 const mockDoctors: DoctorSummary[] = [
-  { id: 1, name: "张医生", department: "内科", title: "主任医师" },
-  { id: 2, name: "李医生", department: "内科", title: "主治医师" },
-  { id: 3, name: "王医生", department: "儿科", title: "副主任医师" },
+  { id: 1, name: "张医生", department: "内科", title: "主任医师", avatarUrl: "/files/Default.gif" },
+  { id: 2, name: "李医生", department: "内科", title: "主治医师", avatarUrl: "/files/Default.gif" },
+  { id: 3, name: "王医生", department: "儿科", title: "副主任医师", avatarUrl: "/files/Default.gif" },
 ];
 
 const timeSlots = ["08:30", "09:00", "10:00", "14:00", "15:00", "16:00"];
@@ -35,7 +35,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
   const departments = useMemo(() => {
     const deptSet = new Set<string>();
     doctors.forEach(d => {
-      const deptName = typeof d.department === 'string' ? d.department : d.department?.name;
+      const deptName = typeof d.department === "string" ? d.department : (d as any).department?.name;
       if (deptName) deptSet.add(deptName);
     });
     return Array.from(deptSet);
@@ -101,7 +101,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
   const filteredDoctors = useMemo(() => {
     if (!selectedDepartment) return doctors;
     return doctors.filter((doc) => {
-      const deptName = typeof doc.department === 'string' ? doc.department : doc.department?.name;
+      const deptName = typeof doc.department === "string" ? doc.department : (doc as any).department?.name;
       return deptName === selectedDepartment;
     });
   }, [selectedDepartment, doctors]);
@@ -195,21 +195,33 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
           {filteredDoctors.length === 0 ? (
             <div className="no-doctors">该科室暂无医生</div>
           ) : (
-            filteredDoctors.map((doctor) => (
-              <div key={doctor.id} className="doctor-card-horizontal">
-                <div className="doctor-avatar-large">👨‍⚕️</div>
-                <div className="doctor-info-area">
-                  <h4>{doctor.name}</h4>
-                  <p className="doctor-title">{doctor.title}</p>
-                  <p className="doctor-department">
-                    {typeof doctor.department === 'string' ? doctor.department : doctor.department?.name}
-                  </p>
+            filteredDoctors.map((doctor) => {
+              const avatarSrc =
+                doctor.avatarUrl && doctor.avatarUrl.trim() !== ""
+                  ? doctor.avatarUrl
+                  : "/files/Default.gif";
+              const deptName =
+                typeof doctor.department === "string"
+                  ? doctor.department
+                  : (doctor as any).department?.name;
+              return (
+                <div key={doctor.id} className="doctor-card-horizontal">
+                  <div className="doctor-avatar-large">
+                    <img src={avatarSrc} alt={`${doctor.name}头像`} />
+                  </div>
+                  <div className="doctor-info-area">
+                    <h4>{doctor.name}</h4>
+                    <p className="doctor-title">{doctor.title}</p>
+                    <p className="doctor-department">
+                      {deptName}
+                    </p>
+                  </div>
+                  <button className="book-button" onClick={() => handleBookClick(doctor)}>
+                    预约挂号
+                  </button>
                 </div>
-                <button className="book-button" onClick={() => handleBookClick(doctor)}>
-                  预约挂号
-                </button>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
