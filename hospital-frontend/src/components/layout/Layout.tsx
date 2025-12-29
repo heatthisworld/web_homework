@@ -12,6 +12,7 @@ interface LayoutProps {
   onTabChange: (key: string) => void;
   debugMode?: boolean;
   onToggleDebugMode?: (value: boolean) => void;
+  onLogout?: () => void;
   children: React.ReactNode;
 }
 
@@ -22,6 +23,7 @@ const Layout: React.FC<LayoutProps> = ({
   onTabChange,
   debugMode = false,
   onToggleDebugMode,
+  onLogout,
   children,
 }) => {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -34,6 +36,7 @@ const Layout: React.FC<LayoutProps> = ({
         onClose={() => setSidebarVisible(false)}
         debugMode={debugMode}
         onToggleDebugMode={onToggleDebugMode}
+        onLogout={onLogout}
       />
 
       {/* 顶部 Header（带菜单按钮） */}

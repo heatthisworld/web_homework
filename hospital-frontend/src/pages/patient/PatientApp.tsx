@@ -4,6 +4,7 @@ import HomePage from './HomePage';
 import RegistrationPage from './RegistrationPage';
 import RecordsPage from './RecordsPage';
 import ProfilePage from './ProfilePage';
+import { logout } from '../../services/authService';
 
 const PatientApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -31,6 +32,16 @@ const PatientApp: React.FC = () => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error('退出登录失败', err);
+    } finally {
+      window.location.href = '/';
+    }
+  };
+
   return (
     <Layout 
       tabs={tabs} 
@@ -38,6 +49,7 @@ const PatientApp: React.FC = () => {
       onTabChange={setActiveTab}
       debugMode={debugMode}
       onToggleDebugMode={setDebugMode}
+      onLogout={handleLogout}
       title="医院挂号系统"
     >
       {renderContent()}

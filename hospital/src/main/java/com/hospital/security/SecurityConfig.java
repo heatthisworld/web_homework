@@ -64,7 +64,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
                         .requestMatchers("/api/debug/login").permitAll()
-                        .requestMatchers("/api/auth/logout", "/api/auth/me").authenticated()
+                        // logout 允许未认证访问，方便直接清除 Cookie
+                        .requestMatchers("/api/auth/logout").permitAll()
+                        .requestMatchers("/api/auth/me").authenticated()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 )
