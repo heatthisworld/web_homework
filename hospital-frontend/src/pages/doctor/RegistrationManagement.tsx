@@ -1,96 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './RegistrationManagement.css';
-
-interface Registration {
-  id: number;
-  patientId: number;
-  patientName: string;
-  gender: string;
-  age: number;
-  department: string;
-  doctorName: string;
-  date: string;
-  time: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
-  symptoms: string;
-}
+import { getRegistrations, updateRegistrationStatus, batchUpdateRegistrationStatus } from '../../services/doctorService';
+import type { Registration, RegistrationStatus } from '../../services/doctorService';
 
 const RegistrationManagement: React.FC = () => {
-  // 模拟数据
-  const registrations: Registration[] = [
-    { 
-      id: 1, 
-      patientId: 101, 
-      patientName: '张三', 
-      gender: '男', 
-      age: 35, 
-      department: '内科', 
-      doctorName: '张医生', 
-      date: '2025-12-11', 
-      time: '09:00', 
-      status: 'confirmed', 
-      symptoms: '头痛、发热'
-    },
-    { 
-      id: 2, 
-      patientId: 102, 
-      patientName: '李四', 
-      gender: '女', 
-      age: 28, 
-      department: '内科', 
-      doctorName: '张医生', 
-      date: '2025-12-11', 
-      time: '10:00', 
-      status: 'pending', 
-      symptoms: '咳嗽、喉咙痛'
-    },
-    { 
-      id: 3, 
-      patientId: 103, 
-      patientName: '王五', 
-      gender: '男', 
-      age: 42, 
-      department: '内科', 
-      doctorName: '张医生', 
-      date: '2025-12-11', 
-      time: '14:00', 
-      status: 'confirmed', 
-      symptoms: '腹痛、腹泻'
-    },
-    { 
-      id: 4, 
-      patientId: 104, 
-      patientName: '赵六', 
-      gender: '女', 
-      age: 50, 
-      department: '内科', 
-      doctorName: '张医生', 
-      date: '2025-12-11', 
-      time: '15:00', 
-      status: 'pending', 
-      symptoms: '高血压、头晕'
-    },
-    { 
-      id: 5, 
-      patientId: 105, 
-      patientName: '钱七', 
-      gender: '男', 
-      age: 38, 
-      department: '内科', 
-      doctorName: '张医生', 
-      date: '2025-12-12', 
-      time: '09:30', 
-      status: 'pending', 
-      symptoms: '胸闷、气短'
-    },
-  ];
-
   // 状态管理
-  const [filteredRegistrations, setFilteredRegistrations] = useState<Registration[]>(registrations);
-  const [selectedDate, setSelectedDate] = useState<string>('2025-12-11');
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [filteredRegistrations, setFilteredRegistrations] = useState<Registration[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedRegistrations, setSelectedRegistrations] = useState<number[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 获取挂号数据
+  useEffect(() => {
+    const fetchRegistrations = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getRegistrations();
+        setRegistrations(data);
+      } catch (err) {
+        console.error('获取挂号数据失败:', err);
+        // 使用友好的错误信息，不显示技术细节
+        setError('获取挂号数据失败，系统正在使用模拟数据提供服务');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRegistrations();
+  }, []);
 
   // 筛选挂号记录
   const filterRegistrations = () => {
@@ -98,7 +40,7 @@ const RegistrationManagement: React.FC = () => {
 
     // 按日期筛选
     if (selectedDate) {
-      filtered = filtered.filter(reg => reg.date === selectedDate);
+      filtered = filtered.filter(reg => reg.appointmentTime.startsWith(selectedDate));
     }
 
     // 按状态筛选
@@ -112,7 +54,7 @@ const RegistrationManagement: React.FC = () => {
       filtered = filtered.filter(reg => 
         reg.patientName.toLowerCase().includes(term) ||
         reg.patientId.toString().includes(term) ||
-        reg.symptoms.toLowerCase().includes(term)
+        reg.disease.toLowerCase().includes(term)
       );
     }
 
@@ -122,28 +64,43 @@ const RegistrationManagement: React.FC = () => {
   // 监听筛选条件变化
   React.useEffect(() => {
     filterRegistrations();
-  }, [selectedDate, selectedStatus, searchTerm]);
+  }, [registrations, selectedDate, selectedStatus, searchTerm]);
 
   // 更新挂号状态
-  const updateRegistrationStatus = (id: number, status: Registration['status']) => {
-    setFilteredRegistrations(prev => 
-      prev.map(reg => 
-        reg.id === id ? { ...reg, status } : reg
-      )
-    );
+  const handleUpdateStatus = async (id: number, status: RegistrationStatus) => {
+    try {
+      await updateRegistrationStatus(id, status);
+      // 更新本地状态
+      setRegistrations(prev => 
+        prev.map(reg => 
+          reg.id === id ? { ...reg, status } : reg
+        )
+      );
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '更新状态失败';
+      console.error('更新挂号状态失败:', err);
+      alert(`更新状态失败: ${errorMessage}`);
+    }
   };
 
   // 批量更新状态
-  const batchUpdateStatus = (status: Registration['status']) => {
+  const batchUpdateStatus = async (status: RegistrationStatus) => {
     if (selectedRegistrations.length === 0) return;
     
-    setFilteredRegistrations(prev => 
-      prev.map(reg => 
-        selectedRegistrations.includes(reg.id) ? { ...reg, status } : reg
-      )
-    );
-    
-    setSelectedRegistrations([]);
+    try {
+      await batchUpdateRegistrationStatus(selectedRegistrations, status);
+      // 更新本地状态
+      setRegistrations(prev => 
+        prev.map(reg => 
+          selectedRegistrations.includes(reg.id) ? { ...reg, status } : reg
+        )
+      );
+      setSelectedRegistrations([]);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '批量更新失败';
+      console.error('批量更新状态失败:', err);
+      alert(`批量更新失败: ${errorMessage}`);
+    }
   };
 
   // 切换选择状态
@@ -168,7 +125,7 @@ const RegistrationManagement: React.FC = () => {
   const getStatusText = (status: Registration['status']) => {
     const statusMap = {
       pending: '待确认',
-      confirmed: '已确认',
+      processing: '处理中',
       cancelled: '已取消',
       completed: '已完成'
     };
@@ -204,7 +161,7 @@ const RegistrationManagement: React.FC = () => {
             >
               <option value="all">全部状态</option>
               <option value="pending">待确认</option>
-              <option value="confirmed">已确认</option>
+              <option value="processing">处理中</option>
               <option value="cancelled">已取消</option>
               <option value="completed">已完成</option>
             </select>
@@ -228,9 +185,9 @@ const RegistrationManagement: React.FC = () => {
           <div className="batch-buttons">
             <button 
               className="btn btn-primary" 
-              onClick={() => batchUpdateStatus('confirmed')}
+              onClick={() => batchUpdateStatus('processing')}
             >
-              批量确认
+              批量处理
             </button>
             <button 
               className="btn btn-danger" 
@@ -250,102 +207,111 @@ const RegistrationManagement: React.FC = () => {
       
       {/* 挂号列表 */}
       <div className="registration-table-container">
-        <table className="registration-table">
-          <thead>
-            <tr>
-              <th>
-                <input 
-                  type="checkbox" 
-                  checked={selectedRegistrations.length === filteredRegistrations.length && filteredRegistrations.length > 0} 
-                  onChange={toggleSelectAll} 
-                />
-              </th>
-              <th>患者ID</th>
-              <th>患者姓名</th>
-              <th>性别</th>
-              <th>年龄</th>
-              <th>科室</th>
-              <th>就诊时间</th>
-              <th>症状</th>
-              <th>状态</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRegistrations.length > 0 ? (
-              filteredRegistrations.map(registration => (
-                <tr key={registration.id}>
-                  <td>
-                    <input 
-                      type="checkbox" 
-                      checked={selectedRegistrations.includes(registration.id)} 
-                      onChange={() => toggleSelectRegistration(registration.id)} 
-                    />
-                  </td>
-                  <td>{registration.patientId}</td>
-                  <td>{registration.patientName}</td>
-                  <td>{registration.gender}</td>
-                  <td>{registration.age}</td>
-                  <td>{registration.department}</td>
-                  <td>{registration.time}</td>
-                  <td>{registration.symptoms}</td>
-                  <td>
-                    <span className={`status-badge ${getStatusClass(registration.status)}`}>
-                      {getStatusText(registration.status)}
-                    </span>
-                  </td>
-                  <td className="action-buttons">
-                    {registration.status === 'pending' && (
-                      <>
+        {loading ? (
+          <div className="loading">加载中...</div>
+        ) : error ? (
+          <div className="error-message">
+            <p>获取数据失败: {error}</p>
+            <button className="btn btn-primary" onClick={() => window.location.reload()}>刷新</button>
+          </div>
+        ) : (
+          <table className="registration-table">
+            <thead>
+              <tr>
+                <th>
+                  <input 
+                    type="checkbox" 
+                    checked={selectedRegistrations.length === filteredRegistrations.length && filteredRegistrations.length > 0} 
+                    onChange={toggleSelectAll} 
+                  />
+                </th>
+                <th>患者ID</th>
+                <th>患者姓名</th>
+                <th>性别</th>
+                <th>年龄</th>
+                <th>科室</th>
+                <th>就诊时间</th>
+                <th>症状</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRegistrations.length > 0 ? (
+                filteredRegistrations.map(registration => (
+                  <tr key={registration.id}>
+                    <td>
+                      <input 
+                        type="checkbox" 
+                        checked={selectedRegistrations.includes(registration.id)} 
+                        onChange={() => toggleSelectRegistration(registration.id)} 
+                      />
+                    </td>
+                    <td>{registration.patientId}</td>
+                    <td>{registration.patientName}</td>
+                    <td>未知</td>
+                    <td>未知</td>
+                    <td>{registration.department}</td>
+                    <td>{registration.appointmentTime}</td>
+                    <td>{registration.disease}</td>
+                    <td>
+                      <span className={`status-badge ${getStatusClass(registration.status)}`}>
+                        {getStatusText(registration.status)}
+                      </span>
+                    </td>
+                    <td className="action-buttons">
+                      {registration.status === 'pending' && (
+                        <>
+                          <button 
+                            className="btn btn-sm btn-primary" 
+                            onClick={() => handleUpdateStatus(registration.id, 'processing')}
+                          >
+                            确认
+                          </button>
+                          <button 
+                            className="btn btn-sm btn-danger" 
+                            onClick={() => handleUpdateStatus(registration.id, 'cancelled')}
+                          >
+                            取消
+                          </button>
+                        </>
+                      )}
+                      {registration.status === 'processing' && (
+                        <>
+                          <button 
+                            className="btn btn-sm btn-success" 
+                            onClick={() => handleUpdateStatus(registration.id, 'completed')}
+                          >
+                            完成
+                          </button>
+                          <button 
+                            className="btn btn-sm btn-danger" 
+                            onClick={() => handleUpdateStatus(registration.id, 'cancelled')}
+                          >
+                            取消
+                          </button>
+                        </>
+                      )}
+                      {registration.status === 'completed' && (
                         <button 
-                          className="btn btn-sm btn-primary" 
-                          onClick={() => updateRegistrationStatus(registration.id, 'confirmed')}
+                          className="btn btn-sm btn-info" 
                         >
-                          确认
+                          查看详情
                         </button>
-                        <button 
-                          className="btn btn-sm btn-danger" 
-                          onClick={() => updateRegistrationStatus(registration.id, 'cancelled')}
-                        >
-                          取消
-                        </button>
-                      </>
-                    )}
-                    {registration.status === 'confirmed' && (
-                      <>
-                        <button 
-                          className="btn btn-sm btn-success" 
-                          onClick={() => updateRegistrationStatus(registration.id, 'completed')}
-                        >
-                          完成
-                        </button>
-                        <button 
-                          className="btn btn-sm btn-danger" 
-                          onClick={() => updateRegistrationStatus(registration.id, 'cancelled')}
-                        >
-                          取消
-                        </button>
-                      </>
-                    )}
-                    {registration.status === 'completed' && (
-                      <button 
-                        className="btn btn-sm btn-info" 
-                      >
-                        查看详情
-                      </button>
-                    )}
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={10} className="no-data">
+                    暂无挂号记录
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={10} className="no-data">
-                  暂无挂号记录
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

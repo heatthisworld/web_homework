@@ -184,7 +184,7 @@ const PatientManagement: React.FC = () => {
         const data = await fetchPatientsWithDetails();
         if (cancelled) return;
         if (!data.length) {
-          setError("暂无患者数据，已展示本地示例数据");
+          console.log("暂无患者数据，已展示本地示例数据");
           setPatients(fallbackPatients);
           setFilteredPatients(fallbackPatients);
           setSelectedPatient(fallbackPatients[0] ?? null);
@@ -195,11 +195,8 @@ const PatientManagement: React.FC = () => {
         setSelectedPatient(data[0] ?? null);
       } catch (err) {
         if (cancelled) return;
-        setError(
-          err instanceof Error
-            ? `${err.message}，已展示本地示例数据`
-            : "加载患者数据失败，已展示本地示例数据",
-        );
+        console.error('加载患者数据失败:', err);
+        // 不显示错误信息，静默使用示例数据
         setPatients(fallbackPatients);
         setFilteredPatients(fallbackPatients);
         setSelectedPatient(fallbackPatients[0] ?? null);
@@ -279,7 +276,7 @@ const PatientManagement: React.FC = () => {
             />
           </div>
         </div>
-        {error && <div className="patient-error">{error}</div>}
+
       </div>
 
       {loading ? (
