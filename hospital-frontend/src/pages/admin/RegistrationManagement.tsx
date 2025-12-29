@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { fetchRegistrations } from "../../services/adminService";
+import { fetchRegistrations, updateRegistration, deleteRegistration } from "../../services/adminService";
 import type { AdminRegistration } from "../../services/adminService";
 
 type RegStatus = "WAITING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
@@ -11,6 +11,17 @@ const RegistrationManagement: React.FC = () => {
   const [keyword, setKeyword] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // 编辑模态框状态
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingRegistration, setEditingRegistration] = useState<AdminRegistration | null>(null);
+  const [editFormData, setEditFormData] = useState<Partial<AdminRegistration>>({
+    status: "WAITING"
+  });
+  
+  // 删除确认对话框状态
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deletingRegistrationId, setDeletingRegistrationId] = useState<number | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -92,6 +103,51 @@ const RegistrationManagement: React.FC = () => {
       </div>
     );
   }
+
+  // 编辑处理函数
+  const handleEdit = (registration: AdminRegistration) => {
+    setEditingRegistration(registration);
+    setEditFormData({
+      status: registration.status as RegStatus,
+      notes: registration.notes
+    });
+    setEditModalVisible(true);
+  };
+  
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRegistration) return;
+    
+    try {
+      console.log("编辑提交数据:", { id: editingRegistration.id, data: editFormData });
+      const updatedRegistration = await updateRegistration(editingRegistration.id, editFormData);
+      setRegistrations(prev => prev.map(reg => 
+        reg.id === updatedRegistration.id ? updatedRegistration : reg
+      ));
+      setEditModalVisible(false);
+    } catch (err) {
+      console.error("编辑失败错误:", err);
+      alert(`编辑失败：${err instanceof Error ? err.message : "未知错误"}`);
+    }
+  };
+  
+  // 删除处理函数
+  const handleDelete = (id: number) => {
+    setDeletingRegistrationId(id);
+    setDeleteModalVisible(true);
+  };
+  
+  const handleDeleteConfirm = async () => {
+    if (!deletingRegistrationId) return;
+    
+    try {
+      await deleteRegistration(deletingRegistrationId);
+      setRegistrations(prev => prev.filter(reg => reg.id !== deletingRegistrationId));
+      setDeleteModalVisible(false);
+    } catch (err) {
+      alert(`删除失败：${err instanceof Error ? err.message : "未知错误"}`);
+    }
+  };
 
   return (
     <div className="page-root">
@@ -194,6 +250,7 @@ const RegistrationManagement: React.FC = () => {
               <th>类型</th>
               <th>状态</th>
               <th>备注</th>
+              <th>操作</th>
             </tr>
           </thead>
           <tbody>
@@ -225,11 +282,218 @@ const RegistrationManagement: React.FC = () => {
                   </span>
                 </td>
                 <td>{row.notes ?? "—"}</td>
+                <td>
+                  <div className="button-group">
+                    <button 
+                      className="button-small primary-button"
+                      onClick={() => handleEdit(row)}
+                    >
+                      编辑
+                    </button>
+                    <button 
+                      className="button-small danger-button"
+                      onClick={() => handleDelete(row.id)}
+                    >
+                      删除
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* 编辑模态框 */}
+      {editModalVisible && editingRegistration && (
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0, 
+          backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          zIndex: 1000 
+        }}>
+          <div style={{ 
+            backgroundColor: 'white', 
+            padding: '20px', 
+            borderRadius: '8px', 
+            width: '400px', 
+            maxWidth: '90%' 
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              marginBottom: '20px' 
+            }}>
+              <h2>编辑挂号信息</h2>
+              <button 
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  fontSize: '24px', 
+                  cursor: 'pointer' 
+                }}
+                onClick={() => setEditModalVisible(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div>
+              <form onSubmit={handleEditSubmit}>
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px' }}>状态</label>
+                  <select 
+                    style={{ 
+                      width: '100%', 
+                      padding: '8px', 
+                      borderRadius: '4px', 
+                      border: '1px solid #ccc' 
+                    }}
+                    value={editFormData.status}
+                    onChange={(e) => setEditFormData(prev => ({...prev, status: e.target.value as RegStatus}))}
+                  >
+                    <option value="WAITING">待确认</option>
+                    <option value="CONFIRMED">已确认</option>
+                    <option value="COMPLETED">已完成</option>
+                    <option value="CANCELLED">已取消</option>
+                  </select>
+                </div>
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px' }}>备注</label>
+                  <textarea 
+                    style={{ 
+                      width: '100%', 
+                      padding: '8px', 
+                      borderRadius: '4px', 
+                      border: '1px solid #ccc', 
+                      minHeight: '80px' 
+                    }}
+                    value={editFormData.notes || ""}
+                    onChange={(e) => setEditFormData(prev => ({...prev, notes: e.target.value}))}
+                  />
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'flex-end', 
+                  gap: '10px' 
+                }}>
+                  <button 
+                    type="button"
+                    style={{ 
+                      padding: '8px 16px', 
+                      borderRadius: '4px', 
+                      border: '1px solid #ccc', 
+                      cursor: 'pointer' 
+                    }}
+                    onClick={() => setEditModalVisible(false)}
+                  >
+                    取消
+                  </button>
+                  <button 
+                    type="submit"
+                    style={{ 
+                      padding: '8px 16px', 
+                      borderRadius: '4px', 
+                      backgroundColor: '#007bff', 
+                      color: 'white', 
+                      border: 'none', 
+                      cursor: 'pointer' 
+                    }}
+                  >
+                    保存
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 删除确认对话框 */}
+      {deleteModalVisible && deletingRegistrationId && (
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0, 
+          backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          zIndex: 1000 
+        }}>
+          <div style={{ 
+            backgroundColor: 'white', 
+            padding: '20px', 
+            borderRadius: '8px', 
+            width: '400px', 
+            maxWidth: '90%' 
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              marginBottom: '20px' 
+            }}>
+              <h2>确认删除</h2>
+              <button 
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  fontSize: '24px', 
+                  cursor: 'pointer' 
+                }}
+                onClick={() => setDeleteModalVisible(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div>
+              <p>确定要删除这条挂号记录吗？此操作不可恢复。</p>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'flex-end', 
+                gap: '10px', 
+                marginTop: '20px' 
+              }}>
+                <button 
+                  type="button"
+                  style={{ 
+                    padding: '8px 16px', 
+                    borderRadius: '4px', 
+                    border: '1px solid #ccc', 
+                    cursor: 'pointer' 
+                  }}
+                  onClick={() => setDeleteModalVisible(false)}
+                >
+                  取消
+                </button>
+                <button 
+                  type="button"
+                  style={{ 
+                    padding: '8px 16px', 
+                    borderRadius: '4px', 
+                    backgroundColor: '#dc3545', 
+                    color: 'white', 
+                    border: 'none', 
+                    cursor: 'pointer' 
+                  }}
+                  onClick={handleDeleteConfirm}
+                >
+                  删除
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

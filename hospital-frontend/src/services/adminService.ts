@@ -215,6 +215,30 @@ export const fetchRegistrations = async (): Promise<AdminRegistration[]> => {
   }
 };
 
+export const updateRegistration = async (id: number, registrationData: Partial<Omit<AdminRegistration, "id">>): Promise<AdminRegistration> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/registrations/${id}`, withCredentials({
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(registrationData)
+    }));
+    return await unwrapData<AdminRegistration>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const deleteRegistration = async (id: number): Promise<void> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/registrations/${id}`, withCredentials({
+      method: "DELETE"
+    }));
+    await unwrapData<void>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
 export const fetchDepartments = async (): Promise<AdminDepartment[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/departments`, withCredentials());
