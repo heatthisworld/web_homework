@@ -270,6 +270,43 @@ export const fetchSchedules = async (): Promise<AdminSchedule[]> => {
   }
 };
 
+export const createSchedule = async (scheduleData: Omit<AdminSchedule, "id" | "booked">): Promise<AdminSchedule> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/schedules`, withCredentials({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(scheduleData)
+    }));
+    return await unwrapData<AdminSchedule>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const updateSchedule = async (id: number, scheduleData: Partial<Omit<AdminSchedule, "id" | "booked">>): Promise<AdminSchedule> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/schedules/${id}`, withCredentials({
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(scheduleData)
+    }));
+    return await unwrapData<AdminSchedule>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const deleteSchedule = async (id: number): Promise<void> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/schedules/${id}`, withCredentials({
+      method: "DELETE"
+    }));
+    await unwrapData<void>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
 export const fetchAnnouncements = async (): Promise<AdminAnnouncement[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/announcements`, withCredentials());

@@ -1,11 +1,11 @@
 package com.hospital.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import com.hospital.entity.Department;
 
 @Data
 @Entity
@@ -17,6 +17,7 @@ public class Doctor {
 
     @OneToOne
     @JoinColumn(name = "user_id", unique = true, nullable = false)
+    @JsonIgnore // 避免序列化User数据，防止循环引用
     private User user;
 
     @Column(name = "name", nullable = false, length = 50)
@@ -42,6 +43,7 @@ public class Doctor {
             joinColumns = @JoinColumn(name = "doctor_id"),
             inverseJoinColumns = @JoinColumn(name = "disease_id")
     )
+    @JsonIgnore // 避免序列化Disease数据，减少响应大小
     private List<Disease> diseases;
 
     @Column(name = "created_at", updatable = false)
