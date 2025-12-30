@@ -71,6 +71,14 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
           />
           <span className="toggle-label">开启Debug 模式（使用模拟数据）</span>
         </label>
+
+        <div
+          className="sidebar-item"
+          style={{ color: "#ef4444", fontWeight: 700, marginTop: 12, cursor: "pointer" }}
+          onClick={onLogout}
+        >
+          🚪 退出登录
+        </div>
       </div>
     </>
   );

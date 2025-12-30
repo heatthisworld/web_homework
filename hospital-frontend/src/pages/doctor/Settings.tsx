@@ -9,7 +9,7 @@ interface UserInfo {
   email: string;
   department: string;
   title: string;
-  avatar: string;
+  avatarUrl?: string;
 }
 
 const Settings: React.FC = () => {
@@ -22,7 +22,7 @@ const Settings: React.FC = () => {
     email: 'zhangsan@hospital.com',
     department: '内科',
     title: '主任医师',
-    avatar: 'https://via.placeholder.com/100'
+    avatarUrl: '/files/Default.gif',
   };
 
   // 状态管理
@@ -71,6 +71,8 @@ const Settings: React.FC = () => {
     // 这里可以添加保存逻辑
     alert('系统偏好已保存');
   };
+
+  const avatarSrc = formData.avatarUrl && formData.avatarUrl.trim() !== '' ? formData.avatarUrl : '/files/Default.gif';
 
   return (
     <div className="settings">
@@ -123,7 +125,7 @@ const Settings: React.FC = () => {
               <div className="profile-info">
                 <div className="avatar-section">
                   <div className="avatar-preview">
-                    <img src={formData.avatar} alt="头像" />
+                    <img src={avatarSrc} alt="头像" />
                   </div>
                   {editing && (
                     <div className="avatar-upload">

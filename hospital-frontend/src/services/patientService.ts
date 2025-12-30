@@ -63,6 +63,7 @@ export interface DoctorSummary {
   name: string;
   department: string;
   title?: string;
+  avatarUrl?: string;
 }
 
 export interface CreateRegistrationRequest {
@@ -222,7 +223,25 @@ export const updatePatientProfile = async (
 export const fetchDoctors = async (): Promise<DoctorSummary[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/doctors`, withCredentials());
-    return await unwrapData<DoctorSummary[]>(response);
+    const data = await unwrapData<DoctorSummary[]>(response);
+    const normalizeAvatar = (url?: string): string => {
+      if (!url || url.trim() === "") return "/files/Default.gif";
+      const trimmed = url.trim();
+      if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("//")) {
+        return trimmed;
+      }
+      if (trimmed.startsWith("/files/")) {
+        return trimmed;
+      }
+      // 将后端返回的相对路径补齐到静态资源映射
+      const cleaned = trimmed.replace(/^\/+/, "");
+      return `/files/${cleaned}`;
+    };
+
+    return data.map((doc) => ({
+      ...doc,
+      avatarUrl: normalizeAvatar(doc.avatarUrl),
+    }));
   } catch (error) {
     throw normalizeFetchError(error);
   }
