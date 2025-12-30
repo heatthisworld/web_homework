@@ -11,6 +11,7 @@ import java.util.List;
 @Repository
 public interface RegistrationRepository extends JpaRepository<Registration, Long> {
     List<Registration> findByPatient(Patient patient);
+    List<Registration> findByPatientId(Long patientId);
     List<Registration> findByDoctorId(Long doctorId);
     List<Registration> findByDiseaseId(Long diseaseId);
     List<Registration> findByStatus(Registration.Status status);

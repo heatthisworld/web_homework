@@ -4,10 +4,7 @@ import com.hospital.entity.Department;
 import com.hospital.model.Result;
 import com.hospital.repository.DepartmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,5 +25,38 @@ public class DepartmentController {
     public Result<Department> get(@PathVariable Long id) {
         Optional<Department> department = departmentRepository.findById(id);
         return department.map(Result::success).orElseGet(() -> Result.error(404, "Department not found"));
+    }
+
+    @PostMapping
+    public Result<Department> create(@RequestBody Department department) {
+        Department savedDepartment = departmentRepository.save(department);
+        return Result.success(savedDepartment);
+    }
+
+    @PutMapping("/{id}")
+    public Result<Department> update(@PathVariable Long id, @RequestBody Department department) {
+        Optional<Department> existingDepartment = departmentRepository.findById(id);
+        if (existingDepartment.isPresent()) {
+            Department updatedDepartment = existingDepartment.get();
+            updatedDepartment.setCode(department.getCode());
+            updatedDepartment.setName(department.getName());
+            updatedDepartment.setLeadName(department.getLeadName());
+            updatedDepartment.setRooms(department.getRooms());
+            updatedDepartment.setFocus(department.getFocus());
+            updatedDepartment.setStatus(department.getStatus());
+            return Result.success(departmentRepository.save(updatedDepartment));
+        } else {
+            return Result.error(404, "Department not found");
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public Result<Void> delete(@PathVariable Long id) {
+        if (departmentRepository.existsById(id)) {
+            departmentRepository.deleteById(id);
+            return Result.success();
+        } else {
+            return Result.error(404, "Department not found");
+        }
     }
 }

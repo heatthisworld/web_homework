@@ -93,12 +93,14 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Override
     public Registration updateRegistration(Long id, Registration registration) {
         Optional<Registration> existingRegistration = registrationRepository.findById(id);
-        if (existingRegistration.isPresent()) {
-            Registration updatedRegistration = existingRegistration.get();
-            updatedRegistration.setDoctor(registration.getDoctor());
-            updatedRegistration.setDisease(registration.getDisease());
-            updatedRegistration.setAppointmentTime(registration.getAppointmentTime());
-            updatedRegistration.setStatus(registration.getStatus());
+        if (existingRegistration.isPresent()) {            Registration updatedRegistration = existingRegistration.get();
+            // 只更新状态和备注字段，这些是前端表单中可编辑的字段
+            if (registration.getStatus() != null) {
+                updatedRegistration.setStatus(registration.getStatus());
+            }
+            if (registration.getNotes() != null) {
+                updatedRegistration.setNotes(registration.getNotes());
+            }
             return registrationRepository.save(updatedRegistration);
         } else {
             throw new RuntimeException("Registration not found with id: " + id);
@@ -119,6 +121,9 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Override
     public void deleteRegistration(Long id) {
+        if (!registrationRepository.existsById(id)) {
+            throw new RuntimeException("Registration not found with id: " + id);
+        }
         registrationRepository.deleteById(id);
     }
 }
