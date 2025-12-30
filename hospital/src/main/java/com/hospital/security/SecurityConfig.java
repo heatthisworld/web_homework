@@ -35,12 +35,19 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // 移除DaoAuthenticationProvider的显式配置，让Spring Boot自动配置
-
+    @Bean
+    public DaoAuthenticationProvider daoAuthenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
+        // 避免用户名不存在时吞掉具体异常，便于定位
+        provider.setHideUserNotFoundExceptions(false);
+        return provider;
+    }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
-        return authConfig.getAuthenticationManager();
+        // 使用显式的 DaoAuthenticationProvider，确保密码匹配使用同一个 BCryptPasswordEncoder
+        return new org.springframework.security.authentication.ProviderManager(daoAuthenticationProvider());
     }
 
     @Bean
@@ -88,6 +95,7 @@ public class SecurityConfig {
                 );
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        http.authenticationProvider(daoAuthenticationProvider());
 
         return http.build();
     }
