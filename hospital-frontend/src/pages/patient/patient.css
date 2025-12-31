@@ -765,11 +765,12 @@
 .success-message {
     background: #f0f9eb;
     border: 1px solid #c2e7b0;
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 15px;
     color: #67c23a;
-    margin-bottom: 16px;
+    font-size: 14px;
+    text-align: center;
 }
 
 .success-message h4 {
@@ -928,287 +929,227 @@
 .profile-page {
   padding: 15px;
   background-color: #f5f5f5;
+  min-height: 100vh;
 }
 
-.user-info-card {
+.info-section {
   background-color: #fff;
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
-  display: flex;
-  align-items: center;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
 }
 
-.user-info h3 {
-  margin: 0 0 5px 0;
-  font-size: 18px;
-}
-
-.user-info p {
+.section-title {
+  font-size: 16px;
+  color: #303133;
+  font-weight: 600;
   margin: 0;
-  color: #909399;
-  font-size: 14px;
 }
 
-.detail-info, .auxiliary-info {
-  background-color: #fff;
-  border-radius: 12px;
-  padding: 15px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+.info-list {
+  margin-top: 16px;
 }
 
-.info-item {
+.info-row {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
+  align-items: flex-start;
+  padding: 14px 0;
   border-bottom: 1px solid #f0f0f0;
 }
 
-.info-item:last-child {
+.info-row:last-child {
   border-bottom: none;
 }
 
 .info-label {
+  min-width: 80px;
   font-size: 14px;
   color: #606266;
+  font-weight: 500;
+  padding-top: 2px;
 }
 
 .info-value {
+  flex: 1;
   font-size: 14px;
   color: #303133;
+  word-break: break-all;
 }
 
-.info-select {
+.info-input-wrapper {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.info-input {
+  width: 100%;
   padding: 10px 12px;
   border: 1px solid #dcdfe6;
   border-radius: 8px;
   font-size: 14px;
   color: #303133;
   background-color: #fff;
-  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.info-select:disabled {
-  background-color: #f5f7fa;
-  cursor: not-allowed;
-  color: #c0c4cc;
-}
-
-.info-select:focus {
+.info-input:focus {
   outline: none;
   border-color: #409eff;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
 }
 
-.menu-section {
-  background-color: #fff;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
-}
-
-.menu-section h4 {
-  padding: 15px;
-  margin: 0;
-  font-size: 14px;
-  color: #909399;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.menu-list {
-  padding: 10px 0;
-}
-
-.menu-item {
-  display: flex;
-  align-items: center;
-  padding: 15px;
-  cursor: pointer;
-}
-
-.menu-icon {
-  font-size: 18px;
-  margin-right: 15px;
-  width: 20px;
-  text-align: center;
-}
-
-.menu-label {
-  flex: 1;
-  font-size: 15px;
-  color: #303133;
-}
-
-.menu-arrow {
-  font-size: 18px;
+.info-input::placeholder {
   color: #c0c4cc;
+}
+
+.field-error {
+  font-size: 12px;
+  color: #f56c6c;
+  margin-top: 4px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  padding: 0 15px;
+}
+
+.primary-btn,
+.secondary-btn {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.primary-btn {
+  background: #409eff;
+  color: #fff;
+}
+
+.primary-btn:hover {
+  background: #66b1ff;
+  transform: translateY(-1px);
+}
+
+.primary-btn:active {
+  transform: translateY(0);
+}
+
+.secondary-btn {
+  background: #fff;
+  color: #606266;
+  border: 1px solid #dcdfe6;
+}
+
+.secondary-btn:hover {
+  background: #f5f7fa;
+  border-color: #c0c4cc;
 }
 
 .logout-btn {
-  width: 100%;
-  padding: 12px;
-  background-color: #fef0f0;
-  color: #f56c6c;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  cursor: pointer;
-  margin-top: 20px;
+  background: #fff !important;
+  color: #f56c6c !important;
+  border: 1px solid #f56c6c !important;
 }
 
 .logout-btn:hover {
-  background-color: #fde2e2;
+  background: #fef0f0 !important;
+  border-color: #f56c6c !important;
 }
 
-/* 响应式设计 */
-@media (max-width: 480px) {
-  .home-page, .registration-page, .records-page, .profile-page {
-    padding: 10px;
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.edit-icon-btn {
+  background: none;
+  border: 1px solid #409eff;
+  color: #409eff;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.edit-icon-btn:hover {
+  background: #ecf5ff;
+}
+
+.user-info-card .user-info p {
+  margin: 4px 0 0 0;
+  color: #909399;
+  font-size: 14px;
+}
+
+/* 快捷日期选择按钮 */
+.quick-date-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.quick-date-btn {
+  flex: 1;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #606266;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quick-date-btn:hover {
+  border-color: #409eff;
+  background: #ecf5ff;
+  color: #409eff;
+}
+
+.quick-date-btn.active {
+  background: #409eff;
+  color: #fff;
+  border-color: #409eff;
+}
+
+/* 日期下拉选择器 */
+.date-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23606266' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.date-select option.weekend-option {
+  color: #f56c6c;
+  font-weight: 600;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+  .quick-date-buttons {
+    flex-direction: column;
   }
-  
-  .quick-menu {
-    grid-template-columns: repeat(2, 1fr);
+
+  .quick-date-btn {
+    width: 100%;
   }
-  
-  .user-card, .user-info-card {
-    padding: 15px;
-  }
-  
-  .user-avatar {
-    width: 50px;
-    height: 50px;
-  }
-
-  .quick-access-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-    /* 在现有样式基础上添加 */
-
-    .field-error {
-        color: #f56c6c;
-        font-size: 12px;
-        margin-top: 4px;
-    }
-
-    .info-item {
-        display: flex;
-        align-items: flex-start;
-        padding: 12px 0;
-        border-bottom: 1px solid #f0f0f0;
-    }
-
-    /* 信息分组区域 */
-    .info-section {
-        background: #fff;
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 16px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    }
-
-    .section-title {
-        font-size: 16px;
-        font-weight: 600;
-        color: #303133;
-        margin: 0 0 12px 0;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #e4e7ed;
-    }
-
-    .info-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .info-row {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-    }
-
-    .info-label {
-        font-size: 15px;
-        color: #606266;
-        min-width: 80px;
-        flex-shrink: 0;
-        padding-top: 2px;
-    }
-
-    .info-value {
-        font-size: 15px;
-        color: #303133;
-        font-weight: 600;
-        flex: 1;
-    }
-
-    .info-input-wrapper {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .info-input {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid #dcdfe6;
-        border-radius: 8px;
-        font-size: 15px;
-        color: #303133;
-        background-color: #fff;
-        transition: all 0.2s;
-    }
-
-    .info-input:focus {
-        outline: none;
-        border-color: #409eff;
-        box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
-    }
-
-    /* 操作按钮区域 */
-    .action-buttons {
-        display: flex;
-        gap: 12px;
-        padding: 0 16px;
-    }
-
-    .primary-btn {
-        flex: 1;
-        padding: 12px;
-        background: #409eff;
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .primary-btn:hover {
-        background: #66b1ff;
-    }
-
-    .secondary-btn {
-        flex: 1;
-        padding: 12px;
-        background: #fff;
-        color: #606266;
-        border: 1px solid #dcdfe6;
-        border-radius: 8px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .secondary-btn:hover {
-        background: #f5f7fa;
-        border-color: #c0c4cc;
-    }
 }

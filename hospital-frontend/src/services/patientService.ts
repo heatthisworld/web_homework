@@ -278,3 +278,17 @@ export const createRegistration = async (
     throw normalizeFetchError(error);
   }
 };
+
+export const cancelRegistration = async (registrationId: number): Promise<void> => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/registrations/${registrationId}`,
+      withCredentials({
+        method: "DELETE",
+      }),
+    );
+    await unwrapData<unknown>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};

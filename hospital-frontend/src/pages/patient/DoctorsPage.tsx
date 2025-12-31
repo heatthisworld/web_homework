@@ -1,46 +1,39 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import "./patient.css";
-import { fetchDoctors, type DoctorSummary } from "../../services/patientService";
+import { useDoctor } from "../../contexts/DoctorContext";
 
 const DoctorsPage: React.FC = () => {
-  const [doctors, setDoctors] = useState<DoctorSummary[]>([]);
-  const [filteredDoctors, setFilteredDoctors] = useState<DoctorSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { doctors, loading, error } = useDoctor();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("");
 
-  useEffect(() => {
-    const loadDoctors = async () => {
-      try {
-        const data = await fetchDoctors();
-        setDoctors(data);
-        setFilteredDoctors(data);
-      } catch (error) {
-        console.error("加载医生列表失败", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadDoctors();
-  }, []);
+  const departments = useMemo(() => {
+    const deptSet = new Set<string>();
+    doctors.forEach(d => {
+      const deptName = typeof d.department === "string" ? d.department : (d.department as any)?.name;
+      if (deptName) deptSet.add(deptName);
+    });
+    return Array.from(deptSet);
+  }, [doctors]);
 
-  useEffect(() => {
+  const filteredDoctors = useMemo(() => {
     let filtered = doctors;
 
     if (searchTerm) {
       filtered = filtered.filter((doctor) =>
-        doctor.name.toLowerCase().includes(searchTerm.toLowerCase()),
+        doctor.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     if (selectedDepartment) {
-      filtered = filtered.filter((doctor) => doctor.department === selectedDepartment);
+      filtered = filtered.filter((doctor) => {
+        const deptName = typeof doctor.department === "string" ? doctor.department : (doctor.department as any)?.name;
+        return deptName === selectedDepartment;
+      });
     }
 
-    setFilteredDoctors(filtered);
+    return filtered;
   }, [searchTerm, selectedDepartment, doctors]);
-
-  const departments = [...new Set(doctors.map((d) => d.department))];
 
   if (loading) {
     return (
@@ -54,52 +47,66 @@ const DoctorsPage: React.FC = () => {
   }
 
   return (
-    <div className="patient-page">
+    <div className="registration-page">
       <h3>医生查询</h3>
+      {error && <div className="error-message">{error}</div>}
 
-      <div className="filter-section">
-        <div className="search-box">
-          <input
-            type="text"
-            placeholder="搜索医生姓名..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        <select
-          value={selectedDepartment}
-          onChange={(e) => setSelectedDepartment(e.target.value)}
-          className="department-filter"
-        >
-          <option value="">全部科室</option>
-          {departments.map((dept) => (
-            <option key={dept} value={dept}>
-              {dept}
-            </option>
-          ))}
-        </select>
+      <div className="search-box" style={{ marginBottom: '15px' }}>
+        <input
+          type="text"
+          placeholder="搜索医生姓名..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
-      <div className="doctor-list">
-        {filteredDoctors.map((doctor) => {
-          const avatarSrc =
-            doctor.avatarUrl && doctor.avatarUrl.trim() !== ""
-              ? doctor.avatarUrl
-              : "/files/Default.gif";
-          return (
-            <div key={doctor.id} className="doctor-card">
-              <div className="doctor-avatar">
-                <img src={avatarSrc} alt={`${doctor.name}头像`} />
-              </div>
-              <div className="doctor-info">
-                <h4>{doctor.name}</h4>
-                <p className="doctor-title">{doctor.title || "医生"}</p>
-                <p className="doctor-department">{doctor.department}</p>
-              </div>
+      <div className="registration-layout">
+        <div className="department-sidebar">
+          <div className="sidebar-title">选择科室</div>
+          <div
+            className={`department-nav-item ${!selectedDepartment ? "active" : ""}`}
+            onClick={() => setSelectedDepartment("")}
+          >
+            全部科室
+          </div>
+          {departments.map((dept) => (
+            <div
+              key={dept}
+              className={`department-nav-item ${selectedDepartment === dept ? "active" : ""}`}
+              onClick={() => setSelectedDepartment(dept)}
+            >
+              {dept}
             </div>
-          );
-        })}
+          ))}
+        </div>
+
+        <div className="doctor-list-area">
+          {filteredDoctors.length === 0 ? (
+            <div className="no-doctors">未找到符合条件的医生</div>
+          ) : (
+            filteredDoctors.map((doctor) => {
+              const avatarSrc = doctor.avatarUrl && doctor.avatarUrl.trim() !== ""
+                ? doctor.avatarUrl
+                : "/files/Default.gif";
+              const deptName = typeof doctor.department === "string"
+                ? doctor.department
+                : (doctor.department as any)?.name || "未知科室";
+
+              return (
+                <div key={doctor.id} className="doctor-card-horizontal">
+                  <div className="doctor-avatar-large">
+                    <img src={avatarSrc} alt={`${doctor.name}头像`} />
+                  </div>
+                  <div className="doctor-info-area">
+                    <h4>{doctor.name}</h4>
+                    <p className="doctor-title">{doctor.title || "医生"}</p>
+                    <p className="doctor-department">{deptName}</p>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
     </div>
   );

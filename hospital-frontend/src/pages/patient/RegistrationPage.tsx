@@ -1,36 +1,21 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import "./patient.css";
-import {
-  createRegistration,
-  fetchCurrentPatientDetails,
-  fetchDoctors,
-  type DoctorSummary,
-  type PatientDetails,
-} from "../../services/patientService";
-
-interface RegistrationPageProps {
-  debugMode: boolean;
-}
-
-const mockDoctors: DoctorSummary[] = [
-  { id: 1, name: "张医生", department: "内科", title: "主任医师", avatarUrl: "/files/Default.gif" },
-  { id: 2, name: "李医生", department: "内科", title: "主治医师", avatarUrl: "/files/Default.gif" },
-  { id: 3, name: "王医生", department: "儿科", title: "副主任医师", avatarUrl: "/files/Default.gif" },
-];
+import { createRegistration } from "../../services/patientService";
+import { usePatient } from "../../contexts/PatientContext";
+import { useDoctor } from "../../contexts/DoctorContext";
 
 const timeSlots = ["08:30", "09:00", "10:00", "14:00", "15:00", "16:00"];
 
-const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
-  const [doctors, setDoctors] = useState<DoctorSummary[]>(mockDoctors);
-  const [patient, setPatient] = useState<PatientDetails | null>(null);
+const RegistrationPage: React.FC = () => {
+  const { patient, loading: patientLoading, refreshPatient } = usePatient();
+  const { doctors, loading: doctorsLoading, error: doctorsError } = useDoctor();
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
-  const [selectedDoctor, setSelectedDoctor] = useState<DoctorSummary | null>(null);
+  const [selectedDoctor, setSelectedDoctor] = useState<any | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
 
   const departments = useMemo(() => {
     const deptSet = new Set<string>();
@@ -41,62 +26,35 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
     return Array.from(deptSet);
   }, [doctors]);
 
-  useEffect(() => {
-    let cancelled = false;
+  const dateOptions = useMemo(() => {
+    const options = [];
+    const today = new Date();
+    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
-    const loadData = async () => {
-      if (debugMode) {
-        setPatient({
-          id: 0,
-          username: "patient@example.com",
-          name: "张三",
-          gender: "MALE",
-          age: 30,
-          phone: "13800000000",
-          address: "北京朝阳",
-          medicalHistory: [],
-          visitHistory: [],
-        });
-        setLoading(false);
-        return;
-      }
-      try {
-        const [patientDetail, doctorList] = await Promise.all([
-          fetchCurrentPatientDetails(),
-          fetchDoctors(),
-        ]);
-        if (cancelled) return;
-        setPatient(patientDetail);
-        setDoctors(doctorList.length ? doctorList : mockDoctors);
-      } catch (err) {
-        if (cancelled) return;
-        setError(
-          err instanceof Error
-            ? `${err.message}，已启用示例数据`
-            : "加载失败，已启用示例数据",
-        );
-        setPatient({
-          id: 0,
-          username: "patient@example.com",
-          name: "张三",
-          gender: "MALE",
-          age: 30,
-          phone: "13800000000",
-          address: "北京朝阳",
-          medicalHistory: [],
-          visitHistory: [],
-        });
-        setDoctors(mockDoctors);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
 
-    loadData();
-    return () => {
-      cancelled = true;
-    };
-  }, [debugMode]);
+      const dateStr = date.toISOString().split('T')[0];
+      const weekday = weekdays[date.getDay()];
+      const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+
+      let label = '';
+      if (i === 0) label = '今天';
+      else if (i === 1) label = '明天';
+      else if (i === 2) label = '后天';
+      else label = `${date.getMonth() + 1}月${date.getDate()}日`;
+
+      options.push({
+        value: dateStr,
+        label: `${label} (${weekday})`,
+        isWeekend,
+        shortLabel: label
+      });
+    }
+
+    return options;
+  }, []);
 
   const filteredDoctors = useMemo(() => {
     if (!selectedDepartment) return doctors;
@@ -106,23 +64,20 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
     });
   }, [selectedDepartment, doctors]);
 
-  const handleBookClick = (doctor: DoctorSummary) => {
+  const handleBookClick = (doctor: any) => {
     setSelectedDoctor(doctor);
     setSelectedDate("");
     setSelectedTime("");
     setShowTimeModal(true);
   };
 
+  const handleQuickDateSelect = (dateValue: string) => {
+    setSelectedDate(dateValue);
+  };
+
   const handleSubmit = async () => {
     if (!patient || !selectedDoctor || !selectedDate || !selectedTime) {
       setError("请完成所有选择");
-      return;
-    }
-
-    if (debugMode) {
-      setRegistrationSuccess(true);
-      setShowTimeModal(false);
-      setTimeout(() => setRegistrationSuccess(false), 3000);
       return;
     }
 
@@ -134,6 +89,9 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
         diseaseId: 1,
         appointmentTime,
       });
+
+      await refreshPatient();
+
       setRegistrationSuccess(true);
       setShowTimeModal(false);
       setError("");
@@ -149,7 +107,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
     }
   };
 
-  if (loading) {
+  if (patientLoading || doctorsLoading) {
     return (
       <div className="registration-page">
         <div className="announcement-item">正在加载，请稍候...</div>
@@ -160,7 +118,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
   return (
     <div className="registration-page">
       <h3>在线挂号</h3>
-      {error && <div className="error-message">{error}</div>}
+      {(error || doctorsError) && <div className="error-message">{error || doctorsError}</div>}
 
       {registrationSuccess && (
         <div className="success-message">
@@ -170,7 +128,6 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
       )}
 
       <div className="registration-layout">
-        {/* 左侧科室导航 */}
         <div className="department-sidebar">
           <div className="sidebar-title">选择科室</div>
           <div
@@ -190,20 +147,13 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
           ))}
         </div>
 
-        {/* 右侧医生列表 */}
         <div className="doctor-list-area">
           {filteredDoctors.length === 0 ? (
             <div className="no-doctors">该科室暂无医生</div>
           ) : (
             filteredDoctors.map((doctor) => {
-              const avatarSrc =
-                doctor.avatarUrl && doctor.avatarUrl.trim() !== ""
-                  ? doctor.avatarUrl
-                  : "/files/Default.gif";
-              const deptName =
-                typeof doctor.department === "string"
-                  ? doctor.department
-                  : (doctor as any).department?.name;
+              const avatarSrc = doctor.avatarUrl && doctor.avatarUrl.trim() !== "" ? doctor.avatarUrl : "/files/Default.gif";
+              const deptName = typeof doctor.department === "string" ? doctor.department : (doctor as any).department?.name;
               return (
                 <div key={doctor.id} className="doctor-card-horizontal">
                   <div className="doctor-avatar-large">
@@ -212,9 +162,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
                   <div className="doctor-info-area">
                     <h4>{doctor.name}</h4>
                     <p className="doctor-title">{doctor.title}</p>
-                    <p className="doctor-department">
-                      {deptName}
-                    </p>
+                    <p className="doctor-department">{deptName}</p>
                   </div>
                   <button className="book-button" onClick={() => handleBookClick(doctor)}>
                     预约挂号
@@ -226,7 +174,6 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
         </div>
       </div>
 
-      {/* 时间选择弹窗 */}
       {showTimeModal && (
         <div className="modal-overlay" onClick={() => setShowTimeModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -238,18 +185,44 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ debugMode }) => {
               <div className="modal-doctor-info">
                 <strong>{selectedDoctor?.name}</strong> - {selectedDoctor?.title}
               </div>
+
               <div className="time-select-group">
-                <label>日期:</label>
-                <input
-                  type="date"
-                  className="time-input"
-                  min={new Date().toISOString().split('T')[0]}
+                <label>快捷选择日期</label>
+                <div className="quick-date-buttons">
+                  {dateOptions.slice(0, 3).map((option) => (
+                    <button
+                      key={option.value}
+                      className={`quick-date-btn ${selectedDate === option.value ? 'active' : ''}`}
+                      onClick={() => handleQuickDateSelect(option.value)}
+                    >
+                      {option.shortLabel}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="time-select-group">
+                <label>选择日期</label>
+                <select
+                  className="time-input date-select"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                />
+                >
+                  <option value="">请选择日期</option>
+                  {dateOptions.map((option) => (
+                    <option
+                      key={option.value}
+                      value={option.value}
+                      className={option.isWeekend ? 'weekend-option' : ''}
+                    >
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
+
               <div className="time-select-group">
-                <label>时间:</label>
+                <label>选择时间</label>
                 <div className="time-slots-grid">
                   {timeSlots.map((time) => (
                     <div
