@@ -2,9 +2,8 @@ package com.hospital.controller;
 
 import com.hospital.entity.Registration;
 import com.hospital.model.Result;
-import com.hospital.service.RegistrationService;
+import com.hospital.repository.RegistrationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -16,88 +15,90 @@ import java.util.Optional;
 public class RegistrationController {
 
     @Autowired
-    private RegistrationService registrationService;
+    private RegistrationRepository registrationRepository;
 
     @GetMapping
     public Result<List<Registration>> getAllRegistrations() {
-        return Result.success(registrationService.getAllRegistrations());
+        return Result.success(registrationRepository.findAll());
     }
 
     @GetMapping("/{id}")
     public Result<Registration> getRegistrationById(@PathVariable Long id) {
-        Optional<Registration> registration = registrationService.getRegistrationById(id);
+        Optional<Registration> registration = registrationRepository.findById(id);
         return registration.map(Result::success)
                 .orElseGet(() -> Result.error(404, "挂号记录不存在"));
     }
 
-    @GetMapping("/patient/{patientId}")
-    public Result<List<Registration>> getRegistrationsByPatientId(@PathVariable Long patientId) {
-        return Result.success(registrationService.getRegistrationsByPatientId(patientId));
-    }
-
-    @GetMapping("/doctor/{doctorId}")
-    public Result<List<Registration>> getRegistrationsByDoctorId(@PathVariable Long doctorId) {
-        return Result.success(registrationService.getRegistrationsByDoctorId(doctorId));
-    }
-
-    @GetMapping("/disease/{diseaseId}")
-    public Result<List<Registration>> getRegistrationsByDiseaseId(@PathVariable Long diseaseId) {
-        return Result.success(registrationService.getRegistrationsByDiseaseId(diseaseId));
-    }
-
-    @GetMapping("/status/{status}")
-    public Result<List<Registration>> getRegistrationsByStatus(@PathVariable Registration.Status status) {
-        return Result.success(registrationService.getRegistrationsByStatus(status));
-    }
-
-    @GetMapping("/patient/{patientId}/status/{status}")
-    public Result<List<Registration>> getRegistrationsByPatientAndStatus(@PathVariable Long patientId, @PathVariable Registration.Status status) {
-        return Result.success(registrationService.getRegistrationsByPatientAndStatus(patientId, status));
-    }
-
-    @GetMapping("/time")
-    public Result<List<Registration>> getRegistrationsByAppointmentTimeBetween(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
-        return Result.success(registrationService.getRegistrationsByAppointmentTimeBetween(start, end));
-    }
-
     @PostMapping
     public Result<Registration> createRegistration(@RequestBody Registration registration) {
-        try {
-            Registration createdRegistration = registrationService.createRegistration(registration);
-            return Result.success(createdRegistration);
-        } catch (RuntimeException e) {
-            return Result.error(400, "创建挂号失败：" + e.getMessage());
+        if (registration.getPatient() != null && registration.getAppointmentTime() != null) {
+            LocalDateTime appointmentTime = registration.getAppointmentTime();
+            LocalDateTime startTime = appointmentTime.minusMinutes(30);
+            LocalDateTime endTime = appointmentTime.plusMinutes(30);
+
+            List<Registration> conflicts = registrationRepository.findConflictingRegistrations(
+                    registration.getPatient().getId(),
+                    startTime,
+                    endTime
+            );
+
+            if (!conflicts.isEmpty()) {
+                return Result.error(4003, "该时间段已有挂号记录，请选择其他时间");
+            }
         }
+
+        Registration savedRegistration = registrationRepository.save(registration);
+        return Result.success(savedRegistration);
     }
 
     @PutMapping("/{id}")
     public Result<Registration> updateRegistration(@PathVariable Long id, @RequestBody Registration registration) {
-        try {
-            Registration updatedRegistration = registrationService.updateRegistration(id, registration);
-            return Result.success(updatedRegistration);
-        } catch (RuntimeException e) {
-            return Result.error(404, "挂号记录不存在");
-        }
-    }
+        Optional<Registration> existingRegistration = registrationRepository.findById(id);
+        if (existingRegistration.isPresent()) {
+            Registration updatedRegistration = existingRegistration.get();
 
-    @PutMapping("/{id}/status/{status}")
-    public Result<Registration> updateRegistrationStatus(@PathVariable Long id, @PathVariable Registration.Status status) {
-        try {
-            Registration updatedRegistration = registrationService.updateRegistrationStatus(id, status);
+            if (registration.getStatus() != null) {
+                updatedRegistration.setStatus(registration.getStatus());
+            }
+            if (registration.getAppointmentTime() != null) {
+                LocalDateTime appointmentTime = registration.getAppointmentTime();
+                LocalDateTime startTime = appointmentTime.minusMinutes(30);
+                LocalDateTime endTime = appointmentTime.plusMinutes(30);
+
+                List<Registration> conflicts = registrationRepository.findConflictingRegistrations(
+                        updatedRegistration.getPatient().getId(),
+                        startTime,
+                        endTime
+                );
+
+                conflicts.removeIf(r -> r.getId().equals(id));
+
+                if (!conflicts.isEmpty()) {
+                    return Result.error(4003, "该时间段已有挂号记录，请选择其他时间");
+                }
+
+                updatedRegistration.setAppointmentTime(registration.getAppointmentTime());
+            }
+            if (registration.getNotes() != null) {
+                updatedRegistration.setNotes(registration.getNotes());
+            }
+
+            registrationRepository.save(updatedRegistration);
             return Result.success(updatedRegistration);
-        } catch (RuntimeException e) {
+        } else {
             return Result.error(404, "挂号记录不存在");
         }
     }
 
     @DeleteMapping("/{id}")
     public Result<Void> deleteRegistration(@PathVariable Long id) {
-        try {
-            registrationService.deleteRegistration(id);
+        Optional<Registration> registration = registrationRepository.findById(id);
+        if (registration.isPresent()) {
+            Registration reg = registration.get();
+            reg.setStatus(Registration.Status.CANCELLED);
+            registrationRepository.save(reg);
             return Result.success();
-        } catch (RuntimeException e) {
+        } else {
             return Result.error(404, "挂号记录不存在");
         }
     }

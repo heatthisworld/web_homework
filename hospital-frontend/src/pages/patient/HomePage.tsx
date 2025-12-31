@@ -15,9 +15,9 @@ const HomePage: React.FC = () => {
 
   const quickAccess = [
     { id: 1, icon: "👨‍⚕️", label: "医生查询", path: "/patient/doctors" },
-    { id: 3, icon: "🗓", label: "快速挂号", path: "/patient/registration" },
-    { id: 4, icon: "📋", label: "我的挂号", path: "/patient/records" },
-    { id: 5, icon: "👤", label: "个人中心", path: "/patient/profile" }
+    { id: 2, icon: "🗓", label: "快速挂号", path: "/patient/registration" },
+    { id: 3, icon: "📋", label: "我的挂号", path: "/patient/records" },
+    { id: 4, icon: "👤", label: "个人中心", path: "/patient/profile" }
   ];
 
   if (loading) {

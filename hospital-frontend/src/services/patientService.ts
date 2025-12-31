@@ -257,26 +257,26 @@ export const fetchDiseases = async (): Promise<Disease[]> => {
 };
 
 export const createRegistration = async (
-  payload: CreateRegistrationRequest,
+    payload: CreateRegistrationRequest,
 ): Promise<void> => {
-  try {
-    const response = await fetch(
-      `${API_BASE_URL}/registrations`,
-      withCredentials({
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          patient: { id: payload.patientId },
-          doctor: { id: payload.doctorId },
-          disease: { id: payload.diseaseId },
-          appointmentTime: payload.appointmentTime,
-        }),
-      }),
-    );
-    await unwrapData<unknown>(response);
-  } catch (error) {
-    throw normalizeFetchError(error);
-  }
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/registrations`,
+            withCredentials({
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    patient: { id: payload.patientId },
+                    doctor: { id: payload.doctorId },
+                    disease: { id: payload.diseaseId },
+                    appointmentTime: payload.appointmentTime,
+                }),
+            }),
+        );
+        await unwrapData<unknown>(response);
+    } catch (error) {
+        throw normalizeFetchError(error);
+    }
 };
 
 export const cancelRegistration = async (registrationId: number): Promise<void> => {

@@ -75,37 +75,42 @@ const RegistrationPage: React.FC = () => {
     setSelectedDate(dateValue);
   };
 
-  const handleSubmit = async () => {
-    if (!patient || !selectedDoctor || !selectedDate || !selectedTime) {
-      setError("请完成所有选择");
-      return;
-    }
+    const handleSubmit = async () => {
+        if (!patient || !selectedDoctor || !selectedDate || !selectedTime) {
+            setError("请完成所有选择");
+            return;
+        }
 
-    try {
-      const appointmentTime = `${selectedDate}T${selectedTime}:00`;
-      await createRegistration({
-        patientId: patient.id,
-        doctorId: selectedDoctor.id,
-        diseaseId: 1,
-        appointmentTime,
-      });
+        try {
+            const appointmentTime = `${selectedDate}T${selectedTime}:00`;
+            await createRegistration({
+                patientId: patient.id,
+                doctorId: selectedDoctor.id,
+                diseaseId: 1,
+                appointmentTime,
+            });
 
-      await refreshPatient();
+            await refreshPatient();
 
-      setRegistrationSuccess(true);
-      setShowTimeModal(false);
-      setError("");
+            setRegistrationSuccess(true);
+            setShowTimeModal(false);
+            setError("");
 
-      setTimeout(() => {
-        setRegistrationSuccess(false);
-        setSelectedDoctor(null);
-        setSelectedDate("");
-        setSelectedTime("");
-      }, 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "提交挂号失败");
-    }
-  };
+            setTimeout(() => {
+                setRegistrationSuccess(false);
+                setSelectedDoctor(null);
+                setSelectedDate("");
+                setSelectedTime("");
+            }, 3000);
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : "提交挂号失败";
+            setError(errorMessage);
+            // 如果是时间冲突错误，保持弹窗打开让用户重新选择
+            if (!errorMessage.includes("时间段已有挂号")) {
+                setShowTimeModal(false);
+            }
+        }
+    };
 
   if (patientLoading || doctorsLoading) {
     return (

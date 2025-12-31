@@ -3,6 +3,8 @@ package com.hospital.repository;
 import com.hospital.entity.Patient;
 import com.hospital.entity.Registration;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -17,4 +19,13 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     List<Registration> findByStatus(Registration.Status status);
     List<Registration> findByPatientAndStatus(Patient patient, Registration.Status status);
     List<Registration> findByAppointmentTimeBetween(LocalDateTime start, LocalDateTime end);
+
+    @Query("SELECT r FROM Registration r WHERE r.patient.id = :patientId " +
+            "AND r.status != 'CANCELLED' " +
+            "AND r.appointmentTime BETWEEN :startTime AND :endTime")
+    List<Registration> findConflictingRegistrations(
+            @Param("patientId") Long patientId,
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime
+    );
 }
