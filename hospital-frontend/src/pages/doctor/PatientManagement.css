@@ -107,6 +107,79 @@
   overflow-y: auto;
 }
 
+/* 空状态容器 */
+.empty-state-container {
+  text-align: center;
+  padding: 40px 20px;
+  color: #7f8c8d;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  height: 400px;
+  justify-content: center;
+}
+
+/* 空状态图标 */
+.empty-state-icon {
+  font-size: 60px;
+  opacity: 0.7;
+}
+
+/* 空状态文本 */
+.empty-state-text h3 {
+  font-size: 18px;
+  font-weight: 500;
+  color: #2c3e50;
+  margin: 0 0 5px 0;
+}
+
+.empty-state-text p {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 300px;
+}
+
+/* 空状态操作按钮 */
+.empty-state-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.empty-state-btn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.empty-state-btn.primary {
+  background-color: #409eff;
+  color: white;
+}
+
+.empty-state-btn.secondary {
+  background-color: #67c23a;
+  color: white;
+}
+
+.empty-state-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.empty-state-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
 .patient-item {
   display: flex;
   align-items: center;
@@ -414,6 +487,76 @@
   border: 1px dashed #dcdfe6;
 }
 
+/* 空状态容器 */
+.empty-state-container {
+  text-align: center;
+  padding: 40px 20px;
+  color: #7f8c8d;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  height: 400px;
+  justify-content: center;
+}
+
+/* 空状态图标 */
+.empty-state-icon {
+  font-size: 60px;
+  opacity: 0.7;
+}
+
+/* 空状态文本 */
+.empty-state-text h3 {
+  font-size: 18px;
+  font-weight: 500;
+  color: #2c3e50;
+  margin: 0 0 5px 0;
+}
+
+.empty-state-text p {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 300px;
+}
+
+/* 空状态操作按钮 */
+.empty-state-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.empty-state-btn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.empty-state-btn.primary {
+  background-color: #409eff;
+  color: white;
+}
+
+.empty-state-btn.primary:hover {
+  background-color: #66b1ff;
+}
+
+.empty-state-btn.secondary {
+  background-color: #67c23a;
+  color: white;
+}
+
+.empty-state-btn.secondary:hover {
+  background-color: #85ce61;
+}
+
 /* 响应式设计 */
 @media (max-width: 1200px) {
   .patient-content {
@@ -465,4 +608,121 @@
     flex: 1;
     min-width: 100px;
   }
+}
+
+/* 模态框样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #ebeef5;
+  background-color: #fafafa;
+  border-radius: 8px 8px 0 0;
+}
+
+.modal-header h2 {
+  font-size: 18px;
+  color: #303133;
+  margin: 0;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #606266;
+  background-color: #fff;
+  box-sizing: border-box;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 20px;
+  border-top: 1px solid #ebeef5;
+  background-color: #fafafa;
+  border-radius: 0 0 8px 8px;
+}
+
+.btn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn.primary {
+  background-color: #409eff;
+  color: white;
+}
+
+.btn.primary:hover {
+  background-color: #66b1ff;
+}
+
+.btn.primary:disabled {
+  background-color: #a0cfff;
+  cursor: not-allowed;
+}
+
+.btn.secondary {
+  background-color: #909399;
+  color: white;
+}
+
+.btn.secondary:hover {
+  background-color: #a6a9ad;
 }

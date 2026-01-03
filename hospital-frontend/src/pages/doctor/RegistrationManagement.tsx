@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './RegistrationManagement.css';
-import { getRegistrations, updateRegistrationStatus, batchUpdateRegistrationStatus } from '../../services/doctorService';
+import { getRegistrations, updateRegistrationStatus, batchUpdateRegistrationStatus, updateRegistration } from '../../services/doctorService';
 import type { Registration, RegistrationStatus } from '../../services/doctorService';
 
 const RegistrationManagement: React.FC = () => {
@@ -13,6 +13,11 @@ const RegistrationManagement: React.FC = () => {
   const [selectedRegistrations, setSelectedRegistrations] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // 查看详情和修改功能状态
+  const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingRegistration, setEditingRegistration] = useState<Partial<Registration> | null>(null);
+  const [saving, setSaving] = useState(false);
 
   // 获取挂号数据
   useEffect(() => {
@@ -118,6 +123,51 @@ const RegistrationManagement: React.FC = () => {
       setSelectedRegistrations([]);
     } else {
       setSelectedRegistrations(filteredRegistrations.map(reg => reg.id));
+    }
+  };
+
+  // 打开详情模态框
+  const openDetailModal = (registration: Registration) => {
+    setSelectedRegistration(registration);
+    setEditingRegistration(registration);
+    setIsModalOpen(true);
+  };
+
+  // 关闭详情模态框
+  const closeDetailModal = () => {
+    setIsModalOpen(false);
+    setSelectedRegistration(null);
+    setEditingRegistration(null);
+  };
+
+  // 处理表单输入变化
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setEditingRegistration(prev => prev ? { ...prev, [name]: value } : null);
+  };
+
+  // 保存修改
+  const handleSaveChanges = async () => {
+    if (!selectedRegistration || !editingRegistration) return;
+    
+    setSaving(true);
+    try {
+      await updateRegistration(selectedRegistration.id, editingRegistration);
+      
+      // 更新本地状态
+      setRegistrations(prev => 
+        prev.map(reg => 
+          reg.id === selectedRegistration.id ? { ...reg, ...editingRegistration } : reg
+        )
+      );
+      
+      closeDetailModal();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '保存失败';
+      console.error('保存挂号信息失败:', err);
+      alert(`保存失败: ${errorMessage}`);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -274,6 +324,12 @@ const RegistrationManagement: React.FC = () => {
                           >
                             取消
                           </button>
+                          <button 
+                            className="btn btn-sm btn-info" 
+                            onClick={() => openDetailModal(registration)}
+                          >
+                            查看详情
+                          </button>
                         </>
                       )}
                       {registration.status === 'processing' && (
@@ -290,11 +346,26 @@ const RegistrationManagement: React.FC = () => {
                           >
                             取消
                           </button>
+                          <button 
+                            className="btn btn-sm btn-info" 
+                            onClick={() => openDetailModal(registration)}
+                          >
+                            查看详情
+                          </button>
                         </>
                       )}
                       {registration.status === 'completed' && (
                         <button 
                           className="btn btn-sm btn-info" 
+                          onClick={() => openDetailModal(registration)}
+                        >
+                          查看详情
+                        </button>
+                      )}
+                      {registration.status === 'cancelled' && (
+                        <button 
+                          className="btn btn-sm btn-info" 
+                          onClick={() => openDetailModal(registration)}
                         >
                           查看详情
                         </button>
@@ -313,6 +384,95 @@ const RegistrationManagement: React.FC = () => {
           </table>
         )}
       </div>
+
+      {/* 详情模态框 */}
+      {isModalOpen && selectedRegistration && editingRegistration && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h2>挂号详情</h2>
+              <button className="close-btn" onClick={closeDetailModal}>&times;</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>患者ID</label>
+                <input 
+                  type="text" 
+                  name="patientId" 
+                  value={editingRegistration.patientId || ''} 
+                  onChange={handleInputChange} 
+                  className="form-control"
+                  readOnly
+                />
+              </div>
+              <div className="form-group">
+                <label>患者姓名</label>
+                <input 
+                  type="text" 
+                  name="patientName" 
+                  value={editingRegistration.patientName || ''} 
+                  onChange={handleInputChange} 
+                  className="form-control"
+                />
+              </div>
+              <div className="form-group">
+                <label>科室</label>
+                <input 
+                  type="text" 
+                  name="department" 
+                  value={editingRegistration.department || ''} 
+                  onChange={handleInputChange} 
+                  className="form-control"
+                />
+              </div>
+              <div className="form-group">
+                <label>症状</label>
+                <textarea 
+                  name="disease" 
+                  value={editingRegistration.disease || ''} 
+                  onChange={handleInputChange} 
+                  className="form-control"
+                  rows={3}
+                />
+              </div>
+              <div className="form-group">
+                <label>就诊时间</label>
+                <input 
+                  type="datetime-local" 
+                  name="appointmentTime" 
+                  value={editingRegistration.appointmentTime ? editingRegistration.appointmentTime.slice(0, 16) : ''} 
+                  onChange={handleInputChange} 
+                  className="form-control"
+                />
+              </div>
+              <div className="form-group">
+                <label>状态</label>
+                <select 
+                  name="status" 
+                  value={editingRegistration.status || 'completed'} 
+                  onChange={handleInputChange} 
+                  className="form-control"
+                >
+                  <option value="pending">待确认</option>
+                  <option value="processing">处理中</option>
+                  <option value="completed">已完成</option>
+                  <option value="cancelled">已取消</option>
+                </select>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={closeDetailModal}>取消</button>
+              <button 
+                className="btn btn-primary" 
+                onClick={handleSaveChanges} 
+                disabled={saving}
+              >
+                {saving ? '保存中...' : '保存修改'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

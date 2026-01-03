@@ -1,34 +1,22 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
-import { getRegistrations, getCurrentDoctor } from '../../services/doctorService';
-import type { Registration } from '../../services/doctorService';
+import { getRegistrations, getCurrentDoctor, getPendingTasks, getStatistics, getNotifications } from '../../services/doctorService';
+import type { Registration, Task, Statistic, Notification } from '../../services/doctorService';
+
+
 
 const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [todayAppointments, setTodayAppointments] = useState<Registration[]>([]);
   const [doctor, setDoctor] = useState<{ name: string } | null>(null);
+  const navigate = useNavigate();
   
-  // 模拟数据（在API不可用时使用）
-  const pendingTasks = [
-    { id: 1, title: '处理患者病历', count: 3 },
-    { id: 2, title: '回复患者咨询', count: 5 },
-    { id: 3, title: '填写诊疗记录', count: 2 },
-    { id: 4, title: '确认下周排班', count: 1 },
-  ];
-
-  const statistics = [
-    { id: 1, title: '今日挂号', value: '12', icon: '📋' },
-    { id: 2, title: '本周挂号', value: '45', icon: '📅' },
-    { id: 3, title: '本月挂号', value: '180', icon: '📈' },
-    { id: 4, title: '患者满意度', value: '98%', icon: '⭐' },
-  ];
-
-  const notifications = [
-    { id: 1, title: '新的挂号通知', content: '患者钱七已挂号，时间：明天 09:30', time: '10分钟前' },
-    { id: 2, title: '系统更新通知', content: '医院系统将于今晚22:00进行维护更新', time: '2小时前' },
-    { id: 3, title: '患者评价提醒', content: '患者张三已评价，评分：5星', time: '1天前' },
-  ];
+  // 真实数据状态
+  const [pendingTasks, setPendingTasks] = useState<Task[]>([]);
+  const [statistics, setStatistics] = useState<Statistic[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,23 +34,28 @@ const Dashboard: React.FC = () => {
         const todayRegs = registrations.filter(reg => reg.appointmentTime.startsWith(today));
         setTodayAppointments(todayRegs);
         
+        // 获取待处理事项
+        const tasks = await getPendingTasks();
+        setPendingTasks(tasks);
+        
+        // 获取统计数据
+        const stats = await getStatistics();
+        setStatistics(stats);
+        
+        // 获取通知
+        const notices = await getNotifications();
+        setNotifications(notices);
+        
         setError(null);
       } catch (err) {
         console.error('Error fetching data:', err);
         
-        // 使用模拟数据作为降级方案
-        const mockDoctor = { name: '张医生' };
-        setDoctor(mockDoctor);
-        
-        // 生成模拟的今日挂号数据
-        const mockAppointments: Registration[] = [
-          { id: 1, patientId: 1, patientName: '张三', department: '内科', disease: '感冒', appointmentTime: new Date().toISOString().split('T')[0] + 'T09:00:00', status: 'pending' },
-          { id: 2, patientId: 2, patientName: '李四', department: '内科', disease: '高血压', appointmentTime: new Date().toISOString().split('T')[0] + 'T10:30:00', status: 'pending' },
-          { id: 3, patientId: 3, patientName: '王五', department: '内科', disease: '糖尿病', appointmentTime: new Date().toISOString().split('T')[0] + 'T14:00:00', status: 'processing' },
-        ];
-        setTodayAppointments(mockAppointments);
-        
-        // 不设置错误信息，使用静默降级方案
+        // API调用失败时使用默认数据显示空状态UI
+        setDoctor({ name: '医生' });
+        setTodayAppointments([]);
+        setPendingTasks([]);
+        setStatistics([]);
+        setNotifications([]);
         setError(null);
       } finally {
         setLoading(false);
@@ -85,22 +78,62 @@ const Dashboard: React.FC = () => {
     <div className="dashboard">
       {loading ? (
         <div className="loading">加载中...</div>
+      ) : error ? (
+        <div className="error-message">{error}</div>
       ) : (
         <>
-          <h1>欢迎回来，{doctor?.name || '医生'}</h1>
+          <h1>欢迎回来，张医生</h1>
           <p className="dashboard-date">{new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}</p>
 
       {/* 统计卡片 */}
       <div className="stats-cards">
-        {statistics.map(stat => (
-          <div key={stat.id} className="stat-card">
-            <div className="stat-icon">{stat.icon}</div>
-            <div className="stat-content">
-              <div className="stat-title">{stat.title}</div>
-              <div className="stat-value">{stat.value}</div>
+        {statistics.length > 0 ? (
+          statistics.map(stat => (
+            <div key={stat.id} className="stat-card">
+              <div className="stat-icon">{stat.icon || '📊'}</div>
+              <div className="stat-content">
+                <div className="stat-title">{stat.title}</div>
+                <div className="stat-value">{stat.value || '-'}</div>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          // 空状态的统计卡片
+          <>
+            <div className="stat-card empty-stat-card">
+              <div className="stat-icon">📈</div>
+              <div className="stat-content">
+                <div className="stat-title">今日接诊</div>
+                <div className="stat-value">0</div>
+                <div className="stat-hint">暂无接诊记录</div>
+              </div>
+            </div>
+            <div className="stat-card empty-stat-card">
+              <div className="stat-icon">👥</div>
+              <div className="stat-content">
+                <div className="stat-title">本月患者</div>
+                <div className="stat-value">0</div>
+                <div className="stat-hint">暂无患者数据</div>
+              </div>
+            </div>
+            <div className="stat-card empty-stat-card">
+              <div className="stat-icon">⭐</div>
+              <div className="stat-content">
+                <div className="stat-title">患者满意度</div>
+                <div className="stat-value">0%</div>
+                <div className="stat-hint">暂无评价</div>
+              </div>
+            </div>
+            <div className="stat-card empty-stat-card">
+              <div className="stat-icon">📊</div>
+              <div className="stat-content">
+                <div className="stat-title">工作量</div>
+                <div className="stat-value">0</div>
+                <div className="stat-hint">暂无统计</div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* 今日挂号患者和待处理事项 */}
@@ -110,7 +143,7 @@ const Dashboard: React.FC = () => {
           <div className="card">
             <div className="card-header">
               <h2>今日挂号患者</h2>
-              <button className="view-all-btn">查看全部</button>
+              <button className="view-all-btn" onClick={() => navigate('/doctor/registration')}>查看全部</button>
             </div>
             <div className="patient-list">
               {todayPatients.length > 0 ? (
@@ -129,7 +162,15 @@ const Dashboard: React.FC = () => {
                   </div>
                 ))
               ) : (
-                <div className="empty-state">今日暂无挂号患者</div>
+                <div className="empty-state-container">
+                  <div className="empty-state-icon">👨‍⚕️</div>
+                  <div className="empty-state-title">今日暂无挂号患者</div>
+                  <div className="empty-state-description">今天还没有患者挂号，您可以：</div>
+                  <div className="empty-state-actions">
+                    <button className="empty-state-btn" onClick={() => navigate('/doctor/registration')}>查看历史挂号</button>
+                    <button className="empty-state-btn" onClick={() => navigate('/doctor/schedule')}>调整排班</button>
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -142,14 +183,22 @@ const Dashboard: React.FC = () => {
               <h2>待处理事项</h2>
             </div>
             <div className="tasks-list">
-              {pendingTasks.map(task => (
-                <div key={task.id} className="task-item">
-                  <div className="task-content">
-                    <div className="task-title">{task.title}</div>
+              {pendingTasks.length > 0 ? (
+                pendingTasks.map(task => (
+                  <div key={task.id} className="task-item">
+                    <div className="task-content">
+                      <div className="task-title">{task.title}</div>
+                    </div>
+                    <div className="task-count">{task.count || 0}</div>
                   </div>
-                  <div className="task-count">{task.count}</div>
+                ))
+              ) : (
+                <div className="empty-state-container">
+                  <div className="empty-state-icon">✅</div>
+                  <div className="empty-state-title">暂无待处理事项</div>
+                  <div className="empty-state-description">所有事项已处理完毕，保持良好状态！</div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -157,18 +206,29 @@ const Dashboard: React.FC = () => {
           <div className="card">
             <div className="card-header">
               <h2>最新通知</h2>
-              <button className="view-all-btn">查看全部</button>
+              <button className="view-all-btn" onClick={() => navigate('/doctor/registration')}>查看全部</button>
             </div>
             <div className="notifications-list">
-              {notifications.map(notification => (
-                <div key={notification.id} className="notification-item">
-                  <div className="notification-content">
-                    <div className="notification-title">{notification.title}</div>
-                    <div className="notification-text">{notification.content}</div>
-                    <div className="notification-time">{notification.time}</div>
+              {notifications.length > 0 ? (
+                notifications.map(notification => (
+                  <div key={notification.id} className="notification-item">
+                    <div className="notification-content">
+                      <div className="notification-title">{notification.title}</div>
+                      <div className="notification-text">{notification.content}</div>
+                      <div className="notification-time">{notification.time}</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="empty-state-container">
+                  <div className="empty-state-icon">📬</div>
+                  <div className="empty-state-title">暂无通知</div>
+                  <div className="empty-state-description">目前没有新的通知</div>
+                  <div className="empty-state-actions">
+                    <button className="empty-state-btn" onClick={() => navigate('/doctor/registration')}>查看所有通知</button>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
