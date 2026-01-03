@@ -10,6 +10,7 @@ import ScheduleManagement from "./ScheduleManagement";
 import RegistrationManagement from "./RegistrationManagement";
 import Statistics from "./Statistics";
 import AnnouncementManagement from "./AnnouncementManagement";
+import { getUserInfo, fetchCurrentUser, clearUserInfo,logout, type LoginResponse } from "../../services/authService";
 
 type AdminPageConfig = {
   key: string;
@@ -172,10 +173,52 @@ const AdminApp: React.FC = () => {
     })
   );
 
-  const currentUser = {
-    name: "陆晚舟",
-    role: "系统管理员",
-  };
+  const [currentUser, setCurrentUser] = useState<{ name: string; role: string }>({
+    name: "",
+    role: "",
+  });
+
+    // 组件加载时获取用户信息
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      try {
+        // 先从localStorage获取
+        const localUser = getUserInfo();
+        if (localUser) {
+          // 转换角色显示名称
+          const roleDisplay = {
+            ADMIN: "系统管理员",
+            DOCTOR: "医生",
+            PATIENT: "患者",
+          }[localUser.role] || localUser.role;
+
+          setCurrentUser({
+            name: localUser.username, // 可以根据需要调整为真实姓名
+            role: roleDisplay,
+          });
+        } else {
+          // 如果localStorage没有，尝试从服务器获取
+          const serverUser = await fetchCurrentUser();
+          const roleDisplay = {
+            ADMIN: "系统管理员",
+            DOCTOR: "医生",
+            PATIENT: "患者",
+          }[serverUser.role] || serverUser.role;
+
+          setCurrentUser({
+            name: serverUser.username,
+            role: roleDisplay,
+          });
+        }
+      } catch (error) {
+        console.error("获取用户信息失败:", error);
+        // 如果获取失败，跳转到登录页面
+        navigate("/auth/login");
+      }
+    };
+
+    loadUserInfo();
+  }, [navigate]);
 
   return (
     <AdminLayout
@@ -186,7 +229,17 @@ const AdminApp: React.FC = () => {
       onTabChange={handleTabChange}
       onTabClose={handleTabClose}
       currentUser={currentUser}
-      onLogout={() => navigate("/")}
+      onLogout={async () => {
+        try {
+          await logout();
+        } catch (error) {
+          console.error("登出失败:", error);
+        } finally {
+          // 确保清除用户信息并跳转登录页
+          clearUserInfo();
+          navigate("/");
+        }
+      }}
     >
       <Routes>
         <Route index element={<Dashboard />} />

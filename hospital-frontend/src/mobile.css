@@ -262,6 +262,14 @@
   cursor: pointer;
 }
 
+.sidebar-button {
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 15px;
+}
+
 .sidebar-divider {
   border-top: 1px solid #eee;
   margin: 10px 0;

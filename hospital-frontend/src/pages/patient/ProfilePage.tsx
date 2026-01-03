@@ -1,197 +1,173 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./patient.css";
-import {
-  fetchCurrentPatientDetails,
-  updatePatientProfile,
-  type PatientDetails,
-} from "../../services/patientService";
+import { updatePatientProfile } from "../../services/patientService";
+import { usePatient } from "../../contexts/PatientContext";
 
 interface ProfilePageProps {
-  debugMode: boolean;
+  onLogout?: () => void;
 }
 
-const mockUser: PatientDetails = {
-  id: 0,
-  username: "patient@example.com",
-  name: "张三",
-  gender: "MALE",
-  age: 35,
-  phone: "138****1234",
-  address: "北京市朝阳区朝阳北路123号",
-  medicalHistory: [],
-  visitHistory: [],
-};
-
-const ProfilePage: React.FC<ProfilePageProps> = ({ debugMode }) => {
-  const [userInfo, setUserInfo] = useState<PatientDetails>(mockUser);
+const ProfilePage: React.FC<ProfilePageProps> = ({ onLogout }) => {
+  const { patient, loading, refreshPatient, updateLocalPatient } = usePatient();
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    address: "",
-  });
-  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState({ name: "", gender: "MALE" as "MALE" | "FEMALE", age: 0, phone: "", address: "" });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      if (debugMode) {
-        setUserInfo(mockUser);
-        setForm({
-          name: mockUser.name || "",
-          phone: mockUser.phone || "",
-          address: mockUser.address || "",
-        });
-        setLoading(false);
-        return;
-      }
-      try {
-        const detail = await fetchCurrentPatientDetails();
-        if (cancelled) return;
-        setUserInfo(detail);
-        setForm({
-          name: detail.name || "",
-          phone: detail.phone || "",
-          address: detail.address || "",
-        });
-      } catch (err) {
-        if (cancelled) return;
-        setError(
-          err instanceof Error ? `${err.message}，已显示示例数据` : "加载失败，已显示示例数据",
-        );
-        setUserInfo(mockUser);
-        setForm({
-          name: mockUser.name || "",
-          phone: mockUser.phone || "",
-          address: mockUser.address || "",
-        });
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [debugMode]);
-
-  const onSave = async () => {
-    if (debugMode) {
-      setUserInfo({ ...userInfo, ...form });
-      setEditing(false);
-      setMessage("已保存（调试模式，仅本地）");
-      return;
-    }
-    try {
-      setMessage("");
-      await updatePatientProfile(userInfo.id, {
-        name: form.name,
-        phone: form.phone,
-        address: form.address,
+    if (patient) {
+      setForm({
+        name: patient.name || "",
+        gender: patient.gender || "MALE",
+        age: patient.age || 0,
+        phone: patient.phone || "",
+        address: patient.address || ""
       });
-      setUserInfo({ ...userInfo, ...form });
-      setEditing(false);
-      setMessage("保存成功");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "保存失败");
+    }
+  }, [patient]);
+
+  const validateField = (name: string, value: string | number) => {
+    switch (name) {
+      case "name": return !value ? "姓名不能为空" : String(value).length > 50 ? "姓名最多50个字符" : "";
+      case "age": return isNaN(Number(value)) || Number(value) < 0 || Number(value) > 150 ? "请输入有效年龄(0-150)" : "";
+      case "phone": return !value ? "手机号不能为空" : String(value).length !== 11 ? "手机号必须为11位" : !/^1[3-9]\d{9}$/.test(String(value)) ? "手机号格式不正确" : "";
+      case "address": return String(value).length > 200 ? "地址最多200个字符" : "";
+      default: return "";
     }
   };
 
-  if (loading) {
-    return (
-      <div className="profile-page patient-page">
-        <div className="announcement-item">正在加载，请稍候...</div>
-      </div>
-    );
-  }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    let filteredValue: string | number = value;
+
+    if (name === "phone") filteredValue = value.replace(/\D/g, "").slice(0, 11);
+    else if (name === "age") filteredValue = parseInt(value.replace(/\D/g, "").slice(0, 3)) || 0;
+    else if (name === "name") filteredValue = value.slice(0, 50);
+    else if (name === "address") filteredValue = value.slice(0, 200);
+
+    setForm({ ...form, [name]: filteredValue });
+    setErrors({ ...errors, [name]: validateField(name, filteredValue) });
+  };
+
+  const onSave = async () => {
+    const newErrors: Record<string, string> = {};
+    ["name", "age", "phone", "address"].forEach((key) => {
+      const error = validateField(key, form[key as keyof typeof form]);
+      if (error) newErrors[key] = error;
+    });
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setError("请修正表单错误");
+      setTimeout(() => setError(""), 3000);
+      return;
+    }
+
+    if (!patient) return;
+
+    try {
+      setMessage("");
+      setError("");
+      await updatePatientProfile(patient.id, { name: form.name, age: form.age, phone: form.phone, address: form.address });
+      updateLocalPatient({ name: form.name, age: form.age, phone: form.phone, address: form.address });
+      await refreshPatient();
+      setEditing(false);
+      setMessage("保存成功");
+      setTimeout(() => setMessage(""), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "保存失败");
+      setTimeout(() => setError(""), 3000);
+    }
+  };
+
+  const handleLogout = () => {
+    if (confirm("确定要退出登录吗？")) {
+      onLogout?.();
+    }
+  };
+
+  if (loading) return <div className="profile-page patient-page"><div className="announcement-item">正在加载，请稍候...</div></div>;
+  if (!patient) return <div className="profile-page patient-page"><div className="error-container">未获取到患者信息</div></div>;
 
   return (
     <div className="profile-page patient-page">
       {error && <div className="error-message">{error}</div>}
       {message && <div className="success-message">{message}</div>}
 
-      {/* 用户信息卡片 */}
       <div className="user-info-card">
-        <img
-          src="/src/assets/Defaulthead.png"
-          alt="用户头像"
-          className="user-avatar"
-        />
+        <img src="/src/assets/Defaulthead.png" alt="用户头像" className="user-avatar" />
         <div className="user-info">
-          <h3>{userInfo.name}</h3>
-          <p>患者ID: {userInfo.id}</p>
-          <p>
-            {userInfo.gender === "MALE" ? "男" : "女"} | {userInfo.age ?? "-"}岁
-          </p>
+          <h3>{patient.name}</h3>
+          <p>患者ID: {patient.id} | {patient.gender === "MALE" ? "男" : "女"} {patient.age ?? "-"}岁</p>
         </div>
       </div>
 
-      {/* 详细信息 */}
-      <div className="detail-info">
-        <div className="info-item">
-          <span className="info-label">姓名:</span>
-          {editing ? (
-            <input
-              className="auth-input"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-          ) : (
-            <span className="info-value">{userInfo.name}</span>
+      <div className="info-section">
+        <div className="section-header">
+          <h4 className="section-title">我的资料</h4>
+          {!editing && (
+            <button className="edit-icon-btn" onClick={() => setEditing(true)}>✏️ 编辑</button>
           )}
         </div>
-        <div className="info-item">
-          <span className="info-label">手机号:</span>
-          {editing ? (
-            <input
-              className="auth-input"
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            />
-          ) : (
-            <span className="info-value">{userInfo.phone}</span>
-          )}
-        </div>
-        <div className="info-item">
-          <span className="info-label">联系地址:</span>
-          {editing ? (
-            <input
-              className="auth-input"
-              value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-            />
-          ) : (
-            <span className="info-value">{userInfo.address}</span>
-          )}
-        </div>
-      </div>
-
-      <div className="menu-section">
-        <h4>操作</h4>
-        <div className="menu-list">
-          <div className="menu-item">
-            <div className="menu-icon">📝</div>
-            <div className="menu-label">编辑信息</div>
-            <div className="menu-arrow">
-              <button className="auth-btn" onClick={() => setEditing(!editing)}>
-                {editing ? "取消" : "编辑"}
-              </button>
-            </div>
-          </div>
-          {editing && (
-            <div className="menu-item">
-              <div className="menu-icon">💾</div>
-              <div className="menu-label">保存更改</div>
-              <div className="menu-arrow">
-                <button className="auth-btn" onClick={onSave}>
-                  保存
-                </button>
+        <div className="info-list">
+          <div className="info-row">
+            <span className="info-label">姓名</span>
+            {editing ? (
+              <div className="info-input-wrapper">
+                <input className="info-input" value={form.name} onChange={handleChange} name="name" maxLength={50} placeholder="请输入姓名" />
+                {errors.name && <div className="field-error">{errors.name}</div>}
               </div>
-            </div>
-          )}
+            ) : <span className="info-value">{patient.name}</span>}
+          </div>
+          <div className="info-row">
+            <span className="info-label">性别</span>
+            {editing ? (
+              <select className="info-input" value={form.gender} onChange={handleChange} name="gender">
+                <option value="MALE">男</option>
+                <option value="FEMALE">女</option>
+              </select>
+            ) : <span className="info-value">{patient.gender === "MALE" ? "男" : "女"}</span>}
+          </div>
+          <div className="info-row">
+            <span className="info-label">年龄</span>
+            {editing ? (
+              <div className="info-input-wrapper">
+                <input type="text" className="info-input" value={form.age || ""} onChange={handleChange} name="age" placeholder="请输入年龄" />
+                {errors.age && <div className="field-error">{errors.age}</div>}
+              </div>
+            ) : <span className="info-value">{patient.age}</span>}
+          </div>
+          <div className="info-row">
+            <span className="info-label">手机号</span>
+            {editing ? (
+              <div className="info-input-wrapper">
+                <input type="text" className="info-input" value={form.phone} onChange={handleChange} name="phone" placeholder="请输入手机号" maxLength={11} />
+                {errors.phone && <div className="field-error">{errors.phone}</div>}
+              </div>
+            ) : <span className="info-value">{patient.phone}</span>}
+          </div>
+          <div className="info-row">
+            <span className="info-label">联系地址</span>
+            {editing ? (
+              <div className="info-input-wrapper">
+                <input className="info-input" value={form.address} onChange={handleChange} name="address" placeholder="请输入地址" maxLength={200} />
+                {errors.address && <div className="field-error">{errors.address}</div>}
+              </div>
+            ) : <span className="info-value">{patient.address}</span>}
+          </div>
         </div>
+      </div>
+
+      <div className="action-buttons">
+        {editing ? (
+          <>
+            <button className="primary-btn" onClick={onSave}>保存</button>
+            <button className="secondary-btn" onClick={() => setEditing(false)}>取消</button>
+          </>
+        ) : (
+          <button className="secondary-btn logout-btn" onClick={handleLogout}>安全退出</button>
+        )}
       </div>
     </div>
   );

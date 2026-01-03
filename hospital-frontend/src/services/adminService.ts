@@ -151,6 +151,43 @@ export const fetchUsers = async (): Promise<AdminUser[]> => {
   }
 };
 
+export const createUser = async (userData: Omit<AdminUser, "id" | "createdAt" | "updatedAt" | "lastLoginAt">): Promise<AdminUser> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users`, withCredentials({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userData)
+    }));
+    return await unwrapData<AdminUser>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const updateUser = async (id: number, userData: Partial<Omit<AdminUser, "id" | "createdAt" | "updatedAt" | "lastLoginAt">>): Promise<AdminUser> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/${id}`, withCredentials({
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userData)
+    }));
+    return await unwrapData<AdminUser>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const deleteUser = async (id: number): Promise<void> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/${id}`, withCredentials({
+      method: "DELETE"
+    }));
+    await unwrapData<void>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
 export const fetchDoctors = async (): Promise<AdminDoctor[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/doctors`, withCredentials());
@@ -178,10 +215,71 @@ export const fetchRegistrations = async (): Promise<AdminRegistration[]> => {
   }
 };
 
+export const updateRegistration = async (id: number, registrationData: Partial<Omit<AdminRegistration, "id">>): Promise<AdminRegistration> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/registrations/${id}`, withCredentials({
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(registrationData)
+    }));
+    return await unwrapData<AdminRegistration>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const deleteRegistration = async (id: number): Promise<void> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/registrations/${id}`, withCredentials({
+      method: "DELETE"
+    }));
+    await unwrapData<void>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
 export const fetchDepartments = async (): Promise<AdminDepartment[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/departments`, withCredentials());
     return await unwrapData<AdminDepartment[]>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const createDepartment = async (departmentData: Omit<AdminDepartment, "id">): Promise<AdminDepartment> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/departments`, withCredentials({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(departmentData)
+    }));
+    return await unwrapData<AdminDepartment>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const updateDepartment = async (id: number, departmentData: Partial<Omit<AdminDepartment, "id">>): Promise<AdminDepartment> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/departments/${id}`, withCredentials({
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(departmentData)
+    }));
+    return await unwrapData<AdminDepartment>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const deleteDepartment = async (id: number): Promise<void> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/departments/${id}`, withCredentials({
+      method: "DELETE"
+    }));
+    await unwrapData<void>(response);
   } catch (error) {
     throw normalizeFetchError(error);
   }
@@ -196,10 +294,84 @@ export const fetchSchedules = async (): Promise<AdminSchedule[]> => {
   }
 };
 
+export const createSchedule = async (scheduleData: Omit<AdminSchedule, "id" | "booked">): Promise<AdminSchedule> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/schedules`, withCredentials({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(scheduleData)
+    }));
+    return await unwrapData<AdminSchedule>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const updateSchedule = async (id: number, scheduleData: Partial<Omit<AdminSchedule, "id" | "booked">>): Promise<AdminSchedule> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/schedules/${id}`, withCredentials({
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(scheduleData)
+    }));
+    return await unwrapData<AdminSchedule>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const deleteSchedule = async (id: number): Promise<void> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/schedules/${id}`, withCredentials({
+      method: "DELETE"
+    }));
+    await unwrapData<void>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
 export const fetchAnnouncements = async (): Promise<AdminAnnouncement[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/announcements`, withCredentials());
     return await unwrapData<AdminAnnouncement[]>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const createAnnouncement = async (announcementData: Omit<AdminAnnouncement, "id">): Promise<AdminAnnouncement> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/announcements`, withCredentials({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(announcementData)
+    }));
+    return await unwrapData<AdminAnnouncement>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const updateAnnouncement = async (id: number, announcementData: Partial<Omit<AdminAnnouncement, "id">>): Promise<AdminAnnouncement> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/announcements/${id}`, withCredentials({
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(announcementData)
+    }));
+    return await unwrapData<AdminAnnouncement>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const deleteAnnouncement = async (id: number): Promise<void> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/announcements/${id}`, withCredentials({
+      method: "DELETE"
+    }));
+    await unwrapData<void>(response);
   } catch (error) {
     throw normalizeFetchError(error);
   }

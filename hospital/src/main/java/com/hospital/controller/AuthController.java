@@ -91,17 +91,27 @@ public class AuthController {
             return Result.error(4002, "用户名已存在");
         }
 
-        // 2. 创建用户对象
+        // 2. 创建用户对象（密码交由 UserService 统一加密，避免重复加密）
         User user = new User();
         user.setUsername(registerRequest.getUsername());
-        // 使用BCrypt加密密码
-        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        // 设置角色为病患
+        user.setPassword(registerRequest.getPassword());
+        // 设置角色为患者
         user.setRole(User.Role.PATIENT);
-        // 保存用户
+        // 保存用户（内部会加密）
         User savedUser = userService.createUser(user);
+        // 调试打印：明文、密文及 Python 校验命令
+        String encodedPassword = savedUser.getPassword();
+        String verifyCmd = String.format(
+                "python util/verify_password.py --password %s --hash \"%s\"",
+                registerRequest.getPassword(),
+                encodedPassword
+        );
+        System.out.println("Password generated -> username=" + user.getUsername()
+                + " plain=" + registerRequest.getPassword()
+                + " hash=" + encodedPassword
+                + " | verify: " + verifyCmd);
 
-        // 3. 创建病患对象
+        // 3. 创建患者对象
         Patient patient = new Patient();
         patient.setUser(savedUser);
         patient.setName(registerRequest.getName());
@@ -111,7 +121,7 @@ public class AuthController {
         patient.setIdCard(registerRequest.getIdCard());
         patient.setPhone(registerRequest.getPhone());
         patient.setAddress(registerRequest.getAddress());
-        // 保存病患
+        // 保存患者
         patientService.createPatient(patient);
 
         return Result.success("注册成功");

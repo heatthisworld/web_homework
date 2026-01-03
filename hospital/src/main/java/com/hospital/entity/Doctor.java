@@ -1,11 +1,11 @@
 package com.hospital.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import com.hospital.entity.Department;
 
 @Data
 @Entity
@@ -17,6 +17,7 @@ public class Doctor {
 
     @OneToOne
     @JoinColumn(name = "user_id", unique = true, nullable = false)
+    @JsonIgnore // 避免序列化User数据，防止循环引用
     private User user;
 
     @Column(name = "name", nullable = false, length = 50)
@@ -32,6 +33,9 @@ public class Doctor {
     @Column(name = "phone", nullable = false, length = 11)
     private String phone;
 
+    @Column(name = "avatar_url", length = 255)
+    private String avatarUrl;
+
     @ManyToOne
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
@@ -42,6 +46,7 @@ public class Doctor {
             joinColumns = @JoinColumn(name = "doctor_id"),
             inverseJoinColumns = @JoinColumn(name = "disease_id")
     )
+    @JsonIgnore // 避免序列化Disease数据，减少响应大小
     private List<Disease> diseases;
 
     @Column(name = "created_at", updatable = false)
@@ -58,6 +63,9 @@ public class Doctor {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (avatarUrl == null || avatarUrl.isBlank()) {
+            avatarUrl = "/files/Default.gif";
+        }
     }
 
     @PreUpdate

@@ -8,22 +8,25 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [statsRes, annRes] = await Promise.all([
+        fetchAdminStats(),
+        fetchAnnouncements().catch(() => [])
+      ]);
+      setStats(statsRes);
+      setAnnouncements(annRes);
+    } catch (e) {
+      setError(`数据加载失败: ${e instanceof Error ? e.message : "未知错误"}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const load = async () => {
-      try {
-        const [statsRes, annRes] = await Promise.all([
-          fetchAdminStats(),
-          fetchAnnouncements().catch(() => []),
-        ]);
-        setStats(statsRes);
-        setAnnouncements(annRes);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "加载失败");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+    loadData();
   }, []);
 
   const computedMetrics = useMemo(() => {
@@ -109,8 +112,10 @@ const Dashboard: React.FC = () => {
           <p className="page-subtitle">掌握今日挂号、排班与公告动态，默认载入一张仪表盘标签。</p>
         </div>
         <div className="page-actions">
-          <span className="pill pill-muted">模拟数据</span>
-          <button className="primary-button" type="button">
+          <span className={`pill ${stats ? 'pill-success' : 'pill-muted'}`}>
+            {stats ? '实时数据' : '加载中...'}
+          </span>
+          <button className="primary-button" type="button" onClick={loadData}>
             快速刷新
           </button>
         </div>
