@@ -7,13 +7,92 @@ interface ProfilePageProps {
   onLogout?: () => void;
 }
 
+// Toast 提示组件
+interface ToastProps {
+  type: 'success' | 'error' | 'info';
+  title: string;
+  message: string;
+  onClose: () => void;
+  duration?: number;
+}
+
+const Toast: React.FC<ToastProps> = ({ type, title, message, onClose, duration = 3000 }) => {
+  const [isHiding, setIsHiding] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsHiding(true);
+      setTimeout(onClose, 300);
+    }, duration);
+    return () => clearTimeout(timer);
+  }, [duration, onClose]);
+
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+
+  return (
+    <div className={`toast toast-${type} ${isHiding ? 'hiding' : ''}`}>
+      <div className="toast-icon">{icons[type]}</div>
+      <div className="toast-content">
+        <div className="toast-title">{title}</div>
+        <div className="toast-message">{message}</div>
+      </div>
+    </div>
+  );
+};
+
+// 确认模态框组件
+interface ConfirmModalProps {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  confirmText?: string;
+  cancelText?: string;
+  type?: 'danger' | 'primary';
+  isLoading?: boolean;
+}
+
+const ConfirmModal: React.FC<ConfirmModalProps> = ({
+  isOpen, title, message, onConfirm, onCancel, confirmText = "确定", cancelText = "取消", type = 'primary', isLoading = false
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="confirm-modal-overlay" onClick={onCancel}>
+      <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="confirm-modal-header">
+          <div className="confirm-modal-icon">{type === 'danger' ? '⚠️' : '❓'}</div>
+          <h4>{title}</h4>
+        </div>
+        <div className="confirm-modal-body">{message}</div>
+        <div className="confirm-modal-footer">
+          <button className="confirm-modal-btn" onClick={onCancel} disabled={isLoading}>{cancelText}</button>
+          <button className={`confirm-modal-btn ${type}`} onClick={onConfirm} disabled={isLoading}>
+            {isLoading ? "处理中..." : confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ProfilePage: React.FC<ProfilePageProps> = ({ onLogout }) => {
   const { patient, loading, refreshPatient, updateLocalPatient } = usePatient();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: "", gender: "MALE" as "MALE" | "FEMALE", age: 0, phone: "", address: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+
+  // Toast 状态
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null);
+
+  // 退出登录确认模态框状态
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
+
+  const showToast = (type: 'success' | 'error' | 'info', title: string, message: string) => {
+    setToast({ type, title, message });
+  };
 
   useEffect(() => {
     if (patient) {
@@ -59,32 +138,49 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onLogout }) => {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      setError("请修正表单错误");
-      setTimeout(() => setError(""), 3000);
+      showToast('error', '保存失败', '请修正表单中的错误');
       return;
     }
 
     if (!patient) return;
 
     try {
-      setMessage("");
-      setError("");
-      await updatePatientProfile(patient.id, { name: form.name, age: form.age, phone: form.phone, address: form.address });
-      updateLocalPatient({ name: form.name, age: form.age, phone: form.phone, address: form.address });
+      await updatePatientProfile(patient.id, { name: form.name, gender: form.gender, age: form.age, phone: form.phone, address: form.address });
+      updateLocalPatient({ name: form.name, gender: form.gender, age: form.age, phone: form.phone, address: form.address });
       await refreshPatient();
       setEditing(false);
-      setMessage("保存成功");
-      setTimeout(() => setMessage(""), 3000);
+      showToast('success', '保存成功', '个人信息已更新');
     } catch (err) {
-      setError(err instanceof Error ? err.message : "保存失败");
-      setTimeout(() => setError(""), 3000);
+      showToast('error', '保存失败', err instanceof Error ? err.message : "保存失败");
     }
   };
 
-  const handleLogout = () => {
-    if (confirm("确定要退出登录吗？")) {
-      onLogout?.();
+  // 显示退出确认模态框
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  // 确认退出登录
+  const handleLogoutConfirm = async () => {
+    setLogoutLoading(true);
+    try {
+      // 显示退出中的提示
+      showToast('info', '正在退出', '正在安全退出登录...');
+      setShowLogoutConfirm(false);
+
+      // 延迟执行退出，让用户看到提示
+      setTimeout(() => {
+        onLogout?.();
+      }, 500);
+    } catch (err) {
+      showToast('error', '退出失败', err instanceof Error ? err.message : "退出登录失败");
+      setLogoutLoading(false);
     }
+  };
+
+  // 取消退出登录
+  const handleLogoutCancel = () => {
+    setShowLogoutConfirm(false);
   };
 
   if (loading) return <div className="profile-page patient-page"><div className="announcement-item">正在加载，请稍候...</div></div>;
@@ -92,8 +188,17 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onLogout }) => {
 
   return (
     <div className="profile-page patient-page">
-      {error && <div className="error-message">{error}</div>}
-      {message && <div className="success-message">{message}</div>}
+      {/* Toast 提示 */}
+      {toast && (
+        <div className="toast-container">
+          <Toast
+            type={toast.type}
+            title={toast.title}
+            message={toast.message}
+            onClose={() => setToast(null)}
+          />
+        </div>
+      )}
 
       <div className="user-info-card">
         <img src="/src/assets/Defaulthead.png" alt="用户头像" className="user-avatar" />
@@ -166,9 +271,22 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onLogout }) => {
             <button className="secondary-btn" onClick={() => setEditing(false)}>取消</button>
           </>
         ) : (
-          <button className="secondary-btn logout-btn" onClick={handleLogout}>安全退出</button>
+          <button className="secondary-btn logout-btn" onClick={handleLogoutClick}>安全退出</button>
         )}
       </div>
+
+      {/* 退出登录确认模态框 */}
+      <ConfirmModal
+        isOpen={showLogoutConfirm}
+        title="确认退出"
+        message="确定要退出登录吗？退出后需要重新登录才能使用系统。"
+        onConfirm={handleLogoutConfirm}
+        onCancel={handleLogoutCancel}
+        confirmText="确定退出"
+        cancelText="取消"
+        type="danger"
+        isLoading={logoutLoading}
+      />
     </div>
   );
 };
