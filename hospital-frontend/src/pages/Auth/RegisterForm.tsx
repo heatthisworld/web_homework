@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../../mobile.css";
 import { login, register, saveUserInfo } from "../../services/authService";
 
@@ -20,6 +21,23 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitch }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const navigate = useNavigate();
+
+  const redirectByRole = (role: "DOCTOR" | "PATIENT" | "ADMIN") => {
+    switch (role) {
+      case "DOCTOR":
+        navigate("/doctor/dashboard");
+        break;
+      case "PATIENT":
+        navigate("/patient/dashboard");
+        break;
+      case "ADMIN":
+        navigate("/admin/dashboard");
+        break;
+      default:
+        navigate("/");
+    }
+  };
 
   const validateStep = (currentStep: number) => {
     if (currentStep === 0) {
@@ -92,7 +110,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitch }) => {
       });
       const loginRes = await login({ username, password });
       saveUserInfo(loginRes);
-      setSuccess("注册成功，已自动登录");
+      setSuccess("注册成功，已自动登录，正在跳转...");
+      redirectByRole(loginRes.role);
       setPassword("");
       setConfirm("");
       setName("");

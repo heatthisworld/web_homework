@@ -22,6 +22,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
@@ -85,10 +87,16 @@ public class AuthController {
     }
 
     @PostMapping("/register")
+    @Transactional
     public Result<String> registerPatient(@RequestBody RegisterRequest registerRequest) {
         // 1. 检查用户名是否已存在
         if (userRepository.findByUsername(registerRequest.getUsername()).isPresent()) {
             return Result.error(4002, "用户名已存在");
+        }
+
+        // 1.1 检查身份证是否已存在，避免数据库唯一约束报错
+        if (patientService.getPatientByIdCard(registerRequest.getIdCard()).isPresent()) {
+            return Result.error(4003, "已存在该身份证号码");
         }
 
         // 2. 创建用户对象（密码交由 UserService 统一加密，避免重复加密）
@@ -121,8 +129,16 @@ public class AuthController {
         patient.setIdCard(registerRequest.getIdCard());
         patient.setPhone(registerRequest.getPhone());
         patient.setAddress(registerRequest.getAddress());
-        // 保存患者
-        patientService.createPatient(patient);
+        try {
+            // 保存患者
+            patientService.createPatient(patient);
+        } catch (DataIntegrityViolationException e) {
+            // 捕获唯一约束异常并返回可读提示，同时触发事务回滚
+            String message = e.getMessage() != null && e.getMessage().contains("id_card")
+                    ? "已存在该身份证号码"
+                    : "患者信息重复，请检查后再试";
+            return Result.error(4003, message);
+        }
 
         return Result.success("注册成功");
     }
