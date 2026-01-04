@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import './Schedule.css';
-import {
+import { 
   getWorkingHours,
   updateWorkingHours,
   submitLeaveRequest,
-  getRegistrations
+  getRegistrations,
+  getLeaveRequests
 } from '../../services/doctorService';
 import type {
   WorkingHour,
@@ -26,51 +27,75 @@ const Schedule: React.FC = () => {
   // 状态管理
   const [scheduleItems, setScheduleItems] = useState<Registration[]>([]);
   const [workingHours, setWorkingHours] = useState<WorkingHour[]>([]);
-  const [leaveRequests] = useState<LeaveRequest[]>([]);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
 
   // 状态管理
   const [activeTab, setActiveTab] = useState<'schedule' | 'workingHours' | 'leave'>('schedule');
+  
+  // 切换标签页时清除错误和成功消息
+  const handleTabChange = (tab: 'schedule' | 'workingHours' | 'leave') => {
+    setActiveTab(tab);
+    setError(null);
+    setSuccess(null);
+  };
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [editingWorkingHour, setEditingWorkingHour] = useState<WorkingHour | null>(null);
   const [newLeaveRequest, setNewLeaveRequest] = useState<{ date: string; reason: string }>({ date: '', reason: '' });
   const [loading, setLoading] = useState({ schedule: false, workingHours: false, leaveRequests: false });
-  // const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   // 筛选当天的日程
   const todaySchedule = scheduleItems.filter(item => item.appointmentTime.startsWith(selectedDate));
 
+  // 获取预约日程
+  const fetchSchedule = async () => {
+    setError(null); // 清除之前的错误
+    setLoading(prev => ({ ...prev, schedule: true }));
+    try {
+      const data = await getRegistrations();
+      setScheduleItems(data);
+    } catch (err) {
+      console.error('获取预约日程失败:', err);
+      setError('获取预约日程失败: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setLoading(prev => ({ ...prev, schedule: false }));
+    }
+  };
+
+  // 获取工作时间
+  const fetchWorkingHours = async () => {
+    setLoading(prev => ({ ...prev, workingHours: true }));
+    try {
+      const data = await getWorkingHours();
+      setWorkingHours(data);
+    } catch (err) {
+      console.error('获取工作时间失败:', err);
+      // 不显示错误信息，让doctorService中的模拟数据机制处理
+    } finally {
+      setLoading(prev => ({ ...prev, workingHours: false }));
+    }
+  };
+
+  // 获取调休申请
+  const fetchLeaveRequests = async () => {
+    setLoading(prev => ({ ...prev, leaveRequests: true }));
+    try {
+      const data = await getLeaveRequests();
+      setLeaveRequests(data);
+    } catch (err) {
+      console.error('获取调休申请失败:', err);
+      // 不显示错误信息，让doctorService中的模拟数据机制处理
+    } finally {
+      setLoading(prev => ({ ...prev, leaveRequests: false }));
+    }
+  };
+
   // 获取数据
   useEffect(() => {
-    // 获取预约日程
-    const fetchSchedule = async () => {
-          setLoading(prev => ({ ...prev, schedule: true }));
-          try {
-            const data = await getRegistrations();
-            setScheduleItems(data);
-          } catch (err) {
-            console.error('获取预约日程失败:', err);
-            alert('获取预约日程失败');
-          } finally {
-            setLoading(prev => ({ ...prev, schedule: false }));
-          }
-        };
-
-        // 获取工作时间
-        const fetchWorkingHours = async () => {
-          setLoading(prev => ({ ...prev, workingHours: true }));
-          try {
-            const data = await getWorkingHours();
-            setWorkingHours(data);
-          } catch (err) {
-            console.error('获取工作时间失败:', err);
-            // 不显示错误信息，让doctorService中的模拟数据机制处理
-          } finally {
-            setLoading(prev => ({ ...prev, workingHours: false }));
-          }
-        };
-
     fetchSchedule();
     fetchWorkingHours();
+    fetchLeaveRequests();
   }, []);
 
   // 提交调休申请
@@ -82,11 +107,15 @@ const Schedule: React.FC = () => {
           endDate: newLeaveRequest.date,
           reason: newLeaveRequest.reason
         });
-        alert('调休申请已提交');
+        setSuccess('调休申请已提交');
         setNewLeaveRequest({ date: '', reason: '' });
+        // 提交成功后重新获取调休记录列表
+        await fetchLeaveRequests();
+        // 3秒后自动关闭成功消息
+        setTimeout(() => setSuccess(null), 3000);
       } catch (err) {
         console.error('提交调休申请失败:', err);
-        alert('提交调休申请失败');
+        setError('提交调休申请失败: ' + (err instanceof Error ? err.message : String(err)));
       }
     }
   };
@@ -105,11 +134,13 @@ const Schedule: React.FC = () => {
         
         // 更新本地状态
         setWorkingHours(updatedWorkingHours);
-        alert('工作时间已保存');
+        setSuccess('工作时间已保存');
         setEditingWorkingHour(null);
+        // 3秒后自动关闭成功消息
+        setTimeout(() => setSuccess(null), 3000);
       } catch (err) {
         console.error('保存工作时间失败:', err);
-        alert('保存工作时间失败');
+        setError('保存工作时间失败: ' + (err instanceof Error ? err.message : String(err)));
       }
     }
   };
@@ -118,23 +149,39 @@ const Schedule: React.FC = () => {
     <div className="schedule">
       <h1>日程安排</h1>
       
+      {/* 错误信息显示 */}
+      {error && (
+        <div className="error-message">
+          {error}
+          <button className="close-error" onClick={() => setError(null)}>×</button>
+        </div>
+      )}
+      
+      {/* 成功信息显示 */}
+      {success && (
+        <div className="success-message">
+          {success}
+          <button className="close-error" onClick={() => setSuccess(null)}>×</button>
+        </div>
+      )}
+      
       {/* 标签页 */}
       <div className="tabs">
         <button 
           className={`tab-btn ${activeTab === 'schedule' ? 'active' : ''}`}
-          onClick={() => setActiveTab('schedule')}
+          onClick={() => handleTabChange('schedule')}
         >
           预约日程
         </button>
         <button 
           className={`tab-btn ${activeTab === 'workingHours' ? 'active' : ''}`}
-          onClick={() => setActiveTab('workingHours')}
+          onClick={() => handleTabChange('workingHours')}
         >
           出诊时间设置
         </button>
         <button 
           className={`tab-btn ${activeTab === 'leave' ? 'active' : ''}`}
-          onClick={() => setActiveTab('leave')}
+          onClick={() => handleTabChange('leave')}
         >
           调休申请
         </button>

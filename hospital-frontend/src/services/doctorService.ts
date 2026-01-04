@@ -59,6 +59,28 @@ export interface UserInfo {
   role: "DOCTOR" | "PATIENT" | "ADMIN";
 }
 
+export interface Task {
+  id: number;
+  title: string;
+  priority: 'high' | 'medium' | 'low';
+  dueTime: string;
+  count?: number;
+}
+
+export interface Statistic {
+  id: number;
+  title: string;
+  value: number;
+  icon: string;
+}
+
+export interface Notification {
+  id: number;
+  title: string;
+  content: string;
+  time: string;
+}
+
 type ApiEnvelope<T> = {
   code: number;
   msg?: string;
@@ -136,16 +158,16 @@ export const getCurrentDoctor = async (): Promise<Doctor> => {
     const response = await fetch(`${API_BASE_URL}/doctors/current`, withCredentials());
     return unwrapData<Doctor>(response);
   } catch (error) {
-    console.warn('使用模拟数据展示当前医生信息:', error);
-    // 返回模拟数据
+    console.error('获取医生信息失败:', error);
+    // API调用失败时返回模拟数据
     return {
       id: 1,
       userId: 1,
-      name: '张医生',
+      name: '李医生',
       department: '内科',
-      title: '主任医师',
-      phone: '13900139001',
-      email: 'doctor@hospital.com',
+      title: '副主任医师',
+      phone: '13800138000',
+      email: 'li.doctor@hospital.com',
       avatar: ''
     };
   }
@@ -158,14 +180,46 @@ export const getRegistrations = async (): Promise<Registration[]> => {
     const data = await unwrapData<Registration[]>(response);
     return data.map(normalizeRegistration);
   } catch (error) {
-    console.warn('使用模拟数据展示挂号列表:', error);
-    // 返回模拟数据
+    console.error('获取挂号列表失败:', error);
+    // API调用失败时返回模拟数据
+    const today = new Date().toISOString().split('T')[0];
     return [
-      { id: 1, patientId: 101, patientName: '张三', department: '内科', disease: '感冒', appointmentTime: '2025-12-30 09:00', status: 'pending' },
-      { id: 2, patientId: 102, patientName: '李四', department: '外科', disease: '骨折', appointmentTime: '2025-12-30 10:00', status: 'processing' },
-      { id: 3, patientId: 103, patientName: '王五', department: '儿科', disease: '发烧', appointmentTime: '2025-12-30 11:00', status: 'completed' },
-      { id: 4, patientId: 104, patientName: '赵六', department: '眼科', disease: '近视', appointmentTime: '2025-12-30 14:00', status: 'pending' },
-      { id: 5, patientId: 105, patientName: '孙七', department: '内科', disease: '高血压', appointmentTime: '2025-12-30 15:00', status: 'cancelled' }
+      {
+        id: 1,
+        patientId: 1001,
+        patientName: '张三',
+        department: '内科',
+        disease: '感冒',
+        appointmentTime: `${today}T09:00:00`,
+        status: 'pending'
+      },
+      {
+        id: 2,
+        patientId: 1002,
+        patientName: '李四',
+        department: '内科',
+        disease: '高血压',
+        appointmentTime: `${today}T10:00:00`,
+        status: 'processing'
+      },
+      {
+        id: 3,
+        patientId: 1003,
+        patientName: '王五',
+        department: '内科',
+        disease: '糖尿病',
+        appointmentTime: `${today}T14:00:00`,
+        status: 'pending'
+      },
+      {
+        id: 4,
+        patientId: 1004,
+        patientName: '赵六',
+        department: '内科',
+        disease: '胃炎',
+        appointmentTime: `${today}T15:30:00`,
+        status: 'completed'
+      }
     ];
   }
 };
@@ -198,18 +252,28 @@ export const batchUpdateRegistrationStatus = async (ids: number[], status: Regis
   }
 };
 
+// 更新挂号信息
+export const updateRegistration = async (id: number, registration: Partial<Registration>): Promise<void> => {
+  try {
+    await fetch(`${API_BASE_URL}/doctors/registrations/${id}`, withCredentials({
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(registration),
+    }));
+  } catch (error) {
+    console.warn('使用模拟数据处理挂号信息更新:', error);
+    // 模拟成功更新，不抛出错误
+  }
+};
+
 // 获取病历记录
 export const getMedicalRecords = async (): Promise<MedicalRecord[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/doctors/medical-records`, withCredentials());
     return unwrapData<MedicalRecord[]>(response);
   } catch (error) {
-    console.warn('使用模拟数据展示病历记录:', error);
-    // 返回模拟数据
-    return [
-      { id: 1, patientId: 101, patientName: '张三', doctorName: '李医生', visitDate: '2025-12-25', diagnosis: '感冒', treatment: '药物治疗', medications: ['感冒药', '退烧药'], symptoms: '头痛、咳嗽、发烧' },
-      { id: 2, patientId: 102, patientName: '李四', doctorName: '王医生', visitDate: '2025-12-26', diagnosis: '骨折', treatment: '石膏固定', medications: ['止痛药'], symptoms: '手臂疼痛、肿胀' }
-    ];
+    console.error('获取病历记录失败:', error);
+    throw normalizeFetchError(error);
   }
 };
 
@@ -219,24 +283,8 @@ export const getWorkingHours = async (): Promise<WorkingHour[]> => {
     const response = await fetch(`${API_BASE_URL}/doctors/working-hours`, withCredentials());
     return unwrapData<WorkingHour[]>(response);
   } catch (error) {
-    console.warn('使用模拟数据展示工作时间:', error);
-    // 返回模拟数据
-    return [
-      { id: 1, doctorId: 1, dayOfWeek: 1, startTime: '08:00', endTime: '12:00', isWorking: true },
-      { id: 2, doctorId: 1, dayOfWeek: 1, startTime: '14:00', endTime: '18:00', isWorking: true },
-      { id: 3, doctorId: 1, dayOfWeek: 2, startTime: '08:00', endTime: '12:00', isWorking: true },
-      { id: 4, doctorId: 1, dayOfWeek: 2, startTime: '14:00', endTime: '18:00', isWorking: true },
-      { id: 5, doctorId: 1, dayOfWeek: 3, startTime: '08:00', endTime: '12:00', isWorking: true },
-      { id: 6, doctorId: 1, dayOfWeek: 3, startTime: '14:00', endTime: '18:00', isWorking: true },
-      { id: 7, doctorId: 1, dayOfWeek: 4, startTime: '08:00', endTime: '12:00', isWorking: true },
-      { id: 8, doctorId: 1, dayOfWeek: 4, startTime: '14:00', endTime: '18:00', isWorking: true },
-      { id: 9, doctorId: 1, dayOfWeek: 5, startTime: '08:00', endTime: '12:00', isWorking: true },
-      { id: 10, doctorId: 1, dayOfWeek: 5, startTime: '14:00', endTime: '18:00', isWorking: true },
-      { id: 11, doctorId: 1, dayOfWeek: 6, startTime: '09:00', endTime: '12:00', isWorking: false },
-      { id: 12, doctorId: 1, dayOfWeek: 6, startTime: '14:00', endTime: '16:00', isWorking: false },
-      { id: 13, doctorId: 1, dayOfWeek: 0, startTime: '09:00', endTime: '12:00', isWorking: false },
-      { id: 14, doctorId: 1, dayOfWeek: 0, startTime: '14:00', endTime: '16:00', isWorking: false }
-    ];
+    console.error('获取工作时间失败:', error);
+    throw normalizeFetchError(error);
   }
 };
 
@@ -268,21 +316,45 @@ export const submitLeaveRequest = async (leaveRequest: Omit<LeaveRequest, "id" |
   }
 };
 
+// 获取调休申请列表
+export const getLeaveRequests = async (): Promise<LeaveRequest[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/doctors/leave-requests`, withCredentials());
+    return unwrapData<LeaveRequest[]>(response);
+  } catch (error) {
+    console.error('获取调休申请列表失败:', error);
+    // API调用失败时返回模拟数据
+    const today = new Date().toISOString().split('T')[0];
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    return [
+      {
+        id: 1,
+        doctorId: 1,
+        startDate: today,
+        endDate: today,
+        reason: '个人事务',
+        status: 'pending'
+      },
+      {
+        id: 2,
+        doctorId: 1,
+        startDate: tomorrow,
+        endDate: tomorrow,
+        reason: '家庭聚会',
+        status: 'approved'
+      }
+    ];
+  }
+};
+
 // 获取患者列表
 export const getPatients = async (): Promise<{ id: number; name: string; gender: string; phone: string; address: string }[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/doctors/patients`, withCredentials());
     return unwrapData<{ id: number; name: string; gender: string; phone: string; address: string }[]>(response);
   } catch (error) {
-    console.warn('使用模拟数据展示患者列表:', error);
-    // 返回模拟数据
-    return [
-      { id: 101, name: '张三', gender: '男', phone: '13800138001', address: '北京市朝阳区' },
-      { id: 102, name: '李四', gender: '女', phone: '13800138002', address: '北京市海淀区' },
-      { id: 103, name: '王五', gender: '男', phone: '13800138003', address: '北京市西城区' },
-      { id: 104, name: '赵六', gender: '女', phone: '13800138004', address: '北京市东城区' },
-      { id: 105, name: '孙七', gender: '男', phone: '13800138005', address: '北京市丰台区' }
-    ];
+    console.error('获取患者列表失败:', error);
+    throw normalizeFetchError(error);
   }
 };
 
@@ -293,19 +365,56 @@ export const getPatientDetails = async (patientId: number): Promise<{ id: number
     return unwrapData<{ id: number; name: string; gender: string; age: number; phone: string; address: string; medicalHistory: MedicalRecord[] }>(response);
   }
   catch (error) {
-    console.warn('使用模拟数据展示患者详情:', error);
-    // 返回模拟数据
-    return {
-      id: patientId,
-      name: patientId === 101 ? '张三' : patientId === 102 ? '李四' : patientId === 103 ? '王五' : '患者' + patientId,
-      gender: patientId % 2 === 0 ? '女' : '男',
-      age: 30 + patientId % 20,
-      phone: '13800138' + patientId.toString().slice(-3),
-      address: '北京市朝阳区',
-      medicalHistory: [
-        { id: 1, patientId, patientName: patientId === 101 ? '张三' : '患者' + patientId, doctorName: '李医生', visitDate: '2025-12-25', diagnosis: '感冒', treatment: '药物治疗', medications: ['感冒药', '退烧药'], symptoms: '头痛、咳嗽、发烧' },
-        { id: 2, patientId, patientName: patientId === 101 ? '张三' : '患者' + patientId, doctorName: '王医生', visitDate: '2025-12-26', diagnosis: '高血压', treatment: '药物治疗', medications: ['降压药'], symptoms: '头痛、头晕' }
-      ]
-    };
+    console.error('获取患者详情失败:', error);
+    throw normalizeFetchError(error);
+  }
+};
+
+// 获取待办事项
+export const getPendingTasks = async (): Promise<Task[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/doctors/tasks/pending`, withCredentials());
+    return unwrapData<Task[]>(response);
+  } catch (error) {
+    console.error('获取待办事项失败:', error);
+    // API调用失败时返回模拟数据
+    return [
+      { id: 1, title: '待处理挂号', priority: 'high', dueTime: new Date().toISOString(), count: 5 },
+      { id: 2, title: '待完成病历', priority: 'medium', dueTime: new Date().toISOString(), count: 3 },
+      { id: 3, title: '待审核请假', priority: 'low', dueTime: new Date().toISOString(), count: 1 }
+    ];
+  }
+};
+
+// 获取统计数据
+export const getStatistics = async (): Promise<Statistic[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/doctors/statistics`, withCredentials());
+    return unwrapData<Statistic[]>(response);
+  } catch (error) {
+    console.error('获取统计数据失败:', error);
+    // API调用失败时返回模拟数据
+    return [
+      { id: 1, title: '今日接诊', value: 15, icon: '👥' },
+      { id: 2, title: '本月接诊', value: 234, icon: '📅' },
+      { id: 3, title: '待处理挂号', value: 5, icon: '⏰' },
+      { id: 4, title: '患者满意度', value: 95, icon: '⭐' }
+    ];
+  }
+};
+
+// 获取通知
+export const getNotifications = async (): Promise<Notification[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/doctors/notifications`, withCredentials());
+    return unwrapData<Notification[]>(response);
+  } catch (error) {
+    console.error('获取通知失败:', error);
+    // API调用失败时返回模拟数据
+    return [
+      { id: 1, title: '系统通知', content: '请及时更新本周出诊时间', time: new Date().toISOString() },
+      { id: 2, title: '患者提醒', content: '患者张三已到诊', time: new Date(Date.now() - 3600000).toISOString() },
+      { id: 3, title: '系统维护', content: '明日凌晨系统将进行维护，请提前做好准备', time: new Date(Date.now() - 7200000).toISOString() }
+    ];
   }
 };

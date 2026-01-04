@@ -11,11 +11,12 @@ import {
 
 interface LoginFormProps {
   onSwitch: () => void;
+  onForgotPassword?: () => void;
 }
 
 const AUTO_LOGIN_KEY = "autoLoginEnabled";
 
-const LoginForm: React.FC<LoginFormProps> = ({ onSwitch }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ onSwitch, onForgotPassword }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [debugMode, setDebugMode] = useState(false);
@@ -34,7 +35,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitch }) => {
         navigate("/doctor/dashboard");
         break;
       case "PATIENT":
-        navigate("/patient/dashboard");
+        navigate("/patient");  // 修复：改为 /patient 而不是 /patient/dashboard
         break;
       case "ADMIN":
         navigate("/admin/dashboard");
@@ -160,6 +161,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitch }) => {
       <button className="auth-btn" onClick={handleLogin} disabled={isBusy}>
         {loading ? "登录中..." : "登录"}
       </button>
+
+      {onForgotPassword && (
+        <div className="switch-text">
+          忘记密码？
+          <span className="switch-link" onClick={onForgotPassword}>
+            立即找回
+          </span>
+        </div>
+      )}
 
       <div className="switch-text">
         还没有账号？

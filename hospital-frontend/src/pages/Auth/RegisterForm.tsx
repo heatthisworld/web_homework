@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../../mobile.css";
 import { login, register, saveUserInfo } from "../../services/authService";
 
@@ -14,12 +15,30 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitch }) => {
   const [name, setName] = useState("");
   const [gender, setGender] = useState<"MALE" | "FEMALE">("MALE");
   const [age, setAge] = useState("");
+  const [email, setEmail] = useState("");
   const [idCard, setIdCard] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const navigate = useNavigate();
+
+  const redirectByRole = (role: "DOCTOR" | "PATIENT" | "ADMIN") => {
+    switch (role) {
+      case "DOCTOR":
+        navigate("/doctor/dashboard");
+        break;
+      case "PATIENT":
+        navigate("/patient/dashboard");
+        break;
+      case "ADMIN":
+        navigate("/admin/dashboard");
+        break;
+      default:
+        navigate("/");
+    }
+  };
 
   const validateStep = (currentStep: number) => {
     if (currentStep === 0) {
@@ -48,8 +67,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitch }) => {
       }
     }
     if (currentStep === 2) {
-      if (!idCard || !phone || !address) {
-        setError("请填写身份证、电话和地址");
+      if (!email || !idCard || !phone || !address) {
+        setError("请填写邮箱、身份证、电话和地址");
+        return false;
+      }
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailPattern.test(email)) {
+        setError("请输入正确的邮箱地址");
         return false;
       }
     }
@@ -83,6 +107,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitch }) => {
         username,
         password,
         role: "PATIENT",
+        email,
         name,
         gender,
         age: ageNum,
@@ -92,12 +117,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitch }) => {
       });
       const loginRes = await login({ username, password });
       saveUserInfo(loginRes);
-      setSuccess("注册成功，已自动登录");
+      setSuccess("注册成功，已自动登录，正在跳转...");
+      redirectByRole(loginRes.role);
       setPassword("");
       setConfirm("");
       setName("");
       setGender("MALE");
       setAge("");
+      setEmail("");
       setIdCard("");
       setPhone("");
       setAddress("");
@@ -173,6 +200,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitch }) => {
 
       {step === 2 && (
         <>
+          <input
+            className="auth-input"
+            type="email"
+            placeholder="请输入邮箱"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
           <input
             className="auth-input"
             type="text"

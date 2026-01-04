@@ -1,10 +1,43 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import "./patient.css";
 import { createRegistration } from "../../services/patientService";
 import { usePatient } from "../../contexts/PatientContext";
 import { useDoctor } from "../../contexts/DoctorContext";
 
 const timeSlots = ["08:30", "09:00", "10:00", "14:00", "15:00", "16:00"];
+
+// Toast 提示组件
+interface ToastProps {
+  type: 'success' | 'error' | 'info';
+  title: string;
+  message: string;
+  onClose: () => void;
+  duration?: number;
+}
+
+const Toast: React.FC<ToastProps> = ({ type, title, message, onClose, duration = 3000 }) => {
+  const [isHiding, setIsHiding] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsHiding(true);
+      setTimeout(onClose, 300);
+    }, duration);
+    return () => clearTimeout(timer);
+  }, [duration, onClose]);
+
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+
+  return (
+    <div className={`toast toast-${type} ${isHiding ? 'hiding' : ''}`}>
+      <div className="toast-icon">{icons[type]}</div>
+      <div className="toast-content">
+        <div className="toast-title">{title}</div>
+        <div className="toast-message">{message}</div>
+      </div>
+    </div>
+  );
+};
 
 const RegistrationPage: React.FC = () => {
   const { patient, loading: patientLoading, refreshPatient } = usePatient();
@@ -14,8 +47,14 @@ const RegistrationPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [showTimeModal, setShowTimeModal] = useState(false);
-  const [registrationSuccess, setRegistrationSuccess] = useState(false);
-  const [error, setError] = useState("");
+  const [modalError, setModalError] = useState("");
+
+  // Toast 状态
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null);
+
+  const showToast = (type: 'success' | 'error' | 'info', title: string, message: string) => {
+    setToast({ type, title, message });
+  };
 
   const departments = useMemo(() => {
     const deptSet = new Set<string>();
@@ -68,49 +107,53 @@ const RegistrationPage: React.FC = () => {
     setSelectedDoctor(doctor);
     setSelectedDate("");
     setSelectedTime("");
+    setModalError("");
     setShowTimeModal(true);
   };
 
   const handleQuickDateSelect = (dateValue: string) => {
     setSelectedDate(dateValue);
+    setModalError("");
   };
 
-    const handleSubmit = async () => {
-        if (!patient || !selectedDoctor || !selectedDate || !selectedTime) {
-            setError("请完成所有选择");
-            return;
-        }
+  const handleModalClose = () => {
+    setShowTimeModal(false);
+    setModalError("");
+    setSelectedDate("");
+    setSelectedTime("");
+  };
 
-        try {
-            const appointmentTime = `${selectedDate}T${selectedTime}:00`;
-            await createRegistration({
-                patientId: patient.id,
-                doctorId: selectedDoctor.id,
-                diseaseId: 1,
-                appointmentTime,
-            });
+  const handleSubmit = async () => {
+    if (!patient || !selectedDoctor || !selectedDate || !selectedTime) {
+      setModalError("请完成所有选择");
+      return;
+    }
 
-            await refreshPatient();
+    try {
+      const appointmentTime = `${selectedDate}T${selectedTime}:00`;
+      await createRegistration({
+        patientId: patient.id,
+        doctorId: selectedDoctor.id,
+        diseaseId: 1,
+        appointmentTime,
+      });
 
-            setRegistrationSuccess(true);
-            setShowTimeModal(false);
-            setError("");
+      await refreshPatient();
 
-            setTimeout(() => {
-                setRegistrationSuccess(false);
-                setSelectedDoctor(null);
-                setSelectedDate("");
-                setSelectedTime("");
-            }, 3000);
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : "提交挂号失败";
-            setError(errorMessage);
-            // 如果是时间冲突错误，保持弹窗打开让用户重新选择
-            if (!errorMessage.includes("时间段已有挂号")) {
-                setShowTimeModal(false);
-            }
-        }
-    };
+      // 关闭模态框并显示成功提示
+      setShowTimeModal(false);
+      setModalError("");
+      showToast('success', '挂号成功', `您已成功预约 ${selectedDoctor.name} 医生，请按时就诊`);
+
+      // 重置状态
+      setSelectedDoctor(null);
+      setSelectedDate("");
+      setSelectedTime("");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "提交挂号失败";
+      setModalError(errorMessage);
+    }
+  };
 
   if (patientLoading || doctorsLoading) {
     return (
@@ -123,12 +166,17 @@ const RegistrationPage: React.FC = () => {
   return (
     <div className="registration-page">
       <h3>在线挂号</h3>
-      {(error || doctorsError) && <div className="error-message">{error || doctorsError}</div>}
+      {doctorsError && <div className="error-message">{doctorsError}</div>}
 
-      {registrationSuccess && (
-        <div className="success-message">
-          <h4>✅ 挂号成功！</h4>
-          <p>您已成功挂号，请按时就诊。</p>
+      {/* Toast 提示 */}
+      {toast && (
+        <div className="toast-container">
+          <Toast
+            type={toast.type}
+            title={toast.title}
+            message={toast.message}
+            onClose={() => setToast(null)}
+          />
         </div>
       )}
 
@@ -180,16 +228,22 @@ const RegistrationPage: React.FC = () => {
       </div>
 
       {showTimeModal && (
-        <div className="modal-overlay" onClick={() => setShowTimeModal(false)}>
+        <div className="modal-overlay" onClick={handleModalClose}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h4>选择预约时间</h4>
-              <button className="modal-close" onClick={() => setShowTimeModal(false)}>×</button>
+              <button className="modal-close" onClick={handleModalClose}>×</button>
             </div>
             <div className="modal-body">
               <div className="modal-doctor-info">
                 <strong>{selectedDoctor?.name}</strong> - {selectedDoctor?.title}
               </div>
+
+              {modalError && (
+                <div className="error-message" style={{ marginBottom: '15px' }}>
+                  {modalError}
+                </div>
+              )}
 
               <div className="time-select-group">
                 <label>快捷选择日期</label>
@@ -211,7 +265,10 @@ const RegistrationPage: React.FC = () => {
                 <select
                   className="time-input date-select"
                   value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedDate(e.target.value);
+                    setModalError("");
+                  }}
                 >
                   <option value="">请选择日期</option>
                   {dateOptions.map((option) => (
@@ -233,7 +290,10 @@ const RegistrationPage: React.FC = () => {
                     <div
                       key={time}
                       className={`time-slot ${selectedTime === time ? "selected" : ""}`}
-                      onClick={() => setSelectedTime(time)}
+                      onClick={() => {
+                        setSelectedTime(time);
+                        setModalError("");
+                      }}
                     >
                       {time}
                     </div>

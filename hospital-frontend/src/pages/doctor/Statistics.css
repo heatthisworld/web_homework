@@ -60,16 +60,51 @@
   color: #95a5a6;
 }
 
-/* 时间范围选择 */
-.time-range-selector {
+/* 操作栏 */
+.operation-bar {
   background-color: white;
   padding: 15px 20px;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 时间范围选择 */
+.time-range-selector {
+  display: flex;
   align-items: center;
   gap: 10px;
+  margin-bottom: 0;
+  background-color: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
+/* 导出按钮 */
+.export-btn {
+  padding: 8px 16px;
+  background-color: #67c23a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+  background-color: #85ce61;
+  box-shadow: 0 2px 5px rgba(103, 194, 58, 0.3);
+}
+
+.export-btn:disabled {
+  background-color: #c0c4cc;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .time-range-selector span {
@@ -151,19 +186,55 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
+  height: 100%;
 }
 
 .chart-bar {
   width: 100%;
-  background-color: #409eff;
+  flex-grow: 1;
+  background-color: #f5f5f5;
   border-radius: 4px 4px 0 0;
-  transition: all 0.3s ease;
-  min-height: 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  overflow: hidden;
+  min-height: 40px;
 }
 
-.chart-bar:hover {
+.chart-bar-fill {
+  width: 100%;
+  background: linear-gradient(to top, #409eff, #66b1ff);
+  border-radius: 4px 4px 0 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.chart-bar-fill:hover {
   background-color: #66b1ff;
   transform: scaleY(1.05);
+}
+
+/* 柱状图数据标签 */
+.chart-bar-label {
+  position: absolute;
+  top: -25px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #409eff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.chart-bar-fill:hover .chart-bar-label {
+  opacity: 1;
 }
 
 .chart-label {
@@ -225,22 +296,40 @@
   position: relative;
 }
 
-.progress-bar::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
+.progress-bar-fill {
   height: 100%;
-  background-color: #409eff;
+  background: linear-gradient(to right, #409eff, #66b1ff);
   border-radius: 6px;
   transition: width 0.5s ease;
-  width: 0%;
-  animation: progressAnimation 1s ease forwards;
+  box-shadow: 0 2px 5px rgba(64, 158, 255, 0.3);
+}
+
+
+
+/* 科室挂号统计进度条颜色 */
+.department-item:nth-child(1) .progress-bar-fill {
+  background: linear-gradient(to right, #409eff, #66b1ff);
+}
+
+.department-item:nth-child(2) .progress-bar-fill {
+  background: linear-gradient(to right, #67c23a, #85ce61);
+}
+
+.department-item:nth-child(3) .progress-bar-fill {
+  background: linear-gradient(to right, #e6a23c, #ebb563);
+}
+
+.department-item:nth-child(4) .progress-bar-fill {
+  background: linear-gradient(to right, #f56c6c, #f78989);
+}
+
+.department-item:nth-child(5) .progress-bar-fill {
+  background: linear-gradient(to right, #909399, #a6a9ad);
 }
 
 @keyframes progressAnimation {
   from { width: 0%; }
-  to { width: var(--progress-width); }
+  to { width: 100%; }
 }
 
 .progress-text {
@@ -254,65 +343,59 @@
 .satisfaction-chart {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 30px;
+  gap: 20px;
   padding: 20px;
   background-color: #fafafa;
   border-radius: 8px;
 }
 
-.satisfaction-score {
+.satisfaction-item {
   display: flex;
   flex-direction: column;
+  gap: 10px;
+}
+
+.satisfaction-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.satisfaction-rating {
+  font-weight: 500;
+  color: #303133;
+}
+
+.satisfaction-count {
+  color: #606266;
+}
+
+.satisfaction-progress {
+  display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.score-value {
-  font-size: 72px;
-  font-weight: bold;
-  color: #409eff;
+/* 患者满意度进度条颜色 */
+.satisfaction-item:nth-child(1) .progress-bar-fill {
+  background: linear-gradient(to right, #409eff, #66b1ff);
 }
 
-.score-label {
-  font-size: 18px;
-  color: #606266;
+.satisfaction-item:nth-child(2) .progress-bar-fill {
+  background: linear-gradient(to right, #67c23a, #85ce61);
 }
 
-.rating-distribution {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+.satisfaction-item:nth-child(3) .progress-bar-fill {
+  background: linear-gradient(to right, #e6a23c, #ebb563);
 }
 
-.rating-item {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  width: 100%;
+.satisfaction-item:nth-child(4) .progress-bar-fill {
+  background: linear-gradient(to right, #f56c6c, #f78989);
 }
 
-.rating-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #303133;
-  min-width: 60px;
-}
-
-.rating-progress {
-  flex: 1;
-  height: 10px;
-  background-color: #ecf5ff;
-  border-radius: 5px;
-  overflow: hidden;
-}
-
-.rating-count {
-  font-size: 12px;
-  color: #606266;
-  min-width: 100px;
-  text-align: right;
+.satisfaction-item:nth-child(5) .progress-bar-fill {
+  background: linear-gradient(to right, #909399, #a6a9ad);
 }
 
 /* 收入统计图表 */
@@ -360,18 +443,35 @@
   transform: translateX(-50%) scale(1.2);
 }
 
-/* 连接线（使用伪元素绘制） */
-.income-line::after {
+/* 收入折线连接线 */
+.income-line-connect {
+  position: absolute;
+  top: 0;
+  left: 20px;
+  right: 20px;
+  height: 100%;
+  pointer-events: none;
+}
+
+.income-line-segment {
+  position: absolute;
+  height: 2px;
+  background-color: #409eff;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(64, 158, 255, 0.3);
+}
+
+/* 收入折线渐变填充 */
+.income-line-container::before {
   content: '';
   position: absolute;
   bottom: 0;
   left: 20px;
   right: 20px;
   height: 100%;
-  background: linear-gradient(to top, transparent 0%, transparent calc(var(--line-height) - 6px), #409eff calc(var(--line-height) - 6px), #409eff calc(var(--line-height) + 6px), transparent calc(var(--line-height) + 6px), transparent 100%);
-  background-size: calc(100% / (var(--point-count) - 1)) 100%;
-  background-repeat: repeat-x;
-  opacity: 0.5;
+  background: linear-gradient(to top, rgba(64, 158, 255, 0.2), rgba(64, 158, 255, 0));
+  pointer-events: none;
+  z-index: -1;
 }
 
 .income-labels {
@@ -391,6 +491,85 @@
   color: #606266;
   transform: translateX(-50%);
   white-space: nowrap;
+}
+
+/* 悬停提示框 */
+.chart-tooltip {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 1000;
+  transform: translate(-50%, -100%);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.chart-tooltip.show {
+  opacity: 1;
+}
+
+/* 患者年龄分布 */
+.age-distribution-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  background-color: #fafafa;
+  border-radius: 8px;
+}
+
+.age-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.age-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.age-range {
+  font-weight: 500;
+  color: #303133;
+}
+
+.age-count {
+  color: #606266;
+}
+
+.age-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 年龄分布进度条颜色 */
+.age-item:nth-child(1) .progress-bar-fill {
+  background: linear-gradient(to right, #67c23a, #85ce61);
+}
+
+.age-item:nth-child(2) .progress-bar-fill {
+  background: linear-gradient(to right, #409eff, #66b1ff);
+}
+
+.age-item:nth-child(3) .progress-bar-fill {
+  background: linear-gradient(to right, #e6a23c, #ebb563);
+}
+
+.age-item:nth-child(4) .progress-bar-fill {
+  background: linear-gradient(to right, #f56c6c, #f78989);
+}
+
+.age-item:nth-child(5) .progress-bar-fill {
+  background: linear-gradient(to right, #909399, #a6a9ad);
 }
 
 /* 响应式设计 */

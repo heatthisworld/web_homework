@@ -8,137 +8,7 @@ import {
 
 type GenderFilter = "all" | "MALE" | "FEMALE";
 
-const fallbackPatients: PatientDetails[] = [
-  {
-    id: 101,
-    username: "zhangsan@example.com",
-    name: "张三",
-    gender: "MALE",
-    age: 35,
-    phone: "13800001234",
-    address: "北京市朝阳区朝阳北路123号",
-    medicalHistory: [
-      {
-        id: 1,
-        visitDate: "2025-11-20T09:00:00",
-        diagnosis: "高血压",
-        treatment: "药物治疗，定期复查",
-        medications: ["降压药", "阿司匹林"],
-        doctor: "张医生",
-        symptoms: "头晕、乏力",
-      },
-      {
-        id: 2,
-        visitDate: "2025-10-15T15:30:00",
-        diagnosis: "感冒",
-        treatment: "休息与用药",
-        medications: ["感冒药", "退烧药"],
-        doctor: "李医生",
-        symptoms: "流涕、咳嗽",
-      },
-    ],
-    visitHistory: [
-      {
-        id: 1,
-        appointmentTime: "2025-12-11T10:00:00",
-        department: "内科",
-        doctor: "张医生",
-        disease: "高血压",
-        status: "completed",
-        symptoms: "头痛、发热",
-      },
-      {
-        id: 2,
-        appointmentTime: "2025-11-20T09:30:00",
-        department: "内科",
-        doctor: "张医生",
-        disease: "高血压",
-        status: "completed",
-        symptoms: "高血压复诊",
-      },
-    ],
-  },
-  {
-    id: 102,
-    username: "lisi@example.com",
-    name: "李四",
-    gender: "FEMALE",
-    age: 28,
-    phone: "13900005678",
-    address: "上海市浦东新区世纪大道456号",
-    medicalHistory: [
-      {
-        id: 3,
-        visitDate: "2025-11-10T14:00:00",
-        diagnosis: "上呼吸道感染",
-        treatment: "对症治疗",
-        medications: ["抗生素", "止咳药"],
-        doctor: "张医生",
-        symptoms: "咽喉疼痛、咳嗽",
-      },
-    ],
-    visitHistory: [
-      {
-        id: 3,
-        appointmentTime: "2025-12-11T13:30:00",
-        department: "内科",
-        doctor: "张医生",
-        disease: "上呼吸道感染",
-        status: "pending",
-        symptoms: "咳嗽、喉咙疼",
-      },
-    ],
-  },
-  {
-    id: 103,
-    username: "wangwu@example.com",
-    name: "王五",
-    gender: "MALE",
-    age: 42,
-    phone: "13700009012",
-    address: "广州市天河区体育西路789号",
-    medicalHistory: [
-      {
-        id: 4,
-        visitDate: "2025-10-05T11:00:00",
-        diagnosis: "胃炎",
-        treatment: "药物治疗与饮食调整",
-        medications: ["胃药"],
-        doctor: "张医生",
-        symptoms: "胃部不适、反酸",
-      },
-      {
-        id: 5,
-        visitDate: "2025-09-15T16:00:00",
-        diagnosis: "腰椎间盘突出",
-        treatment: "物理治疗",
-        medications: ["止痛药"],
-        doctor: "王医生",
-        symptoms: "腰部疼痛",
-      },
-    ],
-    visitHistory: [
-      {
-        id: 4,
-        appointmentTime: "2025-12-11T09:30:00",
-        department: "内科",
-        doctor: "张医生",
-        disease: "胃炎",
-        status: "completed",
-        symptoms: "腹痛、腹胀",
-      },
-      {
-        id: 5,
-        appointmentTime: "2025-10-05T09:00:00",
-        department: "内科",
-        doctor: "张医生",
-        disease: "胃炎",
-        status: "completed",
-        symptoms: "胃部隐痛",
-      },
-    ],
-  },
-];
+
 
 const genderLabel = (gender?: PatientDetails["gender"]) => {
   if (gender === "MALE") return "男";
@@ -170,11 +40,20 @@ const PatientManagement: React.FC = () => {
   const [selectedPatient, setSelectedPatient] = useState<PatientDetails | null>(
     null,
   );
-  const [activeTab, setActiveTab] = useState<"profile" | "medical" | "visit">(
-    "profile",
-  );
+  const [activeTab, setActiveTab] = useState<"profile" | "medical" | "visit">("profile");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  // 添加患者模态框相关状态
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newPatient, setNewPatient] = useState<Partial<PatientDetails>>({
+    name: '',
+    gender: 'MALE',
+    age: 0,
+    phone: '',
+    address: '',
+    medicalHistory: [],
+    visitHistory: []
+  });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -183,23 +62,25 @@ const PatientManagement: React.FC = () => {
       try {
         const data = await fetchPatientsWithDetails();
         if (cancelled) return;
-        if (!data.length) {
-          console.log("暂无患者数据，已展示本地示例数据");
-          setPatients(fallbackPatients);
-          setFilteredPatients(fallbackPatients);
-          setSelectedPatient(fallbackPatients[0] ?? null);
-          return;
+        
+        // 确保只在API返回有效数据时使用真实数据
+        if (Array.isArray(data) && data.length > 0) {
+          console.log("成功获取患者数据");
+          setPatients(data);
+          setFilteredPatients(data);
+          setSelectedPatient(data[0] ?? null);
+        } else {
+          console.log("暂无患者数据");
+          setPatients([]);
+          setFilteredPatients([]);
+          setSelectedPatient(null);
         }
-        setPatients(data);
-        setFilteredPatients(data);
-        setSelectedPatient(data[0] ?? null);
       } catch (err) {
         if (cancelled) return;
         console.error('加载患者数据失败:', err);
-        // 不显示错误信息，静默使用示例数据
-        setPatients(fallbackPatients);
-        setFilteredPatients(fallbackPatients);
-        setSelectedPatient(fallbackPatients[0] ?? null);
+        setPatients([]);
+        setFilteredPatients([]);
+        setSelectedPatient(null);
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -249,6 +130,82 @@ const PatientManagement: React.FC = () => {
     setSelectedPatient(null);
   };
 
+  // 打开添加患者模态框
+  const openAddModal = () => {
+    setIsAddModalOpen(true);
+  };
+
+  // 关闭添加患者模态框
+  const closeAddModal = () => {
+    setIsAddModalOpen(false);
+    // 重置表单
+    setNewPatient({
+      name: '',
+      gender: 'MALE',
+      age: 0,
+      phone: '',
+      address: '',
+      medicalHistory: [],
+      visitHistory: []
+    });
+  };
+
+  // 处理表单输入变化
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    setNewPatient(prev => ({
+      ...prev,
+      [name]: type === 'number' ? parseInt(value) || 0 : value
+    }));
+  };
+
+  // 保存新患者（模拟）
+  const handleSavePatient = async () => {
+    if (!newPatient.name || !newPatient.phone) {
+      alert('请填写患者姓名和手机号');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // 模拟API请求延迟
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // 生成唯一ID（模拟数据库自动生成）
+      const newId = Math.max(...patients.map(p => p.id || 0), 0) + 1;
+      
+      // 创建新患者对象
+      const patientToAdd: PatientDetails = {
+        id: newId,
+        name: newPatient.name,
+        gender: newPatient.gender as 'MALE' | 'FEMALE',
+        age: newPatient.age,
+        phone: newPatient.phone,
+        address: newPatient.address,
+        medicalHistory: [],
+        visitHistory: []
+      };
+
+      // 更新患者列表
+      const updatedPatients = [...patients, patientToAdd];
+      setPatients(updatedPatients);
+      setFilteredPatients(updatedPatients);
+      
+      // 选择新添加的患者
+      setSelectedPatient(patientToAdd);
+      
+      // 关闭模态框
+      closeAddModal();
+      
+      alert('患者添加成功');
+    } catch (error) {
+      console.error('添加患者失败:', error);
+      alert('添加患者失败，请重试');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="patient-management">
       <h1>患者管理</h1>
@@ -292,7 +249,8 @@ const PatientManagement: React.FC = () => {
             </div>
 
             <div className="patient-list">
-              {filteredPatients.map((patient) => (
+              {filteredPatients.length > 0 ? (
+                filteredPatients.map((patient) => (
                 <div
                   key={patient.id}
                   className={`patient-item ${
@@ -314,7 +272,20 @@ const PatientManagement: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+              ))
+              ) : (
+                <div className="empty-state-container">
+                  <div className="empty-state-icon">👥</div>
+                  <div className="empty-state-text">
+                    <h3>暂无患者数据</h3>
+                    <p>当前没有任何患者记录，请添加新患者或导入数据</p>
+                  </div>
+                  <div className="empty-state-actions">
+                    <button className="empty-state-btn primary" onClick={openAddModal}>添加患者</button>
+                    <button className="empty-state-btn secondary">导入数据</button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -493,6 +464,81 @@ const PatientManagement: React.FC = () => {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* 添加患者模态框 */}
+      {isAddModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h2>添加新患者</h2>
+              <button className="close-btn" onClick={closeAddModal}>&times;</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>姓名</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={newPatient.name || ''}
+                  onChange={handleInputChange}
+                  placeholder="请输入患者姓名"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>性别</label>
+                <select
+                  name="gender"
+                  value={newPatient.gender || 'MALE'}
+                  onChange={handleInputChange}
+                >
+                  <option value="MALE">男</option>
+                  <option value="FEMALE">女</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>年龄</label>
+                <input
+                  type="number"
+                  name="age"
+                  value={newPatient.age || 0}
+                  onChange={handleInputChange}
+                  placeholder="请输入患者年龄"
+                  min="0"
+                  max="150"
+                />
+              </div>
+              <div className="form-group">
+                <label>手机号</label>
+                <input
+                  type="text"
+                  name="phone"
+                  value={newPatient.phone || ''}
+                  onChange={handleInputChange}
+                  placeholder="请输入患者手机号"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>地址</label>
+                <textarea
+                  name="address"
+                  value={newPatient.address || ''}
+                  onChange={handleInputChange}
+                  placeholder="请输入患者联系地址"
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn secondary" onClick={closeAddModal}>取消</button>
+              <button className="btn primary" onClick={handleSavePatient} disabled={saving}>
+                {saving ? '保存中...' : '保存'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

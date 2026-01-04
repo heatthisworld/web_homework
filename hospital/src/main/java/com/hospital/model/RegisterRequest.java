@@ -7,6 +7,7 @@ public class RegisterRequest {
     // 用户基本信息
     private String username;
     private String password;
+    private String email;
     
     // 病人信息
     private String name;
