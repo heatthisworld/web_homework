@@ -35,7 +35,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitch, onForgotPassword }) => 
         navigate("/doctor/dashboard");
         break;
       case "PATIENT":
-        navigate("/patient/dashboard");
+        navigate("/patient");  // 修复：改为 /patient 而不是 /patient/dashboard
         break;
       case "ADMIN":
         navigate("/admin/dashboard");
