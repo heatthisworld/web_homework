@@ -70,6 +70,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                        .requestMatchers("/api/auth/password/**").permitAll()
                         .requestMatchers("/api/debug/login").permitAll()
                         // logout 允许未认证访问，方便直接清除 Cookie
                         .requestMatchers("/api/auth/logout").permitAll()

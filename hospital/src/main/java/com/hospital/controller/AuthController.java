@@ -5,9 +5,12 @@ import com.hospital.entity.User;
 import com.hospital.model.AuthRequest;
 import com.hospital.model.AuthResponse;
 import com.hospital.model.RegisterRequest;
+import com.hospital.model.ResetPasswordRequest;
 import com.hospital.model.Result;
+import com.hospital.model.SendResetCodeRequest;
 import com.hospital.repository.UserRepository;
 import com.hospital.service.PatientService;
+import com.hospital.service.PasswordResetService;
 import com.hospital.service.UserService;
 import com.hospital.util.JwtTokenUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,10 +24,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -52,7 +55,7 @@ public class AuthController {
     private PatientService patientService;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    private PasswordResetService passwordResetService;
 
     @PostMapping("/login")
     public Result<AuthResponse> createAuthenticationToken(@RequestBody AuthRequest authenticationRequest,
@@ -93,6 +96,13 @@ public class AuthController {
         if (userRepository.findByUsername(registerRequest.getUsername()).isPresent()) {
             return Result.error(4002, "用户名已存在");
         }
+        if (!StringUtils.hasText(registerRequest.getEmail())) {
+            return Result.error(4004, "邮箱不能为空");
+        }
+        String email = registerRequest.getEmail().trim();
+        if (userRepository.findByEmail(email).isPresent()) {
+            return Result.error(4005, "该邮箱已被使用");
+        }
 
         // 1.1 检查身份证是否已存在，避免数据库唯一约束报错
         if (patientService.getPatientByIdCard(registerRequest.getIdCard()).isPresent()) {
@@ -103,6 +113,7 @@ public class AuthController {
         User user = new User();
         user.setUsername(registerRequest.getUsername());
         user.setPassword(registerRequest.getPassword());
+        user.setEmail(email);
         // 设置角色为患者
         user.setRole(User.Role.PATIENT);
         // 保存用户（内部会加密）
@@ -167,5 +178,32 @@ public class AuthController {
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
         return Result.success("退出成功");
+    }
+
+    @PostMapping("/password/send-code")
+    public Result<String> sendResetCode(@RequestBody SendResetCodeRequest request) {
+        try {
+            passwordResetService.sendResetCode(request.getUsername(), request.getEmail());
+            return Result.success("验证码已发送，请查收邮箱");
+        } catch (IllegalArgumentException e) {
+            return Result.error(4006, e.getMessage());
+        } catch (Exception e) {
+            return Result.error(500, "发送验证码失败，请稍后再试");
+        }
+    }
+
+    @PostMapping("/password/reset")
+    public Result<String> resetPassword(@RequestBody ResetPasswordRequest request) {
+        if (!StringUtils.hasText(request.getNewPassword()) || request.getNewPassword().length() < 6) {
+            return Result.error(4007, "新密码长度不能少于6位");
+        }
+        try {
+            passwordResetService.resetPassword(request.getUsername(), request.getEmail(), request.getCode(), request.getNewPassword());
+            return Result.success("密码重置成功");
+        } catch (IllegalArgumentException e) {
+            return Result.error(4006, e.getMessage());
+        } catch (Exception e) {
+            return Result.error(500, "密码重置失败，请稍后再试");
+        }
     }
 }

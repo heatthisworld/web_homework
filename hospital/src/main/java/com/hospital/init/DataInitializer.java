@@ -118,6 +118,7 @@ public class DataInitializer implements CommandLineRunner {
         admin.setPassword(passwordEncoder.encode("admin123"));
         admin.setRole(User.Role.ADMIN);
         admin.setDisplayName("系统管理员");
+        admin.setEmail("admin@hospital.local");
         admin.setStatus(User.Status.ACTIVE);
         userRepository.save(admin);
         System.out.println("Created admin user admin/admin123");
@@ -164,6 +165,7 @@ public class DataInitializer implements CommandLineRunner {
             user.setPassword(passwordEncoder.encode("doctor123"));
             user.setRole(User.Role.DOCTOR);
             user.setDisplayName("医生" + (i + 1));
+            user.setEmail("doctor" + (i + 1) + "@hospital.local");
             user.setStatus(User.Status.ACTIVE);
             userRepository.save(user);
 
@@ -194,6 +196,7 @@ public class DataInitializer implements CommandLineRunner {
             user.setPassword(passwordEncoder.encode("patient123"));
             user.setRole(User.Role.PATIENT);
             user.setDisplayName("患者" + (i + 1));
+            user.setEmail("patient" + (i + 1) + "@hospital.local");
             user.setStatus(User.Status.ACTIVE);
             userRepository.save(user);
 

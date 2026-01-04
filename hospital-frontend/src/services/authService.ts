@@ -15,6 +15,7 @@ export interface RegisterRequest {
   username: string;
   password: string;
   role: "PATIENT";
+  email: string;
   name: string;
   gender: "MALE" | "FEMALE";
   age: number;
@@ -27,6 +28,7 @@ export interface RegisterResponse {
   id: number;
   username: string;
   role: "PATIENT";
+  email: string;
   name: string;
   gender: "MALE" | "FEMALE";
   age: number;
@@ -35,6 +37,18 @@ export interface RegisterResponse {
   address: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface SendResetCodeRequest {
+  username: string;
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  username: string;
+  email: string;
+  code: string;
+  newPassword: string;
 }
 
 type ApiEnvelope<T> = {
@@ -50,7 +64,11 @@ const withCredentials = (options: RequestInit = {}): RequestInit => ({
 
 const parseJson = async <T>(response: Response): Promise<T> => {
   try {
-    return (await response.json()) as T;
+    const text = await response.text();
+    if (!text) {
+      throw new Error(`服务器返回空响应（HTTP ${response.status}）`);
+    }
+    return JSON.parse(text) as T;
   } catch {
     throw new Error("服务端返回格式不正确");
   }
@@ -149,6 +167,46 @@ export const register = async (
     );
 
     return await unwrapData<RegisterResponse>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const sendResetCode = async (
+  data: SendResetCodeRequest,
+): Promise<void> => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/auth/password/send-code`,
+      withCredentials({
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }),
+    );
+    await unwrapData<unknown>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const resetPassword = async (
+  data: ResetPasswordRequest,
+): Promise<void> => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/auth/password/reset`,
+      withCredentials({
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }),
+    );
+    await unwrapData<unknown>(response);
   } catch (error) {
     throw normalizeFetchError(error);
   }

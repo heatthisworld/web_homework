@@ -15,6 +15,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitch }) => {
   const [name, setName] = useState("");
   const [gender, setGender] = useState<"MALE" | "FEMALE">("MALE");
   const [age, setAge] = useState("");
+  const [email, setEmail] = useState("");
   const [idCard, setIdCard] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -66,8 +67,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitch }) => {
       }
     }
     if (currentStep === 2) {
-      if (!idCard || !phone || !address) {
-        setError("请填写身份证、电话和地址");
+      if (!email || !idCard || !phone || !address) {
+        setError("请填写邮箱、身份证、电话和地址");
+        return false;
+      }
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailPattern.test(email)) {
+        setError("请输入正确的邮箱地址");
         return false;
       }
     }
@@ -101,6 +107,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitch }) => {
         username,
         password,
         role: "PATIENT",
+        email,
         name,
         gender,
         age: ageNum,
@@ -117,6 +124,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitch }) => {
       setName("");
       setGender("MALE");
       setAge("");
+      setEmail("");
       setIdCard("");
       setPhone("");
       setAddress("");
@@ -192,6 +200,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitch }) => {
 
       {step === 2 && (
         <>
+          <input
+            className="auth-input"
+            type="email"
+            placeholder="请输入邮箱"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
           <input
             className="auth-input"
             type="text"
