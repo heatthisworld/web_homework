@@ -74,7 +74,7 @@ public class UserServiceImpl implements UserService {
             updatedUser.setStatus(user.getStatus());
             return userRepository.save(updatedUser);
         } else {
-            throw new RuntimeException("User not found with id: " + id);
+            throw new RuntimeException("用户不存在或已被删除，请检查ID为 " + id + " 的用户是否存在");
         }
     }
 

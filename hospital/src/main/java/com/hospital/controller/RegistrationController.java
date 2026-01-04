@@ -27,7 +27,7 @@ public class RegistrationController {
     public Result<Registration> getRegistrationById(@PathVariable Long id) {
         Optional<Registration> registration = registrationService.getRegistrationById(id);
         return registration.map(Result::success)
-                .orElseGet(() -> Result.error(404, "挂号记录不存在"));
+                .orElseGet(() -> Result.error(404, "挂号记录不存在或已被删除，请检查ID为 " + id + " 的挂号记录是否存在"));
     }
 
     @GetMapping("/patient/{patientId}")
@@ -68,7 +68,7 @@ public class RegistrationController {
             Registration createdRegistration = registrationService.createRegistration(registration);
             return Result.success(createdRegistration);
         } catch (RuntimeException e) {
-            return Result.error(400, "创建挂号失败：" + e.getMessage());
+            return Result.error(400, "创建挂号失败: " + e.getMessage() + ". 请检查输入数据是否正确，并查看服务器日志获取更多信息。");
         }
     }
 
@@ -78,7 +78,7 @@ public class RegistrationController {
             Registration updatedRegistration = registrationService.updateRegistration(id, registration);
             return Result.success(updatedRegistration);
         } catch (RuntimeException e) {
-            return Result.error(404, "挂号记录不存在");
+            return Result.error(404, "挂号记录不存在或已被删除，请检查ID为 " + id + " 的挂号记录是否存在");
         }
     }
 
@@ -88,7 +88,7 @@ public class RegistrationController {
             Registration updatedRegistration = registrationService.updateRegistrationStatus(id, status);
             return Result.success(updatedRegistration);
         } catch (RuntimeException e) {
-            return Result.error(404, "挂号记录不存在");
+            return Result.error(404, "挂号记录不存在或已被删除，请检查ID为 " + id + " 的挂号记录是否存在");
         }
     }
 
@@ -98,7 +98,7 @@ public class RegistrationController {
             registrationService.deleteRegistration(id);
             return Result.success();
         } catch (RuntimeException e) {
-            return Result.error(404, "挂号记录不存在");
+            return Result.error(404, "挂号记录不存在或已被删除，请检查ID为 " + id + " 的挂号记录是否存在");
         }
     }
 }

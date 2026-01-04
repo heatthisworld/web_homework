@@ -78,14 +78,14 @@ public class RegistrationServiceImpl implements RegistrationService {
     public Registration createRegistration(Registration registration) {
         // 验证病人和医生是否存在
         if (!patientRepository.existsById(registration.getPatient().getId())) {
-            throw new RuntimeException("Patient not found");
+            throw new RuntimeException("患者不存在或已被删除，无法创建挂号记录。请检查患者ID是否正确。");
         }
         if (!doctorRepository.existsById(registration.getDoctor().getId())) {
-            throw new RuntimeException("Doctor not found");
+            throw new RuntimeException("医生不存在或已被删除，无法创建挂号记录。请检查医生ID是否正确。");
         }
         // 验证预约时间是否在未来
         if (registration.getAppointmentTime().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Appointment time must be in the future");
+            throw new RuntimeException("预约时间必须是未来时间，请检查预约时间是否正确设置。");
         }
         return registrationRepository.save(registration);
     }
@@ -103,7 +103,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             }
             return registrationRepository.save(updatedRegistration);
         } else {
-            throw new RuntimeException("Registration not found with id: " + id);
+            throw new RuntimeException("挂号记录不存在或已被删除，请检查ID为 " + id + " 的挂号记录是否存在");
         }
     }
 

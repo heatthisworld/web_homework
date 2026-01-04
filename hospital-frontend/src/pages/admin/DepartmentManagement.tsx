@@ -82,10 +82,10 @@ const DepartmentManagement: React.FC = () => {
     try {
       // 验证必填字段
       if (!formData.code.trim()) {
-        throw new Error("请输入科室代码");
+        throw new Error("科室代码不能为空，请输入有效的科室代码");
       }
       if (!formData.name.trim()) {
-        throw new Error("请输入科室名称");
+        throw new Error("科室名称不能为空，请输入有效的科室名称");
       }
 
       console.log("准备提交数据:", formData);
@@ -106,7 +106,7 @@ const DepartmentManagement: React.FC = () => {
 
       setIsModalOpen(false);
     } catch (e) {
-      console.error("提交失败:", e);
+      console.error("提交失败，错误详情:", e);
       setFormError(e instanceof Error ? e.message : "操作失败");
     }
   };
@@ -117,7 +117,8 @@ const DepartmentManagement: React.FC = () => {
         await deleteDepartment(id);
         setDepartments(prevDepartments => prevDepartments.filter(dept => dept.id !== id));
       } catch (e) {
-        alert(e instanceof Error ? e.message : "删除失败");
+        const errorMsg = e instanceof Error ? e.message : "未知错误";
+        alert(`删除科室失败: ${errorMsg}。请检查服务器日志获取更多信息。`);
       }
     }
   };

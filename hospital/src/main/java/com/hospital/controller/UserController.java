@@ -25,7 +25,7 @@ public class UserController {
     public Result<User> getUserById(@PathVariable Long id) {
         Optional<User> user = userService.getUserById(id);
         return user.map(Result::success)
-                .orElseGet(() -> Result.error(404, "用户不存在"));
+                .orElseGet(() -> Result.error(404, "用户不存在，请检查ID为 " + id + " 的用户是否存在"));
     }
 
     @GetMapping("/username/{username}")

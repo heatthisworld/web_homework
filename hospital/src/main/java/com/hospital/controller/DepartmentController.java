@@ -24,7 +24,7 @@ public class DepartmentController {
     @GetMapping("/{id}")
     public Result<Department> get(@PathVariable Long id) {
         Optional<Department> department = departmentRepository.findById(id);
-        return department.map(Result::success).orElseGet(() -> Result.error(404, "Department not found"));
+        return department.map(Result::success).orElseGet(() -> Result.error(404, "科室不存在或已被删除，请检查ID为 " + id + " 的科室是否存在"));
     }
 
     @PostMapping
@@ -46,7 +46,7 @@ public class DepartmentController {
             updatedDepartment.setStatus(department.getStatus());
             return Result.success(departmentRepository.save(updatedDepartment));
         } else {
-            return Result.error(404, "Department not found");
+            return Result.error(404, "科室不存在或已被删除，请检查ID为 " + id + " 的科室是否存在");
         }
     }
 
@@ -56,7 +56,7 @@ public class DepartmentController {
             departmentRepository.deleteById(id);
             return Result.success();
         } else {
-            return Result.error(404, "Department not found");
+            return Result.error(404, "科室不存在或已被删除，请检查ID为 " + id + " 的科室是否存在");
         }
     }
 }

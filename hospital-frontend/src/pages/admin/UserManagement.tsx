@@ -120,10 +120,17 @@ const UserManagement: React.FC = () => {
     try {
       // 验证必填字段
       if (!formData.username.trim()) {
-        throw new Error("请输入用户名");
+        throw new Error("用户名不能为空，请输入用户名");
       }
       if (!editingUser && !formData.password) {
-        throw new Error("请输入密码");
+        throw new Error("密码不能为空，请输入密码");
+      }
+      // 验证邮箱和电话字段不能为空
+      if (!formData.email.trim()) {
+        throw new Error("邮箱不能为空，请输入邮箱地址");
+      }
+      if (!formData.phone.trim()) {
+        throw new Error("电话号码不能为空，请输入联系电话");
       }
 
       const userData = { ...formData };
@@ -159,7 +166,8 @@ const UserManagement: React.FC = () => {
         await deleteUser(id);
         setUsers(prevUsers => prevUsers.filter(user => user.id !== id));
       } catch (e) {
-        alert(e instanceof Error ? e.message : "删除失败");
+        const errorMsg = e instanceof Error ? e.message : "未知错误";
+        alert(`删除用户失败: ${errorMsg}。请检查服务器日志获取更多信息。`);
       }
     }
   };

@@ -216,7 +216,8 @@ const ScheduleManagement: React.FC = () => {
       await deleteSchedule(id);
       setSchedules(prev => prev.filter(s => s.id !== id));
     } catch (e) {
-      alert(e instanceof Error ? e.message : "删除失败");
+      const errorMsg = e instanceof Error ? e.message : "未知错误";
+        alert(`删除排班失败: ${errorMsg}。请检查服务器日志获取更多信息。`);
     }
   };
 

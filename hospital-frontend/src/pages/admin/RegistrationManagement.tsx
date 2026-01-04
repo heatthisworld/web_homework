@@ -126,8 +126,9 @@ const RegistrationManagement: React.FC = () => {
       ));
       setEditModalVisible(false);
     } catch (err) {
-      console.error("编辑失败错误:", err);
-      alert(`编辑失败：${err instanceof Error ? err.message : "未知错误"}`);
+      console.error("编辑挂号失败，错误详情:", err);
+      const errorMsg = err instanceof Error ? err.message : "未知错误";
+      alert(`编辑挂号失败: ${errorMsg}。请检查服务器日志获取更多信息。`);
     }
   };
   
@@ -145,7 +146,8 @@ const RegistrationManagement: React.FC = () => {
       setRegistrations(prev => prev.filter(reg => reg.id !== deletingRegistrationId));
       setDeleteModalVisible(false);
     } catch (err) {
-      alert(`删除失败：${err instanceof Error ? err.message : "未知错误"}`);
+      const errorMsg = err instanceof Error ? err.message : "未知错误";
+      alert(`删除挂号失败: ${errorMsg}。请检查服务器日志获取更多信息。`);
     }
   };
 
