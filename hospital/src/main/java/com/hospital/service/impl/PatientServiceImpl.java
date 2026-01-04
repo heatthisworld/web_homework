@@ -74,6 +74,10 @@ public class PatientServiceImpl implements PatientService {
             if (patient.getName() != null && !patient.getName().isEmpty()) {
                 updatedPatient.setName(patient.getName());
             }
+            // 修复：添加性别字段的更新
+            if (patient.getGender() != null) {
+                updatedPatient.setGender(patient.getGender());
+            }
             if (patient.getAge() != null) {
                 updatedPatient.setAge(patient.getAge());
             }
@@ -83,7 +87,7 @@ public class PatientServiceImpl implements PatientService {
             if (patient.getAddress() != null && !patient.getAddress().isEmpty()) {
                 updatedPatient.setAddress(patient.getAddress());
             }
-            // gender、idCard、user 等字段不更新，保持原值
+            // idCard、user 等字段不更新，保持原值
 
             return patientRepository.save(updatedPatient);
         } else {

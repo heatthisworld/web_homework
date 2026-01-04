@@ -31,20 +31,32 @@ public class RegistrationController {
 
     @PostMapping
     public Result<Registration> createRegistration(@RequestBody Registration registration) {
-        if (registration.getPatient() != null && registration.getAppointmentTime() != null) {
-            LocalDateTime appointmentTime = registration.getAppointmentTime();
-            LocalDateTime startTime = appointmentTime.minusMinutes(30);
-            LocalDateTime endTime = appointmentTime.plusMinutes(30);
+        // 验证必要字段：patient 和 appointmentTime
+        if (registration.getPatient() == null || registration.getPatient().getId() == null) {
+            return Result.error(4001, "患者信息不能为空");
+        }
+        if (registration.getDoctor() == null || registration.getDoctor().getId() == null) {
+            return Result.error(4002, "医生信息不能为空");
+        }
+        if (registration.getAppointmentTime() == null) {
+            return Result.error(4003, "预约时间不能为空");
+        }
 
-            List<Registration> conflicts = registrationRepository.findConflictingRegistrations(
-                    registration.getPatient().getId(),
-                    startTime,
-                    endTime
-            );
+        // disease 字段现在是可选的，不再强制要求
 
-            if (!conflicts.isEmpty()) {
-                return Result.error(4003, "该时间段已有挂号记录，请选择其他时间");
-            }
+        // 检查时间冲突
+        LocalDateTime appointmentTime = registration.getAppointmentTime();
+        LocalDateTime startTime = appointmentTime.minusMinutes(30);
+        LocalDateTime endTime = appointmentTime.plusMinutes(30);
+
+        List<Registration> conflicts = registrationRepository.findConflictingRegistrations(
+                registration.getPatient().getId(),
+                startTime,
+                endTime
+        );
+
+        if (!conflicts.isEmpty()) {
+            return Result.error(4004, "该时间段已有挂号记录，请选择其他时间");
         }
 
         Registration savedRegistration = registrationRepository.save(registration);
@@ -74,13 +86,17 @@ public class RegistrationController {
                 conflicts.removeIf(r -> r.getId().equals(id));
 
                 if (!conflicts.isEmpty()) {
-                    return Result.error(4003, "该时间段已有挂号记录，请选择其他时间");
+                    return Result.error(4004, "该时间段已有挂号记录，请选择其他时间");
                 }
 
                 updatedRegistration.setAppointmentTime(registration.getAppointmentTime());
             }
             if (registration.getNotes() != null) {
                 updatedRegistration.setNotes(registration.getNotes());
+            }
+            // disease 字段可选更新
+            if (registration.getDisease() != null) {
+                updatedRegistration.setDisease(registration.getDisease());
             }
 
             registrationRepository.save(updatedRegistration);

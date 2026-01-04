@@ -200,13 +200,15 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onLogout }) => {
         </div>
       )}
 
-      <div className="user-info-card">
-        <img src="/src/assets/Defaulthead.png" alt="用户头像" className="user-avatar" />
-        <div className="user-info">
-          <h3>{patient.name}</h3>
-          <p>患者ID: {patient.id} | {patient.gender === "MALE" ? "男" : "女"} {patient.age ?? "-"}岁</p>
+        {/* 用户信息卡片 - 与首页布局完全一致 */}
+        <div className="user-info-card">
+            <img src="/src/assets/Defaulthead.png" alt="用户头像" className="user-avatar" />
+            <div className="user-info">
+                <h3>{patient.name || "未命名"}</h3>
+                <p className="user-detail">{patient.gender === "MALE" ? "男" : "女"} | {patient.age || "-"}岁</p>
+                <p className="user-detail">手机号: {patient.phone || "-"}</p>
+            </div>
         </div>
-      </div>
 
       <div className="info-section">
         <div className="section-header">
@@ -216,6 +218,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onLogout }) => {
           )}
         </div>
         <div className="info-list">
+          {/* 添加用户名显示（只读） */}
+          <div className="info-row">
+            <span className="info-label">用户名</span>
+            <span className="info-value">{patient.username || "-"}</span>
+          </div>
           <div className="info-row">
             <span className="info-label">姓名</span>
             {editing ? (

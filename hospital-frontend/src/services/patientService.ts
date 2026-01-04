@@ -51,13 +51,6 @@ export interface PatientBasic {
   address: string;
 }
 
-export interface Disease {
-  id: number;
-  name: string;
-  department: string;
-  description?: string;
-}
-
 export interface DoctorSummary {
   id: number;
   name: string;
@@ -66,10 +59,10 @@ export interface DoctorSummary {
   avatarUrl?: string;
 }
 
+// 修改：移除 diseaseId 字段
 export interface CreateRegistrationRequest {
   patientId: number;
   doctorId: number;
-  diseaseId: number;
   appointmentTime: string;
 }
 
@@ -94,10 +87,8 @@ const parseJson = async <T>(response: Response): Promise<T> => {
 
 const unwrapData = async <T>(response: Response): Promise<T> => {
   const payload = await parseJson(response);
-  
-  // 检查是否符合标准ApiEnvelope格式
+
   if (typeof payload === 'object' && payload !== null) {
-    // 处理标准格式
     if ('code' in payload && 'data' in payload) {
       const apiPayload = payload as ApiEnvelope<T>;
       if (apiPayload.code !== 0) {
@@ -105,12 +96,10 @@ const unwrapData = async <T>(response: Response): Promise<T> => {
       }
       return apiPayload.data;
     }
-    // 处理非标准格式（直接返回数据）
     console.warn('服务器返回非标准格式，已尝试兼容处理');
     return payload as T;
   }
-  
-  // 处理非对象格式
+
   console.warn('服务器返回非对象格式，已尝试兼容处理');
   return payload as T;
 };
@@ -233,7 +222,6 @@ export const fetchDoctors = async (): Promise<DoctorSummary[]> => {
       if (trimmed.startsWith("/files/")) {
         return trimmed;
       }
-      // 将后端返回的相对路径补齐到静态资源映射
       const cleaned = trimmed.replace(/^\/+/, "");
       return `/files/${cleaned}`;
     };
@@ -247,15 +235,7 @@ export const fetchDoctors = async (): Promise<DoctorSummary[]> => {
   }
 };
 
-export const fetchDiseases = async (): Promise<Disease[]> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/diseases`, withCredentials());
-    return await unwrapData<Disease[]>(response);
-  } catch (error) {
-    throw normalizeFetchError(error);
-  }
-};
-
+// 修改：移除 disease 字段的发送
 export const createRegistration = async (
     payload: CreateRegistrationRequest,
 ): Promise<void> => {
@@ -268,7 +248,6 @@ export const createRegistration = async (
                 body: JSON.stringify({
                     patient: { id: payload.patientId },
                     doctor: { id: payload.doctorId },
-                    disease: { id: payload.diseaseId },
                     appointmentTime: payload.appointmentTime,
                 }),
             }),

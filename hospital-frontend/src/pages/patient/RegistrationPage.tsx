@@ -131,10 +131,10 @@ const RegistrationPage: React.FC = () => {
 
     try {
       const appointmentTime = `${selectedDate}T${selectedTime}:00`;
+      // 修改：移除 diseaseId 参数
       await createRegistration({
         patientId: patient.id,
         doctorId: selectedDoctor.id,
-        diseaseId: 1,
         appointmentTime,
       });
 

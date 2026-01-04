@@ -23,8 +23,9 @@ public class Registration {
     @JoinColumn(name = "doctor_id", nullable = false)
     private Doctor doctor;
 
+    // 修改：将 disease 改为可选字段
     @ManyToOne
-    @JoinColumn(name = "disease_id", nullable = false)
+    @JoinColumn(name = "disease_id", nullable = true)
     private Disease disease;
 
     @ManyToOne
