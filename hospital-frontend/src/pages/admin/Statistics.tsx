@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { fetchAdminStats, fetchRegistrations } from "../../services/adminService";
 import type { AdminRegistration, AdminStats } from "../../services/adminService";
+import { exportReport, downloadPDF, exportAllData, exportMonthlyData, exportDoctorRanking } from "../../utils/exportUtils";
 
 interface MonthlyStat {
   month: string;
@@ -18,6 +19,7 @@ const Statistics: React.FC = () => {
   const [registrations, setRegistrations] = useState<AdminRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -74,6 +76,51 @@ const Statistics: React.FC = () => {
       .sort((a, b) => b.registrations - a.registrations)
       .slice(0, 5);
   }, [registrations]);
+  
+  // 导出处理函数
+  const handleExportCSV = (type: 'all' | 'monthly' | 'doctor') => {
+    const statsData = {
+      totalRegistrations,
+      departmentCount: stats?.departmentCount ?? 0,
+      totalPatients: stats?.totalPatients ?? 0
+    };
+    exportReport(type, statsData, monthly, doctorRanking);
+    setShowExportModal(false);
+  };
+  
+  const handleExportPDF = (type: 'all' | 'monthly' | 'doctor') => {
+    const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD格式
+    let data: any[] = [];
+    let title = '';
+    
+    switch (type) {
+      case 'all':
+        data = [
+          { '统计项': '近6个月挂号总量', '数值': totalRegistrations },
+          { '统计项': '科室覆盖', '数值': stats?.departmentCount ?? 0 },
+          { '统计项': '患者总数', '数值': stats?.totalPatients ?? 0 },
+          ...monthly.map(m => ({ '统计项': `${m.month}挂号量`, '数值': m.registrations })),
+          ...doctorRanking.map((d, i) => ({ 
+            '统计项': `第${i+1}名医生 - ${d.name}`, 
+            '数值': d.registrations,
+            '科室': d.department
+          }))
+        ];
+        title = '医院统计报表(全部数据)';
+        break;
+      case 'monthly':
+        data = exportMonthlyData(monthly);
+        title = '医院统计报表(月度趋势)';
+        break;
+      case 'doctor':
+        data = exportDoctorRanking(doctorRanking);
+        title = '医院统计报表(医生排名)';
+        break;
+    }
+    
+    downloadPDF(data, `医院统计报表_${type}_${timestamp}`, title);
+    setShowExportModal(false);
+  };
 
   if (loading) {
     return (
@@ -100,7 +147,7 @@ const Statistics: React.FC = () => {
         </div>
         <div className="page-actions">
           <span className="pill pill-muted">实时数据</span>
-          <button className="primary-button" type="button">
+          <button className="primary-button" type="button" onClick={() => setShowExportModal(true)}>
             导出报表
           </button>
         </div>
@@ -184,6 +231,111 @@ const Statistics: React.FC = () => {
           </table>
         </div>
       </div>
+      
+      {/* 导出模态框 */}
+      {showExportModal && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}
+          onClick={() => setShowExportModal(false)}
+        >
+          <div 
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '8px',
+              padding: '20px',
+              width: '400px',
+              maxWidth: '90%',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ marginTop: 0, marginBottom: '20px' }}>导出统计报表</h2>
+            
+            <div style={{ marginBottom: '30px' }}>
+              <h3 style={{ fontSize: '16px', marginBottom: '10px' }}>选择导出内容：</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <input type="radio" name="exportType" value="all" defaultChecked style={{ marginRight: '8px' }} />
+                  <span>全部数据（统计数据、月度趋势、医生排名）</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <input type="radio" name="exportType" value="monthly" style={{ marginRight: '8px' }} />
+                  <span>仅月度趋势</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <input type="radio" name="exportType" value="doctor" style={{ marginRight: '8px' }} />
+                  <span>仅医生排名</span>
+                </label>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button 
+                type="button" 
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '4px',
+                  border: '1px solid #ddd',
+                  backgroundColor: 'white',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setShowExportModal(false)}
+              >
+                取消
+              </button>
+              
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button 
+                  type="button" 
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    border: '1px solid #007bff',
+                    backgroundColor: '#007bff',
+                    color: 'white',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    const selectedType = document.querySelector('input[name="exportType"]:checked') as HTMLInputElement;
+                    handleExportCSV(selectedType ? selectedType.value as 'all' | 'monthly' | 'doctor' : 'all');
+                  }}
+                >
+                  导出CSV
+                </button>
+                
+                <button 
+                  type="button" 
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    border: '1px solid #28a745',
+                    backgroundColor: '#28a745',
+                    color: 'white',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    const selectedType = document.querySelector('input[name="exportType"]:checked') as HTMLInputElement;
+                    handleExportPDF(selectedType ? selectedType.value as 'all' | 'monthly' | 'doctor' : 'all');
+                  }}
+                >
+                  导出PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
