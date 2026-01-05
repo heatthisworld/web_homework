@@ -2,6 +2,7 @@ package com.hospital.controller;
 
 import com.hospital.entity.Doctor;
 import com.hospital.entity.Disease;
+import com.hospital.entity.MedicalRecord;
 import com.hospital.entity.Patient;
 import com.hospital.entity.Registration;
 import com.hospital.entity.User;
@@ -9,10 +10,12 @@ import com.hospital.model.BatchUpdateRegistrationStatusRequest;
 import com.hospital.model.DoctorPatientSummary;
 import com.hospital.model.DoctorRegistrationDto;
 import com.hospital.model.DoctorRegistrationUpdateRequest;
+import com.hospital.model.MedicalRecordRequest;
 import com.hospital.model.PatientDetailsDto;
 import com.hospital.model.Result;
 import com.hospital.model.UpdateRegistrationStatusRequest;
 import com.hospital.repository.DiseaseRepository;
+import com.hospital.repository.MedicalRecordRepository;
 import com.hospital.repository.RegistrationRepository;
 import com.hospital.repository.UserRepository;
 import com.hospital.service.DoctorService;
@@ -44,6 +47,9 @@ public class DoctorController {
 
     @Autowired
     private DiseaseRepository diseaseRepository;
+
+    @Autowired
+    private MedicalRecordRepository medicalRecordRepository;
 
     @Autowired
     private PatientService patientService;
@@ -110,6 +116,61 @@ public class DoctorController {
         return Result.success(registrations);
     }
 
+    @PostMapping("/registrations/{id}/medical-record")
+    public Result<MedicalRecord> createOrUpdateMedicalRecord(@PathVariable Long id,
+                                                             @RequestBody MedicalRecordRequest request,
+                                                             Authentication authentication) {
+        Optional<Doctor> doctor = resolveCurrentDoctor(authentication);
+        if (doctor.isEmpty()) {
+            return Result.error(403, "Current user is not a doctor or not authenticated");
+        }
+
+        Optional<Registration> optionalRegistration = registrationRepository.findById(id);
+        if (optionalRegistration.isEmpty() || optionalRegistration.get().getDoctor() == null
+                || !doctor.get().getId().equals(optionalRegistration.get().getDoctor().getId())) {
+            return Result.error(404, "Registration not found for this doctor");
+        }
+        Registration registration = optionalRegistration.get();
+
+        MedicalRecord record = medicalRecordRepository.findByRegistrationId(id)
+                .stream()
+                .findFirst()
+                .orElseGet(MedicalRecord::new);
+
+        record.setPatient(registration.getPatient());
+        record.setDoctor(registration.getDoctor());
+        record.setRegistration(registration);
+        record.setVisitDate(registration.getAppointmentTime() != null
+                ? registration.getAppointmentTime()
+                : LocalDateTime.now());
+        record.setSymptoms(request.getSymptoms());
+        record.setDiagnosis(request.getDiagnosis());
+        record.setMedication(request.getMedication());
+        record.setExaminations(request.getExaminations());
+        record.setTreatment(request.getTreatment());
+        record.setNotes(request.getNotes());
+
+        MedicalRecord saved = medicalRecordRepository.save(record);
+        return Result.success(saved);
+    }
+
+    @GetMapping("/registrations/{id}/medical-record")
+    public Result<MedicalRecord> getMedicalRecord(@PathVariable Long id, Authentication authentication) {
+        Optional<Doctor> doctor = resolveCurrentDoctor(authentication);
+        if (doctor.isEmpty()) {
+            return Result.error(403, "Current user is not a doctor or not authenticated");
+        }
+
+        Optional<Registration> optionalRegistration = registrationRepository.findById(id);
+        if (optionalRegistration.isEmpty() || optionalRegistration.get().getDoctor() == null
+                || !doctor.get().getId().equals(optionalRegistration.get().getDoctor().getId())) {
+            return Result.error(404, "Registration not found for this doctor");
+        }
+
+        Optional<MedicalRecord> record = medicalRecordRepository.findByRegistrationId(id).stream().findFirst();
+        return record.map(Result::success).orElseGet(() -> Result.error(404, "Medical record not found"));
+    }
+
     @PutMapping("/registrations/{id}/status")
     public Result<DoctorRegistrationDto> updateRegistrationStatus(@PathVariable Long id,
                                                                   @RequestBody UpdateRegistrationStatusRequest request,
@@ -123,6 +184,11 @@ public class DoctorController {
         if (optionalRegistration.isEmpty() || optionalRegistration.get().getDoctor() == null
                 || !doctor.get().getId().equals(optionalRegistration.get().getDoctor().getId())) {
             return Result.error(404, "Registration not found for this doctor");
+        }
+
+        if ("completed".equalsIgnoreCase(request.getStatus())
+                && medicalRecordRepository.findByRegistrationId(id).isEmpty()) {
+            return Result.error(400, "Medical record is required before completing the registration");
         }
 
         Registration.Status newStatus = mapStatusFromFrontend(request.getStatus());
@@ -157,6 +223,10 @@ public class DoctorController {
             Registration.Status status = mapStatusFromFrontend(request.getStatus());
             if (status == null) {
                 return Result.error(400, "Invalid status value");
+            }
+            if (status == Registration.Status.COMPLETED
+                    && medicalRecordRepository.findByRegistrationId(id).isEmpty()) {
+                return Result.error(400, "Medical record is required before completing the registration");
             }
             registration.setStatus(status);
         }
@@ -309,6 +379,7 @@ public class DoctorController {
         }
         dto.setAppointmentTime(registration.getAppointmentTime());
         dto.setStatus(mapStatusToFrontend(registration.getStatus()));
+        dto.setHasMedicalRecord(!medicalRecordRepository.findByRegistrationId(registration.getId()).isEmpty());
         return dto;
     }
 

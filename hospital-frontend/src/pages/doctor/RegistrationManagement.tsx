@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './RegistrationManagement.css';
-import { getRegistrations, updateRegistrationStatus, batchUpdateRegistrationStatus, updateRegistration } from '../../services/doctorService';
-import type { Registration, RegistrationStatus } from '../../services/doctorService';
+import { getRegistrations, updateRegistrationStatus, batchUpdateRegistrationStatus, updateRegistration, createMedicalRecord, getMedicalRecordByRegistration } from '../../services/doctorService';
+import type { Registration, RegistrationStatus, MedicalRecordPayload, MedicalRecordDetail } from '../../services/doctorService';
 
 const RegistrationManagement: React.FC = () => {
   // 状态管理
@@ -18,6 +18,20 @@ const RegistrationManagement: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRegistration, setEditingRegistration] = useState<Partial<Registration> | null>(null);
   const [saving, setSaving] = useState(false);
+  // 病历录入
+  const [recordModalOpen, setRecordModalOpen] = useState(false);
+  const [recordTarget, setRecordTarget] = useState<Registration | null>(null);
+  const [recordLoading, setRecordLoading] = useState(false);
+  const [recordSaving, setRecordSaving] = useState(false);
+  const [completeAfterSave, setCompleteAfterSave] = useState(false);
+  const [recordForm, setRecordForm] = useState<MedicalRecordPayload>({
+    symptoms: '',
+    diagnosis: '',
+    medication: '',
+    examinations: '',
+    treatment: '',
+    notes: '',
+  });
 
   // 获取挂号数据
   useEffect(() => {
@@ -89,8 +103,24 @@ const RegistrationManagement: React.FC = () => {
   };
 
   // 批量更新状态
+  // 完成前检查是否已有病历
+  const handleComplete = (registration: Registration) => {
+    if (!registration.hasMedicalRecord) {
+      openRecordModal(registration, true);
+      return;
+    }
+    handleUpdateStatus(registration.id, 'completed');
+  };
+
   const batchUpdateStatus = async (status: RegistrationStatus) => {
     if (selectedRegistrations.length === 0) return;
+    if (status === 'completed') {
+      const missingRecord = registrations.filter(reg => selectedRegistrations.includes(reg.id) && !reg.hasMedicalRecord);
+      if (missingRecord.length > 0) {
+        alert('所选挂号中存在未提交病历的记录，请先提交病历再完成。');
+        return;
+      }
+    }
     
     try {
       await batchUpdateRegistrationStatus(selectedRegistrations, status);
@@ -168,6 +198,67 @@ const RegistrationManagement: React.FC = () => {
       alert(`保存失败: ${errorMessage}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleRecordInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setRecordForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const openRecordModal = async (registration: Registration, completeAfter: boolean) => {
+    setRecordTarget(registration);
+    setCompleteAfterSave(completeAfter);
+    setRecordModalOpen(true);
+    setRecordLoading(true);
+    try {
+      const record: MedicalRecordDetail = await getMedicalRecordByRegistration(registration.id);
+      setRecordForm({
+        symptoms: record.symptoms || '',
+        diagnosis: record.diagnosis || '',
+        medication: record.medication || '',
+        examinations: record.examinations || '',
+        treatment: record.treatment || '',
+        notes: record.notes || '',
+      });
+    } catch (err) {
+      // 若不存在病历或获取失败，使用空表单
+      setRecordForm({
+        symptoms: '',
+        diagnosis: '',
+        medication: '',
+        examinations: '',
+        treatment: '',
+        notes: '',
+      });
+    } finally {
+      setRecordLoading(false);
+    }
+  };
+
+  const handleSaveMedicalRecord = async () => {
+    if (!recordTarget) return;
+    if (!recordForm.symptoms && !recordForm.diagnosis) {
+      alert('请至少填写症状或诊断');
+      return;
+    }
+    setRecordSaving(true);
+    try {
+      await createMedicalRecord(recordTarget.id, recordForm);
+      setRegistrations(prev =>
+        prev.map(reg => reg.id === recordTarget.id ? { ...reg, hasMedicalRecord: true } : reg)
+      );
+      setRecordModalOpen(false);
+      setRecordTarget(null);
+      if (completeAfterSave) {
+        await handleUpdateStatus(recordTarget.id, 'completed');
+      }
+      setCompleteAfterSave(false);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '提交病历失败';
+      alert(errorMessage);
+    } finally {
+      setRecordSaving(false);
     }
   };
 
@@ -336,7 +427,7 @@ const RegistrationManagement: React.FC = () => {
                         <>
                           <button 
                             className="btn btn-sm btn-success" 
-                            onClick={() => handleUpdateStatus(registration.id, 'completed')}
+                            onClick={() => handleComplete(registration)}
                           >
                             完成
                           </button>
@@ -345,6 +436,12 @@ const RegistrationManagement: React.FC = () => {
                             onClick={() => handleUpdateStatus(registration.id, 'cancelled')}
                           >
                             取消
+                          </button>
+                          <button
+                            className="btn btn-sm btn-warning"
+                            onClick={() => openRecordModal(registration, false)}
+                          >
+                            编辑病历
                           </button>
                           <button 
                             className="btn btn-sm btn-info" 
@@ -355,12 +452,20 @@ const RegistrationManagement: React.FC = () => {
                         </>
                       )}
                       {registration.status === 'completed' && (
-                        <button 
-                          className="btn btn-sm btn-info" 
-                          onClick={() => openDetailModal(registration)}
-                        >
-                          查看详情
-                        </button>
+                        <>
+                          <button 
+                            className="btn btn-sm btn-warning"
+                            onClick={() => openRecordModal(registration, false)}
+                          >
+                            编辑病历
+                          </button>
+                          <button 
+                            className="btn btn-sm btn-info" 
+                            onClick={() => openDetailModal(registration)}
+                          >
+                            查看详情
+                          </button>
+                        </>
                       )}
                       {registration.status === 'cancelled' && (
                         <button 
@@ -384,6 +489,97 @@ const RegistrationManagement: React.FC = () => {
           </table>
         )}
       </div>
+
+      {/* 病历录入 */}
+      {recordModalOpen && recordTarget && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h2>提交病历</h2>
+              <button className="close-btn" onClick={() => { setRecordModalOpen(false); setRecordTarget(null); setCompleteAfterSave(false); }}>&times;</button>
+            </div>
+            <div className="modal-body">
+              {recordLoading && <div className="loading">加载病历中...</div>}
+              <div className="form-group">
+                <label>症状</label>
+                <textarea
+                  name="symptoms"
+                  value={recordForm.symptoms || ''}
+                  onChange={handleRecordInputChange}
+                  className="form-control"
+                  rows={2}
+                  disabled={recordLoading}
+                />
+              </div>
+              <div className="form-group">
+                <label>诊断</label>
+                <textarea
+                  name="diagnosis"
+                  value={recordForm.diagnosis || ''}
+                  onChange={handleRecordInputChange}
+                  className="form-control"
+                  rows={2}
+                  disabled={recordLoading}
+                />
+              </div>
+              <div className="form-group">
+                <label>用药</label>
+                <input
+                  type="text"
+                  name="medication"
+                  value={recordForm.medication || ''}
+                  onChange={handleRecordInputChange}
+                  className="form-control"
+                  placeholder="多个用逗号分隔"
+                  disabled={recordLoading}
+                />
+              </div>
+              <div className="form-group">
+                <label>检查</label>
+                <input
+                  type="text"
+                  name="examinations"
+                  value={recordForm.examinations || ''}
+                  onChange={handleRecordInputChange}
+                  className="form-control"
+                  disabled={recordLoading}
+                />
+              </div>
+              <div className="form-group">
+                <label>治疗方案</label>
+                <textarea
+                  name="treatment"
+                  value={recordForm.treatment || ''}
+                  onChange={handleRecordInputChange}
+                  className="form-control"
+                  rows={2}
+                  disabled={recordLoading}
+                />
+              </div>
+              <div className="form-group">
+                <label>备注</label>
+                <textarea
+                  name="notes"
+                  value={recordForm.notes || ''}
+                  onChange={handleRecordInputChange}
+                  className="form-control"
+                  rows={2}
+                  disabled={recordLoading}
+                />
+              </div>
+              <p className="hint">提交病历后才能将挂号标记为完成。</p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => { setRecordModalOpen(false); setRecordTarget(null); setCompleteAfterSave(false); }}>
+                取消
+              </button>
+              <button className="btn btn-primary" onClick={handleSaveMedicalRecord} disabled={recordSaving || recordLoading}>
+                {recordSaving ? '提交中...' : (completeAfterSave ? '提交并完成' : '保存病历')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 详情模态框 */}
       {isModalOpen && selectedRegistration && editingRegistration && (

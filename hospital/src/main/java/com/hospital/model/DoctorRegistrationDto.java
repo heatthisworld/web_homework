@@ -13,4 +13,5 @@ public class DoctorRegistrationDto {
     private String disease;
     private LocalDateTime appointmentTime;
     private String status;
+    private boolean hasMedicalRecord;
 }

@@ -21,6 +21,7 @@ export interface Registration {
   disease: string;
   appointmentTime: string;
   status: RegistrationStatus;
+  hasMedicalRecord?: boolean;
 }
 
 export interface MedicalRecord {
@@ -33,6 +34,19 @@ export interface MedicalRecord {
   treatment: string;
   medications: string[];
   symptoms: string;
+}
+
+export interface MedicalRecordPayload {
+  symptoms?: string;
+  diagnosis?: string;
+  medication?: string;
+  examinations?: string;
+  treatment?: string;
+  notes?: string;
+}
+
+export interface MedicalRecordDetail extends MedicalRecordPayload {
+  id?: number;
 }
 
 export interface WorkingHour {
@@ -150,6 +164,7 @@ const normalizeRegistrationStatus = (status?: string | null): RegistrationStatus
 const normalizeRegistration = (registration: Registration): Registration => ({
   ...registration,
   status: normalizeRegistrationStatus(registration.status),
+  hasMedicalRecord: registration.hasMedicalRecord ?? false,
 });
 
 // 获取当前医生信息
@@ -191,7 +206,8 @@ export const getRegistrations = async (): Promise<Registration[]> => {
         department: '内科',
         disease: '感冒',
         appointmentTime: `${today}T09:00:00`,
-        status: 'pending'
+        status: 'pending',
+        hasMedicalRecord: false
       },
       {
         id: 2,
@@ -200,7 +216,8 @@ export const getRegistrations = async (): Promise<Registration[]> => {
         department: '内科',
         disease: '高血压',
         appointmentTime: `${today}T10:00:00`,
-        status: 'processing'
+        status: 'processing',
+        hasMedicalRecord: false
       },
       {
         id: 3,
@@ -209,7 +226,8 @@ export const getRegistrations = async (): Promise<Registration[]> => {
         department: '内科',
         disease: '糖尿病',
         appointmentTime: `${today}T14:00:00`,
-        status: 'pending'
+        status: 'pending',
+        hasMedicalRecord: false
       },
       {
         id: 4,
@@ -218,7 +236,8 @@ export const getRegistrations = async (): Promise<Registration[]> => {
         department: '内科',
         disease: '胃炎',
         appointmentTime: `${today}T15:30:00`,
-        status: 'completed'
+        status: 'completed',
+        hasMedicalRecord: true
       }
     ];
   }
@@ -263,6 +282,29 @@ export const updateRegistration = async (id: number, registration: Partial<Regis
   } catch (error) {
     console.warn('使用模拟数据处理挂号信息更新:', error);
     // 模拟成功更新，不抛出错误
+  }
+};
+
+export const createMedicalRecord = async (registrationId: number, payload: MedicalRecordPayload): Promise<void> => {
+  try {
+    await fetch(`${API_BASE_URL}/doctors/registrations/${registrationId}/medical-record`, withCredentials({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }));
+  } catch (error) {
+    console.error('新增病历失败:', error);
+    throw normalizeFetchError(error);
+  }
+};
+
+export const getMedicalRecordByRegistration = async (registrationId: number): Promise<MedicalRecordDetail> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/doctors/registrations/${registrationId}/medical-record`, withCredentials());
+    return unwrapData<MedicalRecordDetail>(response);
+  } catch (error) {
+    console.error('获取病历失败:', error);
+    throw normalizeFetchError(error);
   }
 };
 
