@@ -10,7 +10,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [todayAppointments, setTodayAppointments] = useState<Registration[]>([]);
-  const [doctor, setDoctor] = useState<{ name: string } | null>(null);
+  const [doctorName, setDoctorName] = useState<string>('医生');
   const navigate = useNavigate();
   
   // 真实数据状态
@@ -24,7 +24,7 @@ const Dashboard: React.FC = () => {
       try {
         // 获取医生信息
         const doctorData = await getCurrentDoctor();
-        setDoctor(doctorData);
+        setDoctorName(doctorData.name || '医生');
         
         // 获取挂号列表
         const registrations = await getRegistrations();
@@ -51,7 +51,7 @@ const Dashboard: React.FC = () => {
         console.error('Error fetching data:', err);
         
         // API调用失败时使用默认数据显示空状态UI
-        setDoctor({ name: '医生' });
+        setDoctorName('医生');
         setTodayAppointments([]);
         setPendingTasks([]);
         setStatistics([]);
@@ -82,7 +82,7 @@ const Dashboard: React.FC = () => {
         <div className="error-message">{error}</div>
       ) : (
         <>
-          <h1>欢迎回来，张医生</h1>
+          <h1>欢迎回来，{doctorName}</h1>
           <p className="dashboard-date">{new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}</p>
 
       {/* 统计卡片 */}
