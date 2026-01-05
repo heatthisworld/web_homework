@@ -82,7 +82,7 @@ const Dashboard: React.FC = () => {
         <div className="error-message">{error}</div>
       ) : (
         <>
-          <h1>欢迎回来，张医生</h1>
+          <h1>欢迎回来，{doctor?.name || '医生'}</h1>
           <p className="dashboard-date">{new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}</p>
 
       {/* 统计卡片 */}
