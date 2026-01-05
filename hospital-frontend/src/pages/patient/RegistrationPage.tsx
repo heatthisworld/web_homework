@@ -48,6 +48,7 @@ const RegistrationPage: React.FC = () => {
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [modalError, setModalError] = useState("");
+  const [departmentsCollapsed, setDepartmentsCollapsed] = useState(false);
 
   // Toast 状态
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null);
@@ -182,22 +183,39 @@ const RegistrationPage: React.FC = () => {
 
       <div className="registration-layout">
         <div className="department-sidebar">
-          <div className="sidebar-title">选择科室</div>
-          <div
-            className={`department-nav-item ${!selectedDepartment ? "active" : ""}`}
-            onClick={() => setSelectedDepartment("")}
-          >
-            全部科室
-          </div>
-          {departments.map((dept) => (
-            <div
-              key={dept}
-              className={`department-nav-item ${selectedDepartment === dept ? "active" : ""}`}
-              onClick={() => setSelectedDepartment(dept)}
+          <div className="sidebar-header">
+            <div className="sidebar-title">选择科室</div>
+            <button
+              className="collapse-btn"
+              onClick={() => setDepartmentsCollapsed((prev) => !prev)}
             >
-              {dept}
+              {departmentsCollapsed ? "展开" : "收起"}
+            </button>
+          </div>
+
+          {departmentsCollapsed ? (
+            <div className="department-collapsed-tip">
+              {selectedDepartment ? `当前：${selectedDepartment}` : "当前：全部科室"}
             </div>
-          ))}
+          ) : (
+            <>
+              <div
+                className={`department-nav-item ${!selectedDepartment ? "active" : ""}`}
+                onClick={() => setSelectedDepartment("")}
+              >
+                全部科室
+              </div>
+              {departments.map((dept) => (
+                <div
+                  key={dept}
+                  className={`department-nav-item ${selectedDepartment === dept ? "active" : ""}`}
+                  onClick={() => setSelectedDepartment(dept)}
+                >
+                  {dept}
+                </div>
+              ))}
+            </>
+          )}
         </div>
 
         <div className="doctor-list-area">
