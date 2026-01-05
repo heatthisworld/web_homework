@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,7 +38,17 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> getAllUsers() {
-        return userRepository.findAll();
+        return userRepository.findByDeletedAtIsNull();
+    }
+
+    @Override
+    public List<User> getActiveUsers() {
+        return userRepository.findByDeletedAtIsNull();
+    }
+
+    @Override
+    public List<User> getDeletedUsers() {
+        return userRepository.findByDeletedAtIsNotNull();
     }
 
     @Override
@@ -80,37 +91,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(Long id) {
-        // 先处理Doctor相关的级联删除
-        doctorRepository.findByUserId(id).ifPresent(doctor -> {
-            // 删除该医生的所有挂号记录
-            registrationRepository.findByDoctorId(doctor.getId()).forEach(registration -> {
-                // 先删除该挂号记录的所有病历
-                medicalRecordRepository.findByRegistrationId(registration.getId()).forEach(medicalRecord -> {
-                    medicalRecordRepository.delete(medicalRecord);
-                });
-                // 再删除挂号记录
-                registrationRepository.delete(registration);
-            });
-            // 删除医生记录
-            doctorRepository.delete(doctor);
-        });
-        
-        // 再处理Patient相关的级联删除
-        patientRepository.findByUserId(id).ifPresent(patient -> {
-            // 删除该患者的所有挂号记录
-            registrationRepository.findByPatientId(patient.getId()).forEach(registration -> {
-                // 先删除该挂号记录的所有病历
-                medicalRecordRepository.findByRegistrationId(registration.getId()).forEach(medicalRecord -> {
-                    medicalRecordRepository.delete(medicalRecord);
-                });
-                // 再删除挂号记录
-                registrationRepository.delete(registration);
-            });
-            // 删除患者记录
-            patientRepository.delete(patient);
-        });
-        
-        // 最后删除User记录
-        userRepository.deleteById(id);
+        Optional<User> optionalUser = userRepository.findById(id);
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            user.setDeletedAt(LocalDateTime.now());
+            userRepository.save(user);
+        } else {
+            throw new RuntimeException("用户不存在或已被删除，请检查ID为 " + id + " 的用户是否存在");
+        }
     }
 }

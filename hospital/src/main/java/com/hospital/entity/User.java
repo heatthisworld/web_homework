@@ -45,12 +45,19 @@ public class User {
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     public enum Role {
         DOCTOR, PATIENT, ADMIN
     }
 
     public enum Status {
         ACTIVE, INACTIVE, PENDING
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
     }
 
     @PrePersist
@@ -65,6 +72,8 @@ public class User {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        if (deletedAt == null) {
+            updatedAt = LocalDateTime.now();
+        }
     }
 }

@@ -52,6 +52,9 @@ public class Doctor {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     public enum Gender {
         MALE, FEMALE
     }

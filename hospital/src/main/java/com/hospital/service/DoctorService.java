@@ -13,6 +13,7 @@ public interface DoctorService {
     Optional<Doctor> getDoctorByUserId(Long userId);
     List<Doctor> getDoctorsByDepartment(String departmentName);
     List<Doctor> searchDoctorsByName(String name);
+    List<Doctor> getDeletedDoctors();
     Doctor createDoctor(Doctor doctor);
     Doctor updateDoctor(Long id, Doctor doctor);
     void deleteDoctor(Long id);

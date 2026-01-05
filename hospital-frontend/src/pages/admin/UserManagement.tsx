@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { fetchUsers, createUser, updateUser, deleteUser } from "../../services/adminService";
+import { fetchUsers, fetchDeletedUsers, createUser, updateUser, deleteUser } from "../../services/adminService";
 import type { AdminUser } from "../../services/adminService";
 
 type UserRole = "DOCTOR" | "PATIENT" | "ADMIN";
@@ -7,6 +7,8 @@ type UserStatus = "ACTIVE" | "INACTIVE" | "PENDING";
 
 const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [deletedUsers, setDeletedUsers] = useState<AdminUser[]>([]);
+  const [showDeleted, setShowDeleted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,8 +33,12 @@ const UserManagement: React.FC = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await fetchUsers();
-        setUsers(data);
+        const [activeData, deletedData] = await Promise.all([
+          fetchUsers(),
+          fetchDeletedUsers()
+        ]);
+        setUsers(activeData);
+        setDeletedUsers(deletedData);
       } catch (e) {
         setError(e instanceof Error ? e.message : "加载失败");
       } finally {
@@ -44,7 +50,8 @@ const UserManagement: React.FC = () => {
 
   const filteredUsers = useMemo(() => {
     if (loading || error) return [];
-    return users.filter((user) => {
+    const displayUsers = showDeleted ? deletedUsers : users;
+    return displayUsers.filter((user) => {
       const byRole = roleFilter === "全部" ? true : user.role === roleFilter;
       const byStatus = statusFilter === "全部" ? true : user.status === statusFilter;
       const byKeyword = keyword
@@ -55,15 +62,15 @@ const UserManagement: React.FC = () => {
         : true;
       return byRole && byStatus && byKeyword;
     });
-  }, [users, roleFilter, statusFilter, keyword, loading, error]);
+  }, [users, deletedUsers, showDeleted, roleFilter, statusFilter, keyword, loading, error]);
 
   const stats = useMemo(() => {
     const total = users.length;
     const doctors = users.filter((u) => u.role === "DOCTOR").length;
     const patients = users.filter((u) => u.role === "PATIENT").length;
     const locked = users.filter((u) => u.status !== "ACTIVE").length;
-    return { total, doctors, patients, locked };
-  }, [users]);
+    return { total, doctors, patients, locked, deletedCount: deletedUsers.length };
+  }, [users, deletedUsers]);
 
   const roleText = (role: UserRole) =>
     role === "DOCTOR" ? "医生" : role === "PATIENT" ? "患者" : "管理员";
@@ -236,6 +243,14 @@ const UserManagement: React.FC = () => {
             <div className="stat-trend down">需激活或停用</div>
           </div>
         </div>
+        <div className="stat-card">
+          <div className="stat-icon">🗑️</div>
+          <div className="stat-meta">
+            <div className="stat-label">已删除</div>
+            <div className="stat-value">{stats.deletedCount}</div>
+            <div className="stat-trend muted">软删除记录</div>
+          </div>
+        </div>
       </div>
 
       <div className="surface-card">
@@ -280,7 +295,18 @@ const UserManagement: React.FC = () => {
               onChange={(e) => setKeyword(e.target.value)}
             />
           </div>
-          <span className="filter-chip">已筛选 {filteredUsers.length} 人</span>
+          <div className="filter-group">
+            <label className="filter-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={showDeleted}
+                onChange={(e) => setShowDeleted(e.target.checked)}
+                style={{ width: '16px', height: '16px' }}
+              />
+              显示已删除
+            </label>
+          </div>
+          <span className="filter-chip">{showDeleted ? `已删除 ${filteredUsers.length} 人` : `已筛选 ${filteredUsers.length} 人`}</span>
         </div>
 
         <table className="data-table">
@@ -298,8 +324,15 @@ const UserManagement: React.FC = () => {
           </thead>
           <tbody>
             {filteredUsers.map((user) => (
-              <tr key={user.id}>
-                <td>{user.displayName ?? user.username}</td>
+              <tr key={user.id} style={{ backgroundColor: showDeleted ? '#fff3f3' : undefined }}>
+                <td>
+                  <span style={{ textDecoration: showDeleted ? 'line-through' : 'none', color: showDeleted ? '#999' : 'inherit' }}>
+                    {user.displayName ?? user.username}
+                  </span>
+                  {showDeleted && (
+                    <span style={{ marginLeft: '8px', fontSize: '12px', color: '#d32f2f' }}>(已删除)</span>
+                  )}
+                </td>
                 <td>
                   <div>{roleText(user.role as UserRole)}</div>
                   <div className="muted">—</div>
@@ -319,20 +352,26 @@ const UserManagement: React.FC = () => {
                 </td>
                 <td>
                   <div className="action-buttons">
-                    <button 
-                      className="secondary-button" 
-                      type="button"
-                      onClick={() => handleEditUser(user)}
-                    >
-                      编辑
-                    </button>
-                    <button 
-                      className="danger-button" 
-                      type="button"
-                      onClick={() => handleDeleteUser(user.id, user.username)}
-                    >
-                      删除
-                    </button>
+                    {!showDeleted ? (
+                      <>
+                        <button 
+                          className="secondary-button" 
+                          type="button"
+                          onClick={() => handleEditUser(user)}
+                        >
+                          编辑
+                        </button>
+                        <button 
+                          className="danger-button" 
+                          type="button"
+                          onClick={() => handleDeleteUser(user.id, user.username)}
+                        >
+                          删除
+                        </button>
+                      </>
+                    ) : (
+                      <span className="muted" style={{ fontSize: '12px' }}>已删除 - 不可操作</span>
+                    )}
                   </div>
                 </td>
               </tr>

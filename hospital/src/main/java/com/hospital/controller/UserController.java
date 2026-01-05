@@ -21,6 +21,11 @@ public class UserController {
         return Result.success(userService.getAllUsers());
     }
 
+    @GetMapping("/deleted")
+    public Result<List<User>> getDeletedUsers() {
+        return Result.success(userService.getDeletedUsers());
+    }
+
     @GetMapping("/{id}")
     public Result<User> getUserById(@PathVariable Long id) {
         Optional<User> user = userService.getUserById(id);

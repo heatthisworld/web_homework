@@ -151,6 +151,15 @@ export const fetchUsers = async (): Promise<AdminUser[]> => {
   }
 };
 
+export const fetchDeletedUsers = async (): Promise<AdminUser[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/deleted`, withCredentials());
+    return await unwrapData<AdminUser[]>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
 export const createUser = async (userData: Omit<AdminUser, "id" | "createdAt" | "updatedAt" | "lastLoginAt">): Promise<AdminUser> => {
   try {
     const response = await fetch(`${API_BASE_URL}/users`, withCredentials({

@@ -12,6 +12,8 @@ import com.hospital.service.DoctorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,31 +34,36 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Override
     public List<Doctor> getAllDoctors() {
-        return doctorRepository.findAll();
+        return doctorRepository.findByDeletedAtIsNull();
     }
 
     @Override
     public Optional<Doctor> getDoctorById(Long id) {
-        return doctorRepository.findById(id);
+        return doctorRepository.findByIdAndDeletedAtIsNull(id);
     }
 
     @Override
     public Optional<Doctor> getDoctorByUserId(Long userId) {
         Optional<User> user = userRepository.findById(userId);
-        return user.flatMap(doctorRepository::findByUser);
+        return user.flatMap(u -> doctorRepository.findByUserAndDeletedAtIsNull(u));
     }
 
     @Override
     public List<Doctor> getDoctorsByDepartment(String departmentName) {
         if (departmentName == null || departmentName.isBlank()) {
-            return doctorRepository.findAll();
+            return doctorRepository.findByDeletedAtIsNull();
         }
-        return doctorRepository.findByDepartment_Name(departmentName);
+        return doctorRepository.findByDepartment_NameAndDeletedAtIsNull(departmentName);
     }
 
     @Override
     public List<Doctor> searchDoctorsByName(String name) {
-        return doctorRepository.findByNameContaining(name);
+        return doctorRepository.findByNameContainingAndDeletedAtIsNull(name);
+    }
+
+    @Override
+    public List<Doctor> getDeletedDoctors() {
+        return doctorRepository.findByDeletedAtIsNotNull();
     }
 
     @Override
@@ -89,7 +96,22 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Override
     public void deleteDoctor(Long id) {
-        doctorRepository.deleteById(id);
+        Optional<Doctor> optionalDoctor = doctorRepository.findById(id);
+        if (optionalDoctor.isPresent()) {
+            Doctor doctor = optionalDoctor.get();
+            // 执行软删除
+            doctor.setDeletedAt(LocalDateTime.now());
+            doctorRepository.save(doctor);
+            
+            // 将关联的用户设置为无效状态
+            if (doctor.getUser() != null) {
+                User user = doctor.getUser();
+                user.setStatus(User.Status.INACTIVE);
+                userRepository.save(user);
+            }
+        } else {
+            throw new RuntimeException("医生不存在或已被删除，请检查ID为 " + id + " 的医生是否存在");
+        }
     }
 
     @Override

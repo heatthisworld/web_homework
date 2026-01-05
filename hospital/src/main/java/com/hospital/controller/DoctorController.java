@@ -22,6 +22,11 @@ public class DoctorController {
         return Result.success(doctorService.getAllDoctors());
     }
 
+    @GetMapping("/deleted")
+    public Result<List<Doctor>> getDeletedDoctors() {
+        return Result.success(doctorService.getDeletedDoctors());
+    }
+
     @GetMapping("/{id}")
     public Result<Doctor> getDoctorById(@PathVariable Long id) {
         Optional<Doctor> doctor = doctorService.getDoctorById(id);
