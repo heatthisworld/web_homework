@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./PatientManagement.css";
 import {
-  fetchPatientsWithDetails,
+  fetchDoctorPatientsWithDetails,
   type PatientDetails,
   type VisitStatus,
 } from "../../services/patientService";
@@ -60,7 +60,7 @@ const PatientManagement: React.FC = () => {
 
     const loadPatients = async () => {
       try {
-        const data = await fetchPatientsWithDetails();
+        const data = await fetchDoctorPatientsWithDetails();
         if (cancelled) return;
         
         // 确保只在API返回有效数据时使用真实数据

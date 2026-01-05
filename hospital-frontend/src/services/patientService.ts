@@ -166,6 +166,19 @@ export const fetchPatientsWithDetails = async (): Promise<PatientDetails[]> => {
   }
 };
 
+export const fetchDoctorPatientsWithDetails = async (): Promise<PatientDetails[]> => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/doctors/patients/details`,
+      withCredentials(),
+    );
+    const data = await unwrapData<PatientDetails[]>(response);
+    return data.map(normalizePatient);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
 export const fetchPatientDetails = async (
   id: number,
 ): Promise<PatientDetails> => {

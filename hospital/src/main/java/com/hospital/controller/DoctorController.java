@@ -2,17 +2,21 @@ package com.hospital.controller;
 
 import com.hospital.entity.Doctor;
 import com.hospital.entity.Disease;
+import com.hospital.entity.Patient;
 import com.hospital.entity.Registration;
 import com.hospital.entity.User;
 import com.hospital.model.BatchUpdateRegistrationStatusRequest;
+import com.hospital.model.DoctorPatientSummary;
 import com.hospital.model.DoctorRegistrationDto;
 import com.hospital.model.DoctorRegistrationUpdateRequest;
+import com.hospital.model.PatientDetailsDto;
 import com.hospital.model.Result;
 import com.hospital.model.UpdateRegistrationStatusRequest;
 import com.hospital.repository.DiseaseRepository;
 import com.hospital.repository.RegistrationRepository;
 import com.hospital.repository.UserRepository;
 import com.hospital.service.DoctorService;
+import com.hospital.service.PatientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +26,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -39,6 +44,9 @@ public class DoctorController {
 
     @Autowired
     private DiseaseRepository diseaseRepository;
+
+    @Autowired
+    private PatientService patientService;
 
     @GetMapping
     public Result<List<Doctor>> getAllDoctors() {
@@ -64,6 +72,29 @@ public class DoctorController {
         Optional<Doctor> doctor = resolveCurrentDoctor(authentication);
         return doctor.map(Result::success)
                 .orElseGet(() -> Result.error(404, "Doctor not found for current user"));
+    }
+
+    @GetMapping("/patients")
+    public Result<List<DoctorPatientSummary>> getPatientsForDoctor(Authentication authentication) {
+        Optional<Doctor> doctor = resolveCurrentDoctor(authentication);
+        if (doctor.isEmpty()) {
+            return Result.error(403, "Current user is not a doctor or not authenticated");
+        }
+
+        List<DoctorPatientSummary> patients = getPatientsForDoctor(doctor.get()).stream()
+                .map(this::toPatientSummary)
+                .collect(Collectors.toList());
+        return Result.success(patients);
+    }
+
+    @GetMapping("/patients/details")
+    public Result<List<PatientDetailsDto>> getPatientsWithDetails(Authentication authentication) {
+        Optional<Doctor> doctor = resolveCurrentDoctor(authentication);
+        if (doctor.isEmpty()) {
+            return Result.error(403, "Current user is not a doctor or not authenticated");
+        }
+        List<PatientDetailsDto> patients = patientService.getPatientsWithDetailsByDoctor(doctor.get().getId());
+        return Result.success(patients);
     }
 
     @GetMapping("/registrations")
@@ -289,5 +320,25 @@ public class DoctorController {
             DateTimeFormatter minuteFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
             return LocalDateTime.parse(raw, minuteFormatter);
         }
+    }
+
+    private List<Patient> getPatientsForDoctor(Doctor doctor) {
+        return registrationRepository.findByDoctorId(doctor.getId()).stream()
+                .map(Registration::getPatient)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(Patient::getId, patient -> patient, (existing, replacement) -> existing))
+                .values()
+                .stream()
+                .collect(Collectors.toList());
+    }
+
+    private DoctorPatientSummary toPatientSummary(Patient patient) {
+        DoctorPatientSummary dto = new DoctorPatientSummary();
+        dto.setId(patient.getId());
+        dto.setName(patient.getName());
+        dto.setGender(patient.getGender() != null ? patient.getGender().name() : null);
+        dto.setPhone(patient.getPhone());
+        dto.setAddress(patient.getAddress());
+        return dto;
     }
 }

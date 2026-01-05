@@ -1,191 +1,132 @@
-# 医院挂号系统数据库设计
+# Database Design
 
-## 1. 项目概述
-医院挂号系统是一个用于管理医院挂号业务的信息系统，主要包含病人管理、病种管理、医生管理和挂号管理等功能。系统需要支持医生、就诊人和管理员三种角色。
+This document summarizes the relational schema used by the hospital system. It is derived from the JPA entities under `hospital/src/main/java/com/hospital/entity`. The legacy `disease` table exists for backward compatibility but is no longer used for new features.
 
-## 2. 数据库表设计
+## Core Tables
 
-### 2.1 用户表（user）
-用于存储系统用户信息，包括医生、就诊人和管理员。
+### user
+- `id` (PK, bigint, identity)
+- `username` (varchar(50), unique, not null)
+- `password` (varchar(100), not null)
+- `display_name` (varchar(50))
+- `email` (varchar(120), unique)
+- `phone` (varchar(20), unique)
+- `role` (enum: DOCTOR, PATIENT, ADMIN, not null)
+- `status` (enum: ACTIVE, INACTIVE, PENDING, default ACTIVE)
+- `created_at`, `updated_at`, `last_login_at` (timestamp)
 
-| 字段名 | 数据类型 | 约束 | 描述 |
-| --- | --- | --- | --- |
-| id | BIGINT | PRIMARY KEY, AUTO_INCREMENT | 用户ID |
-| username | VARCHAR(50) | UNIQUE, NOT NULL | 用户名 |
-| password | VARCHAR(100) | NOT NULL | 密码（加密存储） |
-| role | ENUM('DOCTOR', 'PATIENT', 'ADMIN') | NOT NULL | 用户角色 |
-| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
-| updated_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | 更新时间 |
+### patient
+- `id` (PK, bigint, identity)
+- `user_id` (FK → user.id, unique, not null)
+- `name` (varchar(50), not null)
+- `gender` (enum: MALE, FEMALE, not null)
+- `age` (int, not null)
+- `id_card` (varchar(18), unique, not null)
+- `phone` (varchar(11), not null)
+- `address` (varchar(200))
+- `created_at`, `updated_at` (timestamp)
+- Notes: service layer expects linked user.role = PATIENT.
 
-### 2.2 病人表（patient）
-用于存储病人的详细信息。
+### doctor
+- `id` (PK, bigint, identity)
+- `user_id` (FK → user.id, unique, not null)
+- `name` (varchar(50), not null)
+- `gender` (enum: MALE, FEMALE, not null)
+- `title` (varchar(50), not null)
+- `phone` (varchar(11), not null)
+- `avatar_url` (varchar(255), default `/files/Default.gif`)
+- `department_id` (FK → department.id, not null)
+- `created_at`, `updated_at` (timestamp)
+- Notes: many-to-many `doctor_disease` join table exists but the disease domain is currently unused.
 
-| 字段名 | 数据类型 | 约束 | 描述 |
-| --- | --- | --- | --- |
-| id | BIGINT | PRIMARY KEY, AUTO_INCREMENT | 病人ID |
-| user_id | BIGINT | FOREIGN KEY REFERENCES user(id), UNIQUE | 关联的用户ID |
-| name | VARCHAR(50) | NOT NULL | 病人姓名 |
-| gender | ENUM('MALE', 'FEMALE') | NOT NULL | 性别 |
-| age | INT | NOT NULL | 年龄 |
-| id_card | VARCHAR(18) | UNIQUE, NOT NULL | 身份证号 |
-| phone | VARCHAR(11) | NOT NULL | 联系电话 |
-| address | VARCHAR(200) | | 家庭地址 |
-| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
-| updated_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | 更新时间 |
+### department
+- `id` (PK, bigint, identity)
+- `code` (varchar(30), unique, indexed, not null)
+- `name` (varchar(100), unique, indexed, not null)
+- `lead_name` (varchar(50))
+- `rooms` (int)
+- `status` (enum: OPEN, PAUSED, ADJUSTING, default OPEN)
+- `focus` (varchar(200))
+- `created_at`, `updated_at` (timestamp)
 
-### 2.3 病种表（disease）
-用于存储疾病科室信息。
+### schedule
+- `id` (PK, bigint, identity)
+- `doctor_id` (FK → doctor.id, not null)
+- `department_id` (FK → department.id, not null)
+- `work_date` (date, not null)
+- `start_time`, `end_time` (time, not null)
+- `type` (enum: REGULAR, SPECIALIST, EXTRA, not null)
+- `status` (enum: OPEN, RUNNING, FULL, PAUSED, default OPEN)
+- `capacity` (int, default 0)
+- `booked` (int, default 0)
+- `created_at`, `updated_at` (timestamp)
 
-| 字段名 | 数据类型 | 约束 | 描述 |
-| --- | --- | --- | --- |
-| id | BIGINT | PRIMARY KEY, AUTO_INCREMENT | 病种ID |
-| name | VARCHAR(100) | NOT NULL | 病种名称 |
-| description | TEXT | | 病种描述 |
-| department | VARCHAR(50) | NOT NULL | 所属科室 |
-| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
-| updated_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | 更新时间 |
+### registration
+- `id` (PK, bigint, identity)
+- `patient_id` (FK → patient.id, not null)
+- `doctor_id` (FK → doctor.id, not null)
+- `disease_id` (FK → disease.id, nullable; legacy field, not used by current flows)
+- `schedule_id` (FK → schedule.id, nullable)
+- `registration_time` (timestamp, default now)
+- `appointment_time` (timestamp, not null)
+- `type` (enum: REGULAR, SPECIALIST, EXTRA, default REGULAR)
+- `channel` (enum: ONLINE, OFFLINE, default ONLINE)
+- `status` (enum: WAITING, CONFIRMED, COMPLETED, CANCELLED, default WAITING)
+- `fee` (decimal(12,2))
+- `payment_status` (enum: UNPAID, PAID, REFUNDED, default UNPAID)
+- `notes` (text)
+- `created_at`, `updated_at` (timestamp)
 
-### 2.4 医生表（doctor）
-用于存储医生信息。
+### medical_record
+- `id` (PK, bigint, identity)
+- `patient_id` (FK → patient.id, not null)
+- `doctor_id` (FK → doctor.id, not null)
+- `registration_id` (FK → registration.id, not null)
+- `visit_date` (timestamp, default now)
+- `symptoms` (text)
+- `diagnosis` (text)
+- `medication` (text) — comma-separated list
+- `examinations` (text)
+- `treatment` (text)
+- `notes` (text)
+- `created_at`, `updated_at` (timestamp)
 
-| 字段名 | 数据类型 | 约束 | 描述 |
-| --- | --- | --- | --- |
-| id | BIGINT | PRIMARY KEY, AUTO_INCREMENT | 医生ID |
-| user_id | BIGINT | FOREIGN KEY REFERENCES user(id), UNIQUE | 关联的用户ID |
-| name | VARCHAR(50) | NOT NULL | 医生姓名 |
-| gender | ENUM('MALE', 'FEMALE') | NOT NULL | 性别 |
-| title | VARCHAR(50) | NOT NULL | 职称（如主任医师、副主任医师等） |
-| phone | VARCHAR(11) | NOT NULL | 联系电话 |
-| department | VARCHAR(50) | NOT NULL | 所属科室 |
-| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
-| updated_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | 更新时间 |
+### announcement
+- `id` (PK, bigint, identity)
+- `title` (varchar(200), not null)
+- `content` (text)
+- `status` (enum: DRAFT, PUBLISHED, SCHEDULED, default DRAFT)
+- `audience_scope` (varchar(200))
+- `publish_at` (timestamp)
+- `creator_id` (FK → user.id)
+- `created_at`, `updated_at` (timestamp)
 
-### 2.5 医生病种关联表（doctor_disease）
-用于存储医生和病种的多对多关系（一名医生可以管理1~3个病种）。
+### disease (legacy / unused)
+- `id` (PK, bigint, identity)
+- `name` (varchar(100), not null)
+- `description` (text)
+- `created_at`, `updated_at` (timestamp)
+- Notes: table kept for compatibility; new features should avoid storing or depending on this data.
 
-| 字段名 | 数据类型 | 约束 | 描述 |
-| --- | --- | --- | --- |
-| id | BIGINT | PRIMARY KEY, AUTO_INCREMENT | 关联ID |
-| doctor_id | BIGINT | FOREIGN KEY REFERENCES doctor(id) | 医生ID |
-| disease_id | BIGINT | FOREIGN KEY REFERENCES disease(id) | 病种ID |
-| UNIQUE KEY | (doctor_id, disease_id) | | 确保医生和病种的组合唯一 |
+## Relationships
+- `user` 1↔1 `patient` and 1↔1 `doctor` (exclusive per role).
+- `doctor` ↔ `department`: many-to-one.
+- `doctor` ↔ `schedule`: one-to-many.
+- `registration` links `patient`, `doctor`, optional `schedule`; status and payment tracked on the same row.
+- `medical_record` links back to `registration`, `patient`, and `doctor`.
+- `announcement` optionally references the creator `user`.
+- `doctor_disease` join table exists but disease data is not used operationally.
 
-### 2.6 挂号表（registration）
-用于存储挂号信息（每位病人可以选择1~n个科室）。
+## Status Enums (API-facing mappings)
+- Registration: WAITING→pending, CONFIRMED→processing, COMPLETED→completed, CANCELLED→cancelled.
+- Payment: UNPAID, PAID, REFUNDED.
+- Schedule: OPEN, RUNNING, FULL, PAUSED.
+- User status: ACTIVE, INACTIVE, PENDING.
+- Announcement: DRAFT, PUBLISHED, SCHEDULED.
 
-| 字段名 | 数据类型 | 约束 | 描述 |
-| --- | --- | --- | --- |
-| id | BIGINT | PRIMARY KEY, AUTO_INCREMENT | 挂号ID |
-| patient_id | BIGINT | FOREIGN KEY REFERENCES patient(id) | 病人ID |
-| doctor_id | BIGINT | FOREIGN KEY REFERENCES doctor(id) | 医生ID |
-| disease_id | BIGINT | FOREIGN KEY REFERENCES disease(id) | 病种ID |
-| registration_time | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | 挂号时间 |
-| appointment_time | TIMESTAMP | NOT NULL | 预约就诊时间 |
-| status | ENUM('REGISTERED', 'CONSULTED', 'CANCELLED') | DEFAULT 'REGISTERED' | 挂号状态 |
-| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
-| updated_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | 更新时间 |
-
-### 2.7 病历表（medical_record）
-用于存储病人的病历信息，包括症状、诊断、用药和治疗方案等。
-
-| 字段名 | 数据类型 | 约束 | 描述 |
-| --- | --- | --- | --- |
-| id | BIGINT | PRIMARY KEY, AUTO_INCREMENT | 病历ID |
-| patient_id | BIGINT | FOREIGN KEY REFERENCES patient(id) | 病人ID |
-| doctor_id | BIGINT | FOREIGN KEY REFERENCES doctor(id) | 医生ID |
-| registration_id | BIGINT | FOREIGN KEY REFERENCES registration(id) | 挂号ID |
-| visit_date | TIMESTAMP | NOT NULL | 就诊日期 |
-| symptoms | TEXT | | 症状描述 |
-| diagnosis | TEXT | | 诊断结果 |
-| medication | TEXT | | 用药记录 |
-| examinations | TEXT | | 检查结果 |
-| treatment | TEXT | | 治疗方案 |
-| notes | TEXT | | 医生备注 |
-| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
-| updated_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | 更新时间 |
-
-## 3. 数据库关系图
-
-```
-+--------+     +---------+
-|  user  |     | patient |
-+--------+     +---------+
-| id     |<----| user_id |
-| username|    | name    |
-| password|    | gender  |
-| role   |    | age     |
-+--------+    +---------+
-     |
-     |
-+--------+     +-----------+
-| doctor |     | disease   |
-+--------+     +-----------+
-| id     |<----| id        |
-| user_id|    | name      |
-| name   |    | department|
-| title  |    +-----------+
-+--------+          ^
-     |              |
-     |              |
-+------------------------+
-|    doctor_disease      |
-+------------------------+
-| doctor_id | disease_id |
-+------------------------+
-     |              |
-     |              |
-+------------------------+
-|     registration       |
-+------------------------+
-| patient_id             |
-| doctor_id              |
-| disease_id             |
-| appointment_time       |
-| status                 |
-+------------------------+
-          |
-          |
-+------------------------+
-|    medical_record      |
-+------------------------+
-| patient_id             |
-| doctor_id              |
-| registration_id        |
-| visit_date             |
-| diagnosis              |
-| medication             |
-+------------------------+
-```
-
-## 4. 索引设计
-
-为了提高查询性能，建议在以下字段上创建索引：
-
-1. 用户表：username（唯一索引）
-2. 病人表：user_id（唯一索引）、id_card（唯一索引）、phone（普通索引）
-3. 病种表：name（普通索引）、department（普通索引）
-4. 医生表：user_id（唯一索引）、name（普通索引）、department（普通索引）
-5. 医生病种关联表：doctor_id（普通索引）、disease_id（普通索引）
-6. 挂号表：patient_id（普通索引）、doctor_id（普通索引）、disease_id（普通索引）、appointment_time（普通索引）、status（普通索引）
-7. 病历表：patient_id（普通索引）、doctor_id（普通索引）、registration_id（普通索引）、visit_date（普通索引）
-
-## 5. 数据库配置建议
-
-1. 数据库类型：MySQL 8.0+
-2. 字符集：utf8mb4（支持全Unicode字符，包括emoji）
-3. 排序规则：utf8mb4_unicode_ci（大小写不敏感）
-4. 连接池：使用HikariCP（Spring Boot默认）
-5. 事务隔离级别：READ COMMITTED（避免脏读，提供较好的并发性能）
-
-## 6. 可能的拓展功能
-
-1. **预约管理**：支持病人在线预约医生，选择就诊时间
-2. **排班管理**：管理医生的排班信息，包括出诊时间、挂号限额等
-3. **缴费管理**：实现在线缴费功能
-4. **病历管理**：存储和管理病人的病历信息
-5. **药品管理**：管理药品信息和处方开具
-6. **统计报表**：生成挂号量、科室就诊量等统计报表
-7. **短信通知**：挂号成功、就诊提醒等短信通知功能
-8. **评价系统**：病人对医生的评价功能
-9. **多医院支持**：支持多医院管理，每个医院有独立的医生、科室等信息
-10. **移动支付集成**：集成微信支付、支付宝等移动支付功能
+## Notes and Constraints
+- Timestamps are maintained via entity lifecycle callbacks; `created_at` is set on insert, `updated_at` on each update.
+- Service layer validates role consistency (e.g., doctor.user.role must be DOCTOR, patient.user.role must be PATIENT).
+- Department has unique indexes on `code` and `name`.
+- Patient `id_card`, user `username/email/phone`, and the patient/doctor `user_id` links are unique.
+- Disease fields are retained only for legacy data; new workflows should not rely on them.
