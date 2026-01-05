@@ -178,35 +178,10 @@
   padding: 20px;
   background-color: #fafafa;
   border-radius: 8px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  white-space: nowrap;
-  padding-bottom: 30px;
-  scrollbar-width: thin;
-  scrollbar-color: #409eff #f5f5f5;
-}
-
-.workload-chart::-webkit-scrollbar {
-  height: 8px;
-}
-
-.workload-chart::-webkit-scrollbar-track {
-  background: #f5f5f5;
-  border-radius: 4px;
-}
-
-.workload-chart::-webkit-scrollbar-thumb {
-  background: #409eff;
-  border-radius: 4px;
-}
-
-.workload-chart::-webkit-scrollbar-thumb:hover {
-  background: #66b1ff;
 }
 
 .chart-bar-container {
-  flex: 0 0 auto;
-  min-width: 60px;
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;

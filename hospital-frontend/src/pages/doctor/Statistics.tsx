@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import './Statistics.css';
-import { generateReportData } from '../../services/doctorService';
 
 interface TooltipData {
   visible: boolean;
@@ -44,7 +43,134 @@ interface TimeRangeData {
   ageDistributionData: AgeDistributionData[];
 }
 
-// 使用API获取数据，不再使用模拟数据
+// 模拟数据 - 按时间范围划分
+const dataByTimeRange: Record<'day' | 'week' | 'month', TimeRangeData> = {
+  day: {
+    workloadData: [
+      { date: '09:00', count: 3, avgDuration: 15 },
+      { date: '10:00', count: 2, avgDuration: 20 },
+      { date: '11:00', count: 4, avgDuration: 18 },
+      { date: '14:00', count: 5, avgDuration: 12 },
+      { date: '15:00', count: 3, avgDuration: 25 },
+      { date: '16:00', count: 4, avgDuration: 16 },
+      { date: '17:00', count: 2, avgDuration: 30 },
+    ],
+    departmentData: [
+      { name: '内科', count: 12 },
+      { name: '外科', count: 8 },
+      { name: '儿科', count: 6 },
+      { name: '妇科', count: 3 },
+      { name: '眼科', count: 1 },
+    ],
+    satisfactionData: [
+      { rating: 5, count: 22 },
+      { rating: 4, count: 7 },
+      { rating: 3, count: 1 },
+      { rating: 2, count: 0 },
+      { rating: 1, count: 0 },
+    ],
+    incomeData: [
+      { month: '2025-11-10', amount: 3500 },
+    ],
+    ageDistributionData: [
+      { ageRange: '0-18', count: 5 },
+      { ageRange: '19-30', count: 8 },
+      { ageRange: '31-45', count: 7 },
+      { ageRange: '46-60', count: 6 },
+      { ageRange: '60+', count: 4 },
+    ],
+  },
+  week: {
+    workloadData: [
+      { date: '周一', count: 12, avgDuration: 18 },
+      { date: '周二', count: 15, avgDuration: 15 },
+      { date: '周三', count: 10, avgDuration: 22 },
+      { date: '周四', count: 13, avgDuration: 17 },
+      { date: '周五', count: 16, avgDuration: 14 },
+      { date: '周六', count: 8, avgDuration: 25 },
+      { date: '周日', count: 5, avgDuration: 30 },
+    ],
+    departmentData: [
+      { name: '内科', count: 35 },
+      { name: '外科', count: 20 },
+      { name: '儿科', count: 12 },
+      { name: '妇科', count: 8 },
+      { name: '眼科', count: 5 },
+    ],
+    satisfactionData: [
+      { rating: 5, count: 68 },
+      { rating: 4, count: 10 },
+      { rating: 3, count: 2 },
+      { rating: 2, count: 0 },
+      { rating: 1, count: 1 },
+    ],
+    incomeData: [
+      { month: '11-04', amount: 18000 },
+      { month: '11-05', amount: 22000 },
+      { month: '11-06', amount: 16000 },
+      { month: '11-07', amount: 24000 },
+      { month: '11-08', amount: 28000 },
+      { month: '11-09', amount: 15000 },
+      { month: '11-10', amount: 12000 },
+    ],
+    ageDistributionData: [
+      { ageRange: '0-18', count: 15 },
+      { ageRange: '19-30', count: 22 },
+      { ageRange: '31-45', count: 18 },
+      { ageRange: '46-60', count: 15 },
+      { ageRange: '60+', count: 9 },
+    ],
+  },
+  month: {
+    workloadData: [
+      { date: '2025-11-01', count: 8, avgDuration: 20 },
+      { date: '2025-11-02', count: 12, avgDuration: 18 },
+      { date: '2025-11-03', count: 10, avgDuration: 22 },
+      { date: '2025-11-04', count: 15, avgDuration: 16 },
+      { date: '2025-11-05', count: 13, avgDuration: 19 },
+      { date: '2025-11-06', count: 9, avgDuration: 24 },
+      { date: '2025-11-07', count: 7, avgDuration: 28 },
+      { date: '2025-11-08', count: 11, avgDuration: 21 },
+      { date: '2025-11-09', count: 14, avgDuration: 17 },
+      { date: '2025-11-10', count: 16, avgDuration: 15 },
+    ],
+    departmentData: [
+      { name: '内科', count: 45 },
+      { name: '外科', count: 25 },
+      { name: '儿科', count: 15 },
+      { name: '妇科', count: 10 },
+      { name: '眼科', count: 5 },
+    ],
+    satisfactionData: [
+      { rating: 5, count: 85 },
+      { rating: 4, count: 12 },
+      { rating: 3, count: 2 },
+      { rating: 2, count: 0 },
+      { rating: 1, count: 1 },
+    ],
+    incomeData: [
+      { month: '2025-01', amount: 12000 },
+      { month: '2025-02', amount: 15000 },
+      { month: '2025-03', amount: 18000 },
+      { month: '2025-04', amount: 16000 },
+      { month: '2025-05', amount: 20000 },
+      { month: '2025-06', amount: 22000 },
+      { month: '2025-07', amount: 25000 },
+      { month: '2025-08', amount: 23000 },
+      { month: '2025-09', amount: 28000 },
+      { month: '2025-10', amount: 30000 },
+      { month: '2025-11', amount: 32000 },
+      { month: '2025-12', amount: 35000 },
+    ],
+    ageDistributionData: [
+      { ageRange: '0-18', count: 45 },
+      { ageRange: '19-30', count: 65 },
+      { ageRange: '31-45', count: 55 },
+      { ageRange: '46-60', count: 35 },
+      { ageRange: '60+', count: 20 },
+    ],
+  },
+};
 
 const Statistics: React.FC = () => {
   // 状态管理
@@ -57,13 +183,7 @@ const Statistics: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentData, setCurrentData] = useState<TimeRangeData>({
-    workloadData: [],
-    departmentData: [],
-    satisfactionData: [],
-    incomeData: [],
-    ageDistributionData: []
-  });
+  const [currentData, setCurrentData] = useState<TimeRangeData>(dataByTimeRange.month);
 
   // Tooltip显示处理函数
   const handleTooltipShow = (content: string, event: React.MouseEvent) => {
@@ -88,15 +208,21 @@ const Statistics: React.FC = () => {
 
   // 数据加载逻辑
   useEffect(() => {
-    // 从API获取真实数据
+    // 模拟数据加载
     const fetchData = async () => {
       setIsLoading(true);
       setError(null);
       
       try {
-        // 调用API获取统计数据
-        const data = await generateReportData(timeRange);
-        setCurrentData(data);
+        // 模拟网络请求延迟
+        await new Promise(resolve => setTimeout(resolve, 800));
+        // 模拟随机错误（10%概率）
+        if (Math.random() < 0.1) {
+          throw new Error('数据加载失败，请稍后重试');
+        }
+        
+        // 加载对应时间范围的数据
+        setCurrentData(dataByTimeRange[timeRange]);
       } catch (err) {
         setError(err instanceof Error ? err.message : '未知错误');
       } finally {
@@ -318,14 +444,11 @@ const Statistics: React.FC = () => {
                     <div key={index} className="chart-bar-container">
                       <div className="chart-bar">
                         <div 
-                            className="chart-bar-fill"
-                            style={{ height: `${(() => {
-                              const maxCount = Math.max(...currentData.workloadData.map(i => i.count));
-                              return maxCount > 0 ? (item.count / maxCount) * 100 : 0;
-                            })()}%` }}
-                            onMouseEnter={(e) => handleTooltipShow(`${item.date}: ${item.count}人`, e)}
-                            onMouseLeave={handleTooltipHide}
-                          >
+                          className="chart-bar-fill"
+                          style={{ height: `${(item.count / Math.max(...currentData.workloadData.map(i => i.count))) * 100}%` }}
+                          onMouseEnter={(e) => handleTooltipShow(`${item.date}: ${item.count}人`, e)}
+                          onMouseLeave={handleTooltipHide}
+                        >
                           {/* 柱状图数据标签 */}
                           <div className="chart-bar-label">{item.count}</div>
                         </div>
