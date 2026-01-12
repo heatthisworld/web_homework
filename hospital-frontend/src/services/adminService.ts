@@ -109,6 +109,7 @@ export interface AdminDepartment {
   rooms?: number;
   focus?: string;
   status: "OPEN" | "PAUSED" | "ADJUSTING";
+  doctors?: AdminDoctor[];
 }
 
 export interface AdminSchedule {
@@ -289,6 +290,28 @@ export const deleteDepartment = async (id: number): Promise<void> => {
       method: "DELETE"
     }));
     await unwrapData<void>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const fetchDepartmentDoctors = async (departmentId: number): Promise<AdminDoctor[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/departments/${departmentId}/doctors`, withCredentials());
+    return await unwrapData<AdminDoctor[]>(response);
+  } catch (error) {
+    throw normalizeFetchError(error);
+  }
+};
+
+export const updateDepartmentDoctors = async (departmentId: number, doctorIds: number[]): Promise<AdminDepartment> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/departments/${departmentId}/doctors`, withCredentials({
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ doctorIds })
+    }));
+    return await unwrapData<AdminDepartment>(response);
   } catch (error) {
     throw normalizeFetchError(error);
   }

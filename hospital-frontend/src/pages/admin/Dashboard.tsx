@@ -124,7 +124,6 @@ const Dashboard: React.FC = () => {
       <div className="stat-grid">
         {computedMetrics.map((item) => (
           <div key={item.label} className="stat-card">
-            <div className="stat-icon">◎</div>
             <div className="stat-meta">
               <div className="stat-label">{item.label}</div>
               <div className="stat-value">{item.value}</div>

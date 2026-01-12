@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { fetchUsers, fetchDeletedUsers, createUser, updateUser, deleteUser } from "../../services/adminService";
-import type { AdminUser } from "../../services/adminService";
+import { fetchUsers, createUser, updateUser, deleteUser, fetchDoctors, fetchPatients } from "../../services/adminService";
+import type { AdminUser, AdminDoctor, AdminPatient } from "../../services/adminService";
 
 type UserRole = "DOCTOR" | "PATIENT" | "ADMIN";
 type UserStatus = "ACTIVE" | "INACTIVE" | "PENDING";
 
 const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
-  const [deletedUsers, setDeletedUsers] = useState<AdminUser[]>([]);
-  const [showDeleted, setShowDeleted] = useState(false);
+  const [doctors, setDoctors] = useState<AdminDoctor[]>([]);
+  const [patients, setPatients] = useState<AdminPatient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,12 +33,14 @@ const UserManagement: React.FC = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [activeData, deletedData] = await Promise.all([
+        const [activeData, doctorsData, patientsData] = await Promise.all([
           fetchUsers(),
-          fetchDeletedUsers()
+          fetchDoctors(),
+          fetchPatients()
         ]);
         setUsers(activeData);
-        setDeletedUsers(deletedData);
+        setDoctors(doctorsData);
+        setPatients(patientsData);
       } catch (e) {
         setError(e instanceof Error ? e.message : "加载失败");
       } finally {
@@ -48,29 +50,47 @@ const UserManagement: React.FC = () => {
     load();
   }, []);
 
+  // 根据用户ID获取对应的真实姓名
+  const getRealName = useMemo(() => {
+    const doctorMap = new Map<number, string>();
+    doctors.forEach(doctor => doctorMap.set(doctor.id, doctor.name));
+    
+    const patientMap = new Map<number, string>();
+    patients.forEach(patient => patientMap.set(patient.id, patient.name));
+    
+    return (userId: number, role: string): string => {
+      if (role === "DOCTOR") {
+        return doctorMap.get(userId) || "";
+      } else if (role === "PATIENT") {
+        return patientMap.get(userId) || "";
+      }
+      return "";
+    };
+  }, [doctors, patients]);
+
   const filteredUsers = useMemo(() => {
     if (loading || error) return [];
-    const displayUsers = showDeleted ? deletedUsers : users;
-    return displayUsers.filter((user) => {
+    return users.filter((user) => {
+      const realName = getRealName(user.id, user.role);
       const byRole = roleFilter === "全部" ? true : user.role === roleFilter;
       const byStatus = statusFilter === "全部" ? true : user.status === statusFilter;
       const byKeyword = keyword
-        ? [user.username, user.displayName ?? "", user.email ?? "", user.phone ?? ""]
+        ? [user.username, user.displayName ?? "", realName, user.email ?? "", user.phone ?? ""]
             .join(" ")
             .toLowerCase()
             .includes(keyword.toLowerCase())
         : true;
       return byRole && byStatus && byKeyword;
     });
-  }, [users, deletedUsers, showDeleted, roleFilter, statusFilter, keyword, loading, error]);
+  }, [users, roleFilter, statusFilter, keyword, loading, error, getRealName]);
 
   const stats = useMemo(() => {
     const total = users.length;
     const doctors = users.filter((u) => u.role === "DOCTOR").length;
     const patients = users.filter((u) => u.role === "PATIENT").length;
     const locked = users.filter((u) => u.status !== "ACTIVE").length;
-    return { total, doctors, patients, locked, deletedCount: deletedUsers.length };
-  }, [users, deletedUsers]);
+    return { total, doctors, patients, locked };
+  }, [users]);
 
   const roleText = (role: UserRole) =>
     role === "DOCTOR" ? "医生" : role === "PATIENT" ? "患者" : "管理员";
@@ -212,7 +232,6 @@ const UserManagement: React.FC = () => {
 
       <div className="stat-grid">
         <div className="stat-card">
-          <div className="stat-icon">👥</div>
           <div className="stat-meta">
             <div className="stat-label">总用户</div>
             <div className="stat-value">{stats.total}</div>
@@ -220,7 +239,6 @@ const UserManagement: React.FC = () => {
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">🩺</div>
           <div className="stat-meta">
             <div className="stat-label">医生</div>
             <div className="stat-value">{stats.doctors}</div>
@@ -228,7 +246,6 @@ const UserManagement: React.FC = () => {
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">🧑‍🤝‍🧑</div>
           <div className="stat-meta">
             <div className="stat-label">患者</div>
             <div className="stat-value">{stats.patients}</div>
@@ -236,21 +253,13 @@ const UserManagement: React.FC = () => {
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">🔒</div>
           <div className="stat-meta">
             <div className="stat-label">待处理</div>
             <div className="stat-value">{stats.locked}</div>
             <div className="stat-trend down">需激活或停用</div>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon">🗑️</div>
-          <div className="stat-meta">
-            <div className="stat-label">已删除</div>
-            <div className="stat-value">{stats.deletedCount}</div>
-            <div className="stat-trend muted">软删除记录</div>
-          </div>
-        </div>
+
       </div>
 
       <div className="surface-card">
@@ -295,89 +304,116 @@ const UserManagement: React.FC = () => {
               onChange={(e) => setKeyword(e.target.value)}
             />
           </div>
-          <div className="filter-group">
-            <label className="filter-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={showDeleted}
-                onChange={(e) => setShowDeleted(e.target.checked)}
-                style={{ width: '16px', height: '16px' }}
-              />
-              显示已删除
-            </label>
-          </div>
-          <span className="filter-chip">{showDeleted ? `已删除 ${filteredUsers.length} 人` : `已筛选 ${filteredUsers.length} 人`}</span>
+          <span className="filter-chip">已筛选 ${filteredUsers.length} 人</span>
         </div>
 
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>姓名</th>
-              <th>角色 / 科室</th>
-              <th>联系方式</th>
-              <th>邮箱</th>
-              <th>状态</th>
-              <th>创建时间</th>
-              <th>最近活动</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.map((user) => (
-              <tr key={user.id} style={{ backgroundColor: showDeleted ? '#fff3f3' : undefined }}>
-                <td>
-                  <span style={{ textDecoration: showDeleted ? 'line-through' : 'none', color: showDeleted ? '#999' : 'inherit' }}>
-                    {user.displayName ?? user.username}
-                  </span>
-                  {showDeleted && (
-                    <span style={{ marginLeft: '8px', fontSize: '12px', color: '#d32f2f' }}>(已删除)</span>
-                  )}
-                </td>
-                <td>
-                  <div>{roleText(user.role as UserRole)}</div>
-                  <div className="muted">—</div>
-                </td>
-                <td>{user.phone ?? "—"}</td>
-                <td>{user.email ?? "—"}</td>
-                <td>
-                  <span className={`pill ${statusTone(user.status as UserStatus)}`}>
-                    {statusText(user.status as UserStatus)}
-                  </span>
-                </td>
-                <td>
-                  {user.createdAt ? new Date(user.createdAt).toLocaleDateString("zh-CN") : "—"}
-                </td>
-                <td>
-                  {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString("zh-CN") : "—"}
-                </td>
-                <td>
-                  <div className="action-buttons">
-                    {!showDeleted ? (
-                      <>
+        <div className="table-container">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th style={{ width: '150px', textAlign: 'left' }}>用户名</th>
+                <th style={{ width: '120px', textAlign: 'left' }}>真实姓名</th>
+                <th style={{ width: '150px', textAlign: 'left' }}>角色</th>
+                <th style={{ width: '120px', textAlign: 'left' }}>联系方式</th>
+                <th style={{ width: '200px', textAlign: 'left' }}>邮箱</th>
+                <th style={{ width: '100px', textAlign: 'center' }}>状态</th>
+                <th style={{ width: '130px', textAlign: 'center' }}>创建时间</th>
+                <th style={{ width: '180px', textAlign: 'center' }}>最近活动</th>
+                <th style={{ width: '120px', textAlign: 'center' }}>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map((user) => (
+                  <tr key={user.id} style={{ 
+                    height: '60px',
+                    verticalAlign: 'middle'
+                  }}>
+                    <td style={{ padding: '8px 12px', textAlign: 'left' }}>
+                      <span style={{ 
+                        fontWeight: '500'
+                      }}>
+                        {user.username}
+                      </span>
+                    </td>
+                    <td style={{ padding: '8px 12px', textAlign: 'left' }}>
+                      <span className="muted">{getRealName(user.id, user.role) || user.displayName || "—"}</span>
+                    </td>
+                    <td style={{ padding: '8px 12px', textAlign: 'left' }}>
+                      <div style={{ fontWeight: '500' }}>{roleText(user.role as UserRole)}</div>
+                    </td>
+                    <td style={{ padding: '8px 12px', textAlign: 'left' }}>
+                      {user.phone ?? "—"}
+                    </td>
+                    <td style={{ padding: '8px 12px', textAlign: 'left' }}>
+                      <span style={{ 
+                        display: 'inline-block', 
+                        maxWidth: '100%', 
+                        overflow: 'hidden', 
+                        textOverflow: 'ellipsis', 
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {user.email ?? "—"}
+                      </span>
+                    </td>
+                    <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                      <span className={`pill ${statusTone(user.status as UserStatus)}`}>
+                        {statusText(user.status as UserStatus)}
+                      </span>
+                    </td>
+                    <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString("zh-CN") : "—"}
+                    </td>
+                    <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                      {user.lastLoginAt ? (
+                        <span style={{ 
+                          display: 'inline-block', 
+                          maxWidth: '100%', 
+                          overflow: 'hidden', 
+                          textOverflow: 'ellipsis', 
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {new Date(user.lastLoginAt).toLocaleString("zh-CN")}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                      <div className="action-buttons" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                         <button 
-                          className="secondary-button" 
+                          className="action-button edit" 
                           type="button"
                           onClick={() => handleEditUser(user)}
                         >
                           编辑
                         </button>
                         <button 
-                          className="danger-button" 
+                          className="action-button delete" 
                           type="button"
                           onClick={() => handleDeleteUser(user.id, user.username)}
                         >
                           删除
                         </button>
-                      </>
-                    ) : (
-                      <span className="muted" style={{ fontSize: '12px' }}>已删除 - 不可操作</span>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={9} style={{ 
+                    height: '100px', 
+                    textAlign: 'center', 
+                    color: '#999',
+                    fontSize: '16px'
+                  }}>
+                    没有找到匹配的用户
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* 用户表单模态框 */}
@@ -486,14 +522,14 @@ const UserManagement: React.FC = () => {
                 </div>
 
                 <div className="form-group" style={{ marginBottom: '16px' }}>
-                  <label htmlFor="displayName" style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>显示名称</label>
+                  <label htmlFor="displayName" style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>真实姓名</label>
                   <input
                     type="text"
                     id="displayName"
                     name="displayName"
                     value={formData.displayName}
                     onChange={handleInputChange}
-                    placeholder="请输入显示名称"
+                    placeholder="请输入姓名"
                     style={{ 
                       width: '100%', 
                       padding: '8px 12px', 

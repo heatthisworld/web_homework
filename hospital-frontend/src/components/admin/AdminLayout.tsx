@@ -48,25 +48,24 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
         <div className="tab-bar">
           {tabs.map((tab) => (
             <button
-              key={tab.key}
-              className={`tab ${tab.key === activeMenu ? "active" : ""}`}
-              onClick={() => onTabChange(tab.key)}
-              type="button"
-            >
-              <span className="tab-icon">{tab.icon ?? "•"}</span>
-              <span className="tab-label">{tab.label}</span>
-              {tab.key !== "dashboard" && (
-                <span
-                  className="tab-close"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onTabClose(tab.key);
-                  }}
-                >
-                  ×
-                </span>
-              )}
-            </button>
+            key={tab.key}
+            className={`tab ${tab.key === activeMenu ? "active" : ""}`}
+            onClick={() => onTabChange(tab.key)}
+            type="button"
+          >
+            <span className="tab-label">{tab.label}</span>
+            {tab.key !== "dashboard" && (
+              <span
+                className="tab-close"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTabClose(tab.key);
+                }}
+              >
+                ×
+              </span>
+            )}
+          </button>
           ))}
         </div>
 

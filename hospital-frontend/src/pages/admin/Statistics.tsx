@@ -176,7 +176,6 @@ const Statistics: React.FC = () => {
 
       <div className="stat-grid">
         <div className="stat-card">
-          <div className="stat-icon">📅</div>
           <div className="stat-meta">
             <div className="stat-label">近 6 个月挂号总量</div>
             <div className="stat-value">{totalRegistrations.toLocaleString()}</div>
@@ -184,7 +183,6 @@ const Statistics: React.FC = () => {
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">🏥</div>
           <div className="stat-meta">
             <div className="stat-label">科室覆盖</div>
             <div className="stat-value">{stats?.departmentCount ?? 0}</div>
@@ -192,7 +190,6 @@ const Statistics: React.FC = () => {
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">👥</div>
           <div className="stat-meta">
             <div className="stat-label">患者总数</div>
             <div className="stat-value">{stats?.totalPatients ?? 0}</div>

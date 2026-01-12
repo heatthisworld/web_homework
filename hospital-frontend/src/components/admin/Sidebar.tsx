@@ -36,7 +36,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activeKey, items, onSelect }) => {
             onClick={() => onSelect(item.key)}
             type="button"
           >
-            <span className="sidebar-icon">{item.icon ?? "•"}</span>
             <span className="sidebar-text">
               <span className="sidebar-label">{item.label}</span>
               {item.hint && <small className="sidebar-hint">{item.hint}</small>}

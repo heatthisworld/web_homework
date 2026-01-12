@@ -368,6 +368,76 @@
   box-shadow: 0 14px 34px rgba(37, 99, 235, 0.28);
 }
 
+/* 统一的编辑和删除按钮样式 */
+.action-button {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+.action-button.edit {
+  background-color: #6c757d;
+  color: white;
+}
+
+.action-button.edit:hover {
+  background-color: #5a6268;
+}
+
+.action-button.delete {
+  background-color: #dc3545;
+  color: white;
+}
+
+.action-button.delete:hover {
+  background-color: #c82333;
+}
+
+/* 小按钮类的统一样式 */
+.small-button {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+.small-button:not(.danger) {
+  background-color: #6c757d;
+  color: white;
+}
+
+.small-button:not(.danger):hover {
+  background-color: #5a6268;
+}
+
+.small-button.danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.small-button.danger:hover {
+  background-color: #c82333;
+}
+
+.danger-button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.danger-button:hover {
+  background-color: #c82333;
+}
+
 .surface-card {
   background: var(--card);
   border-radius: var(--radius);

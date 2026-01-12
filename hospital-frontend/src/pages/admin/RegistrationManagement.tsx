@@ -168,7 +168,6 @@ const RegistrationManagement: React.FC = () => {
 
       <div className="stat-grid">
         <div className="stat-card">
-          <div className="stat-icon">⏳</div>
           <div className="stat-meta">
             <div className="stat-label">待确认</div>
             <div className="stat-value">{stats.pending}</div>
@@ -176,7 +175,6 @@ const RegistrationManagement: React.FC = () => {
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">✅</div>
           <div className="stat-meta">
             <div className="stat-label">已确认</div>
             <div className="stat-value">{stats.confirmed}</div>
@@ -184,7 +182,6 @@ const RegistrationManagement: React.FC = () => {
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">🏁</div>
           <div className="stat-meta">
             <div className="stat-label">已完成</div>
             <div className="stat-value">{stats.finished}</div>
@@ -285,15 +282,15 @@ const RegistrationManagement: React.FC = () => {
                 </td>
                 <td>{row.notes ?? "—"}</td>
                 <td>
-                  <div className="button-group">
+                  <div className="action-buttons" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                     <button 
-                      className="button-small primary-button"
+                      className="action-button edit"
                       onClick={() => handleEdit(row)}
                     >
                       编辑
                     </button>
                     <button 
-                      className="button-small danger-button"
+                      className="action-button delete"
                       onClick={() => handleDelete(row.id)}
                     >
                       删除

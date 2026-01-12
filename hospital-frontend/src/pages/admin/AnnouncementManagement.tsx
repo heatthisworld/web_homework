@@ -4,11 +4,13 @@ import type { AdminAnnouncement } from "../../services/adminService";
 
 type AnnouncementStatus = "DRAFT" | "PUBLISHED" | "SCHEDULED";
 
+type AudienceScope = "全院" | "医生" | "患者";
+
 interface AnnouncementFormData {
   title: string;
   content: string;
   status: AnnouncementStatus;
-  audienceScope: string;
+  audienceScope: AudienceScope;
   publishAt?: string;
 }
 
@@ -40,6 +42,12 @@ const AnnouncementManagement: React.FC = () => {
       }
     };
     load();
+
+    // 每30秒自动刷新一次公告列表
+    const intervalId = setInterval(load, 30000);
+
+    // 组件卸载时清除定时器
+    return () => clearInterval(intervalId);
   }, []);
 
   const filtered = useMemo(() => {
@@ -103,6 +111,15 @@ const AnnouncementManagement: React.FC = () => {
     setFormError(null);
 
     try {
+      // 表单验证
+      if (formData.status === "SCHEDULED" && !formData.publishAt) {
+        throw new Error("预告状态必须填写发布时间");
+      }
+      if (formData.status === "PUBLISHED") {
+        // 已发布状态不需要发布时间
+        delete formData.publishAt;
+      }
+
       if (editingAnnouncement) {
         // 更新公告
         const updated = await updateAnnouncement(editingAnnouncement.id, {
@@ -221,17 +238,17 @@ const AnnouncementManagement: React.FC = () => {
                 <span className={`pill ${statusTone(item.status)}`}>{statusText(item.status)}</span>
                 <span className="badge">ID {item.id}</span>
                 <button 
-                  className="primary-button" 
+                  className="action-button edit" 
                   type="button"
-                  style={{ marginLeft: "10px", padding: "5px 10px", fontSize: "12px" }}
+                  style={{ marginLeft: "10px" }}
                   onClick={() => handleOpenModal(item)}
                 >
                   编辑
                 </button>
                 <button 
-                  className="danger-button" 
+                  className="action-button delete" 
                   type="button"
-                  style={{ marginLeft: "5px", padding: "5px 10px", fontSize: "12px" }}
+                  style={{ marginLeft: "5px" }}
                   onClick={() => handleDelete(item.id)}
                 >
                   删除
@@ -298,19 +315,25 @@ const AnnouncementManagement: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="audienceScope">受众范围</label>
-                  <input
-                    type="text"
+                  <label htmlFor="audienceScope">受众范围 *</label>
+                  <select
                     id="audienceScope"
                     name="audienceScope"
                     value={formData.audienceScope}
                     onChange={handleFormChange}
-                    className="form-input"
-                  />
+                    required
+                    className="form-select"
+                  >
+                    <option value="全院">全院</option>
+                    <option value="医生">医生</option>
+                    <option value="患者">患者</option>
+                  </select>
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="publishAt">发布时间（可选）</label>
+                  <label htmlFor="publishAt">
+                    {formData.status === "SCHEDULED" ? "发布时间 *" : "发布时间"}
+                  </label>
                   <input
                     type="datetime-local"
                     id="publishAt"
@@ -318,7 +341,14 @@ const AnnouncementManagement: React.FC = () => {
                     value={formData.publishAt}
                     onChange={handleFormChange}
                     className="form-input"
+                    disabled={formData.status === "PUBLISHED"}
+                    required={formData.status === "SCHEDULED"}
                   />
+                  {formData.status === "PUBLISHED" && (
+                    <small style={{ color: '#6c757d', display: 'block', marginTop: '5px' }}>
+                      已发布状态不需要设置发布时间
+                    </small>
+                  )}
                 </div>
               </div>
               <div className="modal-footer">

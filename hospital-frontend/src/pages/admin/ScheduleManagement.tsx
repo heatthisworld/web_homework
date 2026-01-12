@@ -366,16 +366,14 @@ const ScheduleManagement: React.FC = () => {
                 <td>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button 
-                      className="small-button"
+                      className="action-button edit"
                       onClick={() => handleEditSchedule(row)}
-                      style={{ padding: '4px 8px', fontSize: '12px' }}
                     >
                       编辑
                     </button>
                     <button 
-                      className="small-button pill-danger"
+                      className="action-button delete"
                       onClick={() => handleDeleteSchedule(row.id, row.booked > 0)}
-                      style={{ padding: '4px 8px', fontSize: '12px', backgroundColor: '#f87171', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                     >
                       删除
                     </button>

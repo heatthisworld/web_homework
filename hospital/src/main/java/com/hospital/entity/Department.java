@@ -1,9 +1,11 @@
 package com.hospital.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Entity
@@ -40,6 +42,10 @@ public class Department {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "department", fetch = FetchType.LAZY)
+    @JsonIgnore // 避免序列化时的循环引用
+    private List<Doctor> doctors;
 
     public enum Status {
         OPEN, PAUSED, ADJUSTING

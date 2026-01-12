@@ -1,17 +1,22 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { fetchDepartments, createDepartment, updateDepartment, deleteDepartment } from "../../services/adminService";
-import type { AdminDepartment } from "../../services/adminService";
+import { fetchDepartments, createDepartment, updateDepartment, deleteDepartment, fetchDoctors, fetchDepartmentDoctors, updateDepartmentDoctors } from "../../services/adminService";
+import type { AdminDepartment, AdminDoctor } from "../../services/adminService";
 
 type DeptStatus = "OPEN" | "PAUSED" | "ADJUSTING";
 
 const DepartmentManagement: React.FC = () => {
   const [departments, setDepartments] = useState<AdminDepartment[]>([]);
+  const [doctors, setDoctors] = useState<AdminDoctor[]>([]);
   const [statusFilter, setStatusFilter] = useState<"全部" | DeptStatus>("全部");
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(true);
+  const [doctorsLoading, setDoctorsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDoctorModalOpen, setIsDoctorModalOpen] = useState(false);
   const [editingDepartment, setEditingDepartment] = useState<AdminDepartment | null>(null);
+  const [selectedDepartment, setSelectedDepartment] = useState<AdminDepartment | null>(null);
+  const [departmentDoctors, setDepartmentDoctors] = useState<AdminDoctor[]>([]);
   const [formData, setFormData] = useState<Omit<AdminDepartment, "id">>({
     code: "",
     name: "",
@@ -25,8 +30,12 @@ const DepartmentManagement: React.FC = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await fetchDepartments();
-        setDepartments(data);
+        const [departmentsData, doctorsData] = await Promise.all([
+          fetchDepartments(),
+          fetchDoctors()
+        ]);
+        setDepartments(departmentsData);
+        setDoctors(doctorsData);
       } catch (e) {
         setError(e instanceof Error ? e.message : "加载失败");
       } finally {
@@ -123,6 +132,53 @@ const DepartmentManagement: React.FC = () => {
     }
   };
 
+  const handleManageDoctors = async (department: AdminDepartment) => {
+    setSelectedDepartment(department);
+    setDoctorsLoading(true);
+    try {
+      const deptDoctors = await fetchDepartmentDoctors(department.id);
+      setDepartmentDoctors(deptDoctors);
+    } catch (e) {
+      const errorMsg = e instanceof Error ? e.message : "加载科室医生失败";
+      alert(errorMsg);
+    } finally {
+      setDoctorsLoading(false);
+      setIsDoctorModalOpen(true);
+    }
+  };
+
+  const handleAddDoctor = (doctor: AdminDoctor) => {
+    if (!departmentDoctors.some(d => d.id === doctor.id)) {
+      setDepartmentDoctors(prev => [...prev, doctor]);
+    }
+  };
+
+  const handleRemoveDoctor = (doctorId: number) => {
+    setDepartmentDoctors(prev => prev.filter(d => d.id !== doctorId));
+  };
+
+  const handleSaveDoctors = async () => {
+    if (!selectedDepartment) return;
+    
+    try {
+      const doctorIds = departmentDoctors.map(d => d.id);
+      await updateDepartmentDoctors(selectedDepartment.id, doctorIds);
+      
+      // 更新本地科室医生数据
+      setDepartments(prev => prev.map(dept => 
+        dept.id === selectedDepartment.id 
+          ? { ...dept, doctors: departmentDoctors } 
+          : dept
+      ));
+      
+      setIsDoctorModalOpen(false);
+      alert("医生分配更新成功");
+    } catch (e) {
+      const errorMsg = e instanceof Error ? e.message : "更新医生分配失败";
+      alert(errorMsg);
+    }
+  };
+
   const filtered = useMemo(() => {
     return departments.filter((dept) => {
       const byStatus = statusFilter === "全部" ? true : dept.status === statusFilter;
@@ -197,16 +253,21 @@ const DepartmentManagement: React.FC = () => {
               </div>
               <div className="card-actions" style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
                 <button 
-                  className="small-button" 
+                  className="action-button edit" 
                   onClick={() => handleEditDepartment(dept)}
-                  style={{ padding: '4px 8px', fontSize: '12px' }}
                 >
                   编辑
                 </button>
                 <button 
-                  className="small-button danger" 
+                  className="action-button" 
+                  style={{ backgroundColor: '#1890ff' }}
+                  onClick={() => handleManageDoctors(dept)}
+                >
+                  管理医生
+                </button>
+                <button 
+                  className="action-button delete" 
                   onClick={() => handleDeleteDepartment(dept.id, dept.name)}
-                  style={{ padding: '4px 8px', fontSize: '12px' }}
                 >
                   删除
                 </button>
@@ -253,6 +314,8 @@ const DepartmentManagement: React.FC = () => {
               <th>诊室数</th>
               <th>状态</th>
               <th>当前重点</th>
+              <th>医生数量</th>
+              <th>操作</th>
             </tr>
           </thead>
           <tbody>
@@ -265,19 +328,25 @@ const DepartmentManagement: React.FC = () => {
                   <span className={`pill ${statusTone(dept.status)}`}>{statusText(dept.status)}</span>
                 </td>
                 <td>{dept.focus ?? "—"}</td>
+                <td>{dept.doctors?.length || 0} 人</td>
                 <td>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button 
-                      className="small-button" 
+                      className="action-button edit" 
                       onClick={() => handleEditDepartment(dept)}
-                      style={{ padding: '4px 8px', fontSize: '12px' }}
                     >
                       编辑
                     </button>
                     <button 
-                      className="small-button danger" 
+                      className="action-button" 
+                      style={{ backgroundColor: '#1890ff' }}
+                      onClick={() => handleManageDoctors(dept)}
+                    >
+                      管理医生
+                    </button>
+                    <button 
+                      className="action-button delete" 
                       onClick={() => handleDeleteDepartment(dept.id, dept.name)}
-                      style={{ padding: '4px 8px', fontSize: '12px' }}
                     >
                       删除
                     </button>
@@ -289,6 +358,168 @@ const DepartmentManagement: React.FC = () => {
         </table>
       </div>
 
+      {/* 医生管理模态框 */}
+      {isDoctorModalOpen && (
+        <div className="modal-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div className="modal" style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '24px',
+            width: '90%',
+            maxWidth: '800px',
+            maxHeight: '80vh',
+            overflowY: 'auto'
+          }}>
+            <h2 style={{ marginBottom: '20px' }}>
+              管理科室医生 - {selectedDepartment?.name}
+            </h2>
+            
+            <div style={{ display: 'flex', gap: '24px', marginBottom: '24px' }}>
+              {/* 可选医生列表 */}
+              <div style={{ flex: 1 }}>
+                <h3 style={{ marginBottom: '12px' }}>可选医生</h3>
+                <div style={{ 
+                  maxHeight: '300px', 
+                  overflowY: 'auto',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  padding: '8px'
+                }}>
+                  {doctorsLoading ? (
+                    <p>加载中...</p>
+                  ) : (
+                    doctors
+                      .filter(doctor => !departmentDoctors.some(d => d.id === doctor.id))
+                      .map(doctor => (
+                        <div 
+                          key={doctor.id}
+                          style={{
+                            padding: '8px',
+                            marginBottom: '4px',
+                            backgroundColor: '#f5f5f5',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}
+                          onClick={() => handleAddDoctor(doctor)}
+                        >
+                          <div>
+                            <div>{doctor.name}</div>
+                            <div style={{ fontSize: '12px', color: '#666' }}>{doctor.title || '医师'}</div>
+                          </div>
+                          <button 
+                            className="action-button edit" 
+                            style={{ padding: '4px 8px', fontSize: '12px' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddDoctor(doctor);
+                            }}
+                          >
+                            添加
+                          </button>
+                        </div>
+                      ))
+                  )}
+                </div>
+              </div>
+              
+              {/* 已选医生列表 */}
+              <div style={{ flex: 1 }}>
+                <h3 style={{ marginBottom: '12px' }}>已分配医生</h3>
+                <div style={{ 
+                  maxHeight: '300px', 
+                  overflowY: 'auto',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  padding: '8px'
+                }}>
+                  {departmentDoctors.length === 0 ? (
+                    <p style={{ color: '#999', textAlign: 'center', padding: '20px' }}>暂无医生分配</p>
+                  ) : (
+                    departmentDoctors.map(doctor => (
+                      <div 
+                        key={doctor.id}
+                        style={{
+                          padding: '8px',
+                          marginBottom: '4px',
+                          backgroundColor: '#e6f7ff',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <div>
+                          <div>{doctor.name}</div>
+                          <div style={{ fontSize: '12px', color: '#666' }}>{doctor.title || '医师'}</div>
+                        </div>
+                        <button 
+                          className="action-button delete" 
+                          style={{ padding: '4px 8px', fontSize: '12px' }}
+                          onClick={() => handleRemoveDoctor(doctor.id)}
+                        >
+                          移除
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="modal-footer" style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '12px',
+              marginTop: '24px'
+            }}>
+              <button 
+                type="button" 
+                className="secondary-button"
+                onClick={() => setIsDoctorModalOpen(false)}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#f0f0f0',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                取消
+              </button>
+              <button 
+                type="button" 
+                className="primary-button"
+                onClick={handleSaveDoctors}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#1890ff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* 新增/编辑科室模态框 */}
       {isModalOpen && (
         <div className="modal-overlay" style={{
